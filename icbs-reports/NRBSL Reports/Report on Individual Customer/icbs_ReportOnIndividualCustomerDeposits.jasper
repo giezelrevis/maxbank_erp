@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.2.0.final using JasperReports Library version 6.2.0  -->
+<!-- 2016-04-08T15:04:47 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="customer_business_subreport" pageWidth="612" pageHeight="792" columnWidth="612" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="3e900871-a303-4808-a9d6-59dab616adc8">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="PostgresLocal"/>
+	<parameter name="customer_id" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[select 
+	deposit.acct_no,
+	customer.customer_id, 	
+	deposit.date_opened,
+	case when deposit.type_id=3 then rollover.end_date else null end as maturidy_date,
+	deposit.product_id,
+	product.name as product_txt,
+	deposit.status_id as acctstatus,
+	acctstatus.description as acctstatus_txt,
+	deposit.ledger_bal_amt as balance,
+	deposit.type_id,
+	deposit_type.description as type_txt
+	
+	
+from deposit as deposit
+	inner join customer as customer on customer.id = deposit.customer_id
+	left join product as product on deposit.product_id = product.id
+	left join deposit_status as acctstatus on deposit.status_id=acctstatus.id
+	left join deposit_type as deposit_type on deposit.type_id = deposit_type.id
+	left join rollover as rollover on deposit.id=rollover.deposit and rollover.rollovers_idx =(select max(r.rollovers_idx) from rollover as r where r.deposit=deposit.id)
+
+
+
+
+ where customer.customer_id = $P{customer_id}
+order by type_id]]>
+	</queryString>
+	<field name="acct_no" class="java.lang.String"/>
+	<field name="customer_id" class="java.lang.String"/>
+	<field name="date_opened" class="java.sql.Timestamp"/>
+	<field name="maturidy_date" class="java.sql.Timestamp"/>
+	<field name="product_id" class="java.lang.Long"/>
+	<field name="product_txt" class="java.lang.String"/>
+	<field name="acctstatus" class="java.lang.Long"/>
+	<field name="acctstatus_txt" class="java.lang.String"/>
+	<field name="balance" class="java.lang.Double"/>
+	<field name="type_id" class="java.lang.Long"/>
+	<field name="type_txt" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<columnHeader>
+		<band height="17">
+			<staticText>
+				<reportElement x="0" y="0" width="60" height="12" uuid="e915a1b4-5ad8-418d-8490-27e5e6ba08db">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.x" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<text><![CDATA[Acct. No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="62" y="0" width="88" height="12" uuid="d7ce3e91-9dc1-4688-8aad-732e0ba7a110">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="9"/>
+				</textElement>
+				<text><![CDATA[Date Open]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="0" width="88" height="12" uuid="cbbcf6fc-d8ca-4adc-87db-5e7477d12f8c">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="9"/>
+				</textElement>
+				<text><![CDATA[Maturity Date]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="238" y="0" width="192" height="12" uuid="1aa4649a-764a-4a64-a3b2-a6b6942ae1f7">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="9"/>
+				</textElement>
+				<text><![CDATA[Product]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="511" y="0" width="90" height="12" uuid="78091592-3eae-4228-aa5a-53cfd0f6dc68">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="9"/>
+				</textElement>
+				<text><![CDATA[Residence Since]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="430" y="0" width="75" height="12" uuid="8b228556-b78e-4708-84e2-d9c3c45e0b63">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="9"/>
+				</textElement>
+				<text><![CDATA[Balance]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="15" splitType="Stretch">
+			<textField isBlankWhenNull="true">
+				<reportElement x="0" y="0" width="60" height="12" uuid="81725e2b-5c10-4c52-97ae-604da870ebd4">
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.x" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{acct_no}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="62" y="0" width="88" height="12" uuid="62e0ef0f-560d-4f7e-a3da-908be4ee9bb3">
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.x" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{date_opened}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="240" y="0" width="190" height="12" uuid="8294d4ec-d700-4a13-a79f-c530f096cd1a">
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{product_txt}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="150" y="0" width="88" height="12" uuid="2a68906a-6116-4fae-8435-5fae099a7e0e">
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{maturidy_date}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00#" isBlankWhenNull="true">
+				<reportElement x="430" y="0" width="75" height="12" uuid="4bd2e913-1584-43e0-955d-223e9e233270">
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{balance}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="511" y="0" width="90" height="12" uuid="4c9a3770-f65b-4e40-810a-6d6a3194b3ca">
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{acctstatus_txt}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>

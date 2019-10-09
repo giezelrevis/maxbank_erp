@@ -1,0 +1,535 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.2.1.final using JasperReports Library version 6.2.0  -->
+<!-- 2016-04-28T16:06:33 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Interest Income Scheme" pageWidth="612" pageHeight="792" whenNoDataType="NoDataSection" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="dac3f577-440d-44f6-825c-d87b2f035ad3">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="icbs_nrbsl"/>
+	<property name="ireport.jasperserver.url" value="http://localhost:8080/jasperserver/"/>
+	<property name="ireport.jasperserver.user" value="jasperadmin"/>
+	<property name="ireport.jasperserver.report.resource" value="/ICBS_REPORT/ADMIN/InterestIncomeScheme_files/main_jrxml"/>
+	<property name="ireport.jasperserver.reportUnit" value="/ICBS_REPORT/ADMIN/InterestIncomeScheme"/>
+	<parameter name="Interest_Income_Scheme" class="java.lang.String"/>
+	<queryString language="SQL">
+		<![CDATA[select 	
+C.param_value as "BANK NAME",
+interest_income_scheme.code as "Code",
+	interest_income_scheme.name as "Name",
+	loan_installment_type.description as "Installment Type",
+	loan_calculation.description as "Installment Calculation Type",
+	loan_advanced_interest_type.description as "Advanced Interest Type",
+	interest_income_scheme.default_interest_rate as "Default Interest Rate",
+	interest_income_scheme.past_due_interest_rate as "Past Due Interest Rate",
+	interest_income_scheme.min_interest_rate as "Min Interest Rate",
+	interest_income_scheme.max_interest_rate as "Max_interest_rate",
+	interest_income_scheme.divisor as "Divisor",
+	interest_income_scheme.grace_period as "Grace Period",
+	interest_income_scheme.has_balloon_mode as "Balloon Mode",
+	interest_income_scheme.can_change_interest_rate as "Changeable Interest Rate",
+	interest_income_scheme.has_interest_accrual as "Interest Accrual",
+	config_item_status.description as "Status"
+from interest_income_scheme
+inner join (select param_value from institution where id = '1') C ON C.param_value is not null
+inner join loan_installment_type on loan_installment_type.id = installment_type_id
+inner join loan_calculation on loan_calculation.id = installment_calc_type_id
+inner join loan_advanced_interest_type on loan_advanced_interest_type.id = adv_interest_type_id
+inner join config_item_status on config_item_status.id = status_id
+where interest_income_scheme.code = $P{Interest_Income_Scheme}]]>
+	</queryString>
+	<field name="BANK NAME" class="java.lang.String"/>
+	<field name="Code" class="java.lang.String"/>
+	<field name="Name" class="java.lang.String"/>
+	<field name="Installment Type" class="java.lang.String"/>
+	<field name="Installment Calculation Type" class="java.lang.String"/>
+	<field name="Advanced Interest Type" class="java.lang.String"/>
+	<field name="Default Interest Rate" class="java.lang.Double"/>
+	<field name="Past Due Interest Rate" class="java.lang.Double"/>
+	<field name="Min Interest Rate" class="java.lang.Double"/>
+	<field name="Max_interest_rate" class="java.lang.Double"/>
+	<field name="Divisor" class="java.lang.Integer"/>
+	<field name="Grace Period" class="java.lang.Integer"/>
+	<field name="Balloon Mode" class="java.lang.Boolean"/>
+	<field name="Changeable Interest Rate" class="java.lang.Boolean"/>
+	<field name="Interest Accrual" class="java.lang.Boolean"/>
+	<field name="Status" class="java.lang.String"/>
+	<group name="BANK NAME">
+		<groupExpression><![CDATA[$F{BANK NAME}]]></groupExpression>
+	</group>
+	<group name="Code">
+		<groupExpression><![CDATA[$F{Code}]]></groupExpression>
+	</group>
+	<group name="Name">
+		<groupExpression><![CDATA[$F{Name}]]></groupExpression>
+	</group>
+	<group name="Installment Type">
+		<groupExpression><![CDATA[$F{Installment Type}]]></groupExpression>
+	</group>
+	<group name="Installment Calculation Type">
+		<groupExpression><![CDATA[$F{Installment Calculation Type}]]></groupExpression>
+	</group>
+	<group name="Advanced Interest Type">
+		<groupExpression><![CDATA[$F{Advanced Interest Type}]]></groupExpression>
+	</group>
+	<group name="Default Interest Rate">
+		<groupExpression><![CDATA[$F{Default Interest Rate}]]></groupExpression>
+	</group>
+	<group name="Past Due Interest Rate">
+		<groupExpression><![CDATA[$F{Past Due Interest Rate}]]></groupExpression>
+	</group>
+	<group name="Min Interest Rate">
+		<groupExpression><![CDATA[$F{Min Interest Rate}]]></groupExpression>
+	</group>
+	<group name="Max_interest_rate">
+		<groupExpression><![CDATA[$F{Max_interest_rate}]]></groupExpression>
+	</group>
+	<group name="Divisor">
+		<groupExpression><![CDATA[$F{Divisor}]]></groupExpression>
+	</group>
+	<group name="Grace Period">
+		<groupExpression><![CDATA[$F{Grace Period}]]></groupExpression>
+	</group>
+	<group name="Balloon Mode">
+		<groupExpression><![CDATA[$F{Balloon Mode}]]></groupExpression>
+	</group>
+	<group name="Changeable Interest Rate">
+		<groupExpression><![CDATA[$F{Changeable Interest Rate}]]></groupExpression>
+	</group>
+	<group name="Interest Accrual">
+		<groupExpression><![CDATA[$F{Interest Accrual}]]></groupExpression>
+	</group>
+	<group name="Status">
+		<groupExpression><![CDATA[$F{Status}]]></groupExpression>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band height="92" splitType="Stretch">
+			<textField>
+				<reportElement x="472" y="0" width="100" height="13" uuid="97b840be-3f44-404a-a559-4e9d44a98d2d">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA["Page: " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="HH:mm">
+				<reportElement x="472" y="13" width="100" height="13" uuid="3fc2c470-668a-4ea3-af13-732dce3cf196">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField pattern="MMMMM dd, yyyy">
+				<reportElement x="472" y="26" width="100" height="13" uuid="77d32c66-6157-4457-9ac9-efecdbcff25a">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="80" y="63" width="400" height="22" uuid="95ad84b8-7b6a-42fb-98da-5d39df2fc68c">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="16" isBold="true"/>
+				</textElement>
+				<text><![CDATA[INTEREST INCOME SCHEME ]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="80" y="39" width="400" height="24" uuid="cb66cabc-281d-487a-9dbb-b4b3104c6dba">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="18" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BANK NAME}]]></textFieldExpression>
+			</textField>
+			<image>
+				<reportElement x="0" y="0" width="50" height="50" uuid="5f1e9fa6-2c59-425e-9f4b-a62e0604e392"/>
+				<imageExpression><![CDATA["repo:logo.png"]]></imageExpression>
+			</image>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band height="293" splitType="Stretch">
+			<textField>
+				<reportElement x="300" y="0" width="182" height="13" uuid="a4111637-4b37-439d-a522-8fc07dc37522">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Code}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="180" y="0" width="100" height="13" uuid="74d055ea-1b9d-4fe4-a716-2623037a02a2">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Code]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="300" y="20" width="182" height="13" uuid="eae0380a-c7ac-4b39-9105-42e50e599177">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Name}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="180" y="20" width="100" height="13" uuid="9c2dd8bb-3506-4823-9734-3fc6e28118c4">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Name]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="300" y="40" width="182" height="13" uuid="b1546b14-56e7-4ead-a8b9-55f5c7470c09">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Installment Type}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="180" y="40" width="100" height="13" uuid="270e11b5-9778-4f84-b969-8f9c0d3d81e5">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Installment Type]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="300" y="60" width="182" height="13" uuid="c195a057-22c2-4bfa-a35e-aae06afb4fb4">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Installment Calculation Type}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="180" y="60" width="100" height="13" uuid="209db372-a601-4b7e-8c72-0a849dac71bd">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Installment Calculation Type]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="300" y="80" width="182" height="13" uuid="aa34a066-49be-4c26-8638-6bb1eea99309">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Advanced Interest Type}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="180" y="80" width="100" height="13" uuid="bfb83feb-f3d9-4d94-ac56-8716a0869907">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Advanced Interest Type]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="300" y="100" width="182" height="13" uuid="b2e865e1-4954-41c8-b03d-5b8c69ee242c">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="local_mesure_unitx" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Default Interest Rate}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="180" y="100" width="100" height="13" uuid="250521fc-79ed-4555-9d68-c3c6da6ef216">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="local_mesure_unitx" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Default Interest Rate]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="300" y="120" width="182" height="13" uuid="08a1203a-c788-4c84-b826-38a4a01cbe89">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Past Due Interest Rate}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="180" y="120" width="100" height="13" uuid="ace4243d-c6b4-4aba-a8a7-ea7a69047bf0">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Past Due Interest Rate]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="300" y="140" width="182" height="13" uuid="1ae9cd7a-f3e6-45bc-9ce8-1db8c0dd6c97">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Min Interest Rate}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="180" y="140" width="100" height="13" uuid="c4fed7ba-33bd-471c-969e-9e3e6d972f0a">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Min Interest Rate]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="300" y="160" width="182" height="13" uuid="745dd162-9c54-4840-9124-c4dd2af11f29">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+					<property name="local_mesure_unitx" value="pixel"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Max_interest_rate}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="180" y="160" width="100" height="13" uuid="bbe8de27-66e6-44c0-bada-695d31ebae1d">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Max_interest_rate]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="300" y="180" width="182" height="13" uuid="d116404a-3c10-45bc-b7ba-70fc5efd9850">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Divisor}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="180" y="180" width="100" height="13" uuid="de4e7d67-1eab-460f-b6dc-6f2fd94f5b5f">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Divisor]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="300" y="200" width="190" height="13" uuid="5fc61f00-7e53-4f04-aa9b-af9b83215ae3">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="local_mesure_unitx" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Grace Period}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="180" y="200" width="100" height="13" uuid="cc39554d-78f5-4ec7-85f7-8a3c3d0eebec">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Grace Period]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="300" y="220" width="190" height="13" uuid="c75853a4-d8d1-4c5a-aa03-25e9a0704621">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Balloon Mode}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="180" y="220" width="100" height="13" uuid="74dba6c0-b9b1-43e7-8b9d-8c93efad61f3">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Balloon Mode]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="300" y="240" width="190" height="13" uuid="9913bb2e-b3c5-4657-9646-c98f0301b8c1">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Changeable Interest Rate}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="180" y="240" width="100" height="13" uuid="598e8f18-7b6a-4db3-b32c-be701ab5046c">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Changeable Interest Rate]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="300" y="260" width="190" height="13" uuid="1b796e2b-51fa-4774-af11-c32b3dbf362a">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Interest Accrual}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="180" y="260" width="100" height="13" uuid="41251667-0ad5-40c9-89e9-99ec70aea92a">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="local_mesure_unitx" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Interest Accrual]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="300" y="280" width="190" height="13" uuid="8f3f965c-1528-4870-9115-dcead7e093ec">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Status}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="180" y="280" width="100" height="13" uuid="3be9b136-c99e-414f-bce0-9dab700d47ae">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Status]]></text>
+			</staticText>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="45" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="54" splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band height="42" splitType="Stretch"/>
+	</summary>
+	<noData>
+		<band height="97">
+			<textField pattern="MMMMM dd, yyyy">
+				<reportElement x="472" y="29" width="100" height="13" uuid="8370de12-2267-4aca-95d6-bdee77c425cc">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="81" y="70" width="400" height="22" uuid="629b546a-1672-477b-bbd9-ffcb45d954d0">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[NO DATA FOR REPORT]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="472" y="3" width="100" height="13" uuid="0575f960-4c24-4e39-9be4-79963bc403f0">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA["Page: " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="HH:mm">
+				<reportElement x="472" y="16" width="100" height="13" uuid="5727fe34-7ae4-4337-975b-4196805dc491">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<image>
+				<reportElement x="0" y="4" width="50" height="50" uuid="2be4a108-01f1-4153-bde1-c209afdb5aaa"/>
+				<imageExpression><![CDATA["repo:logo.png"]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement x="80" y="44" width="400" height="22" uuid="55b28739-91bb-4f52-bac9-2574fa36af4d">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="16" isBold="true"/>
+				</textElement>
+				<text><![CDATA[INTEREST INCOME SCHEME ]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

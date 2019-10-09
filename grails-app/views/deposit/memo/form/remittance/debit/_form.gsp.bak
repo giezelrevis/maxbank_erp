@@ -1,0 +1,101 @@
+<!--
+  To change this license header, choose License Headers in Project Properties.
+  To change this template file, choose Tools | Templates
+  and open the template in the editor.
+-->
+<%@ page contentType="text/html;charset=UTF-8" %>
+<div class="row">
+    <div class="col-md-6">
+        
+        <g:hiddenField id="txnType" name="tnxType.id" value="9"/>
+        <g:hiddenField id="acct"name="acct.id" value="${adjustmentInstance?.acct?.id?:depositInstance?.id}"/>
+        <div class="form-group fieldcontain ${hasErrors(bean: remittanceInstance, field: 'type', 'has-error')} ">
+            <label class="control-label col-sm-4"for="type">
+                    <g:message code="remittance.type.label" default="Memo Type" />
+            </label>
+            <div class="col-sm-8">
+                <g:select id="type" name="type.id" onchange="changeMemoForm('remittance')" from="${icbs.lov.MemoType.findAllByIdInListAndStatus([2],true)}" optionKey="id" optionValue ="description" value="${remittanceInstance?.type?.id}"class="form-control"/>
+                <g:hasErrors bean="${remittanceInstance}" field="type">
+                    <div class="controls">
+                        <span class="help-block">
+                            <g:eachError bean="${remittanceInstance}" field="type">
+                                <g:message error="${it}" /><br/>
+                            </g:eachError>
+                        </span>
+                    </div>
+                </g:hasErrors>
+            </div>
+        </div>
+        <div class="form-group fieldcontain ${hasErrors(bean: remittanceInstance, field: 'txnTemplate', 'has-error')} ">
+            <label class="control-label col-sm-4"for="txnTemplate">
+                    <g:message code="remittance.txnTemplate.label" default="Transaction Code" />
+            </label>
+            <div class="col-sm-8">
+                <g:select id="txnTemplate" name="txnTemplate.id" from="${icbs.admin.TxnTemplate.findAllByIdInList([36,37,38,39])}" optionKey="id" optionValue ="description" value="${adjustmentInstance?.txnTemplate?.id}"class="form-control"/>
+                <g:hasErrors bean="${remittanceInstance}" field="txnTemplate">
+                    <div class="controls">
+                        <span class="help-block">
+                            <g:eachError bean="${remittanceInstance}" field="txnTemplate">
+                                <g:message error="${it}" /><br/>
+                            </g:eachError>
+                        </span>
+                    </div>
+                </g:hasErrors>
+            </div>
+        </div>
+        <div class="form-group fieldcontain ${hasErrors(bean: remittanceInstance, field: 'amt', 'has-error')} ">
+            <label class="control-label col-sm-4"for="amt">
+                    <g:message code="remittance.amt.label" default="Amount" />
+            </label>
+            <div class="col-sm-8">
+                <g:textField name="amt" value="${remittanceInstance?.amt}" class="form-control"/>
+                <g:hasErrors bean="${remittanceInstance}" field="amt">
+                    <div class="controls">
+                        <span class="help-block">
+                            <g:eachError bean="${remittanceInstance}" field="amt">
+                                <g:message error="${it}" /><br/>
+                            </g:eachError>
+                        </span>
+                    </div>
+                </g:hasErrors>
+            </div>
+        </div>
+        <div class="form-group fieldcontain ${hasErrors(bean: remittanceInstance, field: 'ref', 'has-error')} ">
+            <label class="control-label col-sm-4"for="ref">
+                    <g:message code="remittance.ref.label" default="Reference" />
+            </label>
+            <div class="col-sm-8">
+                <g:textField name="ref" value="${remittanceInstance?.ref}" class="form-control"/>
+                <g:hasErrors bean="${remittanceInstance}" field="ref">
+                    <div class="controls">
+                        <span class="help-block">
+                            <g:eachError bean="${remittanceInstance}" field="ref">
+                                <g:message error="${it}" /><br/>
+                            </g:eachError>
+                        </span>
+                    </div>
+                </g:hasErrors>
+            </div>
+        </div>
+        <div class="form-group fieldcontain ${hasErrors(bean: remittanceInstance, field: 'txnDescription', 'has-error')} ">
+            <label class="control-label col-sm-4"for="ref">
+                    <g:message code="remittance.txnDescription.label" default="Description" />
+            </label>
+            <div class="col-sm-8">
+                <g:textField name="txnDescription" value="${remittanceInstance?.txnDescription}" class="form-control"/>
+                <g:hasErrors bean="${remittanceInstance}" field="txnDescription">
+                    <div class="controls">
+                        <span class="help-block">
+                            <g:eachError bean="${remittanceInstance}" field="txnDescription">
+                                <g:message error="${it}" /><br/>
+                            </g:eachError>
+                        </span>
+                    </div>
+                </g:hasErrors>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <g:submitButton name="submit" value="submit" class="btn btn-primary" />
+    </div>
+</div>

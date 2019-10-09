@@ -1,0 +1,72 @@
+package icbs.admin
+
+import icbs.lov.BranchRunStatus
+import icbs.lov.BranchStatus
+import icbs.lov.Lov
+
+class Branch {
+
+	Integer code
+	String name
+	String swiftCode
+        
+        String due_to_from_acct
+	String address
+	Lov country
+	Lov region
+	String contactNumber
+	UserMaster manager
+	Date openDate
+	boolean dataCenter
+	String taxNo
+    boolean openOnMon
+    boolean openOnTue
+    boolean openOnWed
+    boolean openOnThu
+    boolean openOnFri
+    boolean openOnSat
+    boolean openOnSun
+        Date newRunDate
+	Date runDate
+       
+    boolean isTelleringActive
+	BranchRunStatus branchRunStatus
+	BranchStatus status
+
+    static hasMany = [products: Product, clearingBanks: ClearingBank, checkDepositClearingTypes:CheckDepositClearingType, holidays:Holiday]
+
+    static constraints = {
+    	code min:1, max:999, unique:true
+    	name maxSize:50, unique:true
+    	swiftCode maxSize:50
+    	address maxSize:255
+    	country nullable:true
+    	region nullable:true
+    	contactNumber nullable:true
+    	manager nullable:true
+    	openDate nullable:true
+    	dataCenter nullable:false
+    	taxNo maxSize:50, nullable:true
+        openOnMon nullable:false
+        openOnTue nullable:false
+        openOnWed nullable:false
+        openOnThu nullable:false
+        openOnFri nullable:false
+        openOnSat nullable:false
+        openOnSun nullable:false
+    	runDate nullable:false
+        newRunDate nullable:false
+    	branchRunStatus nullable:false
+        isTelleringActive nullable:true
+        due_to_from_acct nullable:false
+    }
+
+    static mapping = {
+        products joinTable: [name:'branch_product', key:'branch_id']
+        clearingBanks joinTable: [name:'branch_clearing_bank', key:'branch_id']
+        checkDepositClearingTypes joinTable: [name:'branch_check_deposit_clearing_type', key:'branch_id']
+        holidays joinTable: [name:'branch_holiday', key:'branch_id']
+    	id sqlType:'int', generator:'increment'
+    	openDate sqlType:'date'
+    }
+}

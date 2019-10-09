@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.3.0.final using JasperReports Library version 6.3.0  -->
+<!-- 2016-10-31T07:12:35 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="PN" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="495033ab-bdfe-45bd-9b76-2aa370d5c777">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="LocalHost"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<parameter name="id" class="java.lang.Integer"/>
+	<queryString>
+		<![CDATA[select
+
+(select param_value from institution where id = '1')::text as institutuion_name,
+(select run_date::date from branch where branch.id = loan.branch_id)::text as run_date,
+(select name from branch where branch.id = loan.branch_id)::text as branch_name,
+(select address from branch where branch.id = loan.branch_id)::text as branch_address,
+
+loan.account_no::text as acct_no,
+
+loan.pn_no::text as pn_no,
+
+cif_basic_info.customer_id,
+
+cif_basic_info.cont_name::text as cont_name,
+
+cif_address_view.address::text as cont_address,
+
+trim(to_char(loan.granted_amount,'99,999,999.99'))::text as loan_granted,
+
+cash_words(cast(loan.granted_amount::text as money))::text as granted_amount_words,
+
+trim(to_char(loan.interest_rate,'99,999,999'))::text as intrest_rate,
+
+(select trim(to_char(total_installment_amount,'99,999,999.99'))::text from loan_installment where id in (select loan_installment_id from loan_loan_installment where loan_loan_installments_id = loan.id)  limit 1) as installment_amount,
+
+cash_words(cast((select trim(to_char(total_installment_amount,'99,999,999.99'))::text from loan_installment where id in (select loan_installment_id from loan_loan_installment where loan_loan_installments_id = loan.id)  limit 1) as money)) as installment_amount_words,
+
+trim(to_char(loan.num_installments,'99,999,999'))::text as num_installments,
+
+replace(replace(cash_words(cast(trim(to_char(loan.num_installments,'99,999,999'))::text as money)),' dollar and zero cents',''),' dollars and zero cents','') as num_installments_word,
+
+(select split_part(description,'|',1) from loan_installment_freq where loan_installment_freq.id = loan.frequency_id) as frequency,
+
+(select code from currency where currency.id = loan.currency_id) as currency_code,
+
+(select split_part(description,'|',1) from loan_type where loan_type.id = loan_type_id) as ln_type_employer,
+
+(select split_part(description,'|',1) from loan_project where loan_project.id = loan.loan_project_id) as loan_projec_desc,
+
+(select split_part(description,'|',1) from loan_security where loan_security.id = loan.loan_security_id) as loan_security_desc,
+
+trim(to_char(loan.penalty_rate,'99,999,999.99'))::text as penalty_rate,
+
+(select split_part(description,'|',1)  from loan_type where loan_type.id = loan.loan_type_id) as loan_type_desc
+
+from loan
+inner join cif_basic_info on cif_basic_info.id = loan.customer_id
+inner join cif_address_view on cif_basic_info.customer_id = cif_address_view.customer_id
+
+where loan.id =  $P{id}]]>
+	</queryString>
+	<field name="institutuion_name" class="java.lang.String"/>
+	<field name="run_date" class="java.lang.String"/>
+	<field name="branch_name" class="java.lang.String"/>
+	<field name="branch_address" class="java.lang.String"/>
+	<field name="acct_no" class="java.lang.String"/>
+	<field name="pn_no" class="java.lang.String"/>
+	<field name="customer_id" class="java.lang.String"/>
+	<field name="cont_name" class="java.lang.String"/>
+	<field name="cont_address" class="java.lang.String"/>
+	<field name="loan_granted" class="java.lang.String"/>
+	<field name="granted_amount_words" class="java.lang.String"/>
+	<field name="intrest_rate" class="java.lang.String"/>
+	<field name="installment_amount" class="java.lang.String"/>
+	<field name="installment_amount_words" class="java.lang.String"/>
+	<field name="num_installments" class="java.lang.String"/>
+	<field name="num_installments_word" class="java.lang.String"/>
+	<field name="frequency" class="java.lang.String"/>
+	<field name="currency_code" class="java.lang.String"/>
+	<field name="ln_type_employer" class="java.lang.String"/>
+	<field name="loan_projec_desc" class="java.lang.String"/>
+	<field name="loan_security_desc" class="java.lang.String"/>
+	<field name="penalty_rate" class="java.lang.String"/>
+	<field name="loan_type_desc" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="55">
+			<textField>
+				<reportElement x="-1" y="0" width="555" height="30" uuid="34bf8b3f-85a5-4c74-8383-2873a86c054c"/>
+				<textElement textAlignment="Left" verticalAlignment="Bottom"/>
+				<textFieldExpression><![CDATA["Assignment No.: " + $F{acct_no} + " (" + $F{pn_no} + ")\n" +
+$F{institutuion_name}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<detail>
+		<band height="256" splitType="Stretch">
+			<textField isStretchWithOverflow="true">
+				<reportElement positionType="Float" x="0" y="0" width="555" height="90" uuid="880a6eb4-0379-4f5f-b2bb-e1d49ef7f90b"/>
+				<textElement textAlignment="Left" markup="none">
+					<paragraph leftIndent="0" rightIndent="0"/>
+				</textElement>
+				<textFieldExpression><![CDATA["	This Assignment is made between Ajejdrikdrik, Incorporated, P.O. Box 318, Majuro, MH 96960, as assignee (\"Ajejdrikdrik\"), and " + $F{cont_name} +", " + $F{cont_address} + " as assignor (\"Borrower\").\n\n" + 
+
+"	Borrower has executed a Loan Agreement, Promissory Note, and Guaranty (collectively \"Loan Document\") on this date payable to Ajejdrikdrik in the amount of  "+ $F{granted_amount_words}  + " (" +$F{loan_granted}+") plus interest. The Loan Document, this Assignment, and any other documents executed or delivered by Borrower in connection with the indebtedness evidenced by the documents, as any or all such documents may be amended, substituted for, or replaced from time to time, are referred to collectively as the \"Loan Documentation.\"\n\n" +
+
+"	In order to induce Ajejdrikdrik to make the loan, as a source of repayment of the loan, and as security for the payment and performance of all obligations of Borrower to Ajejdrikdrik under the Loan Documentation, whether now existing or subsequently incurred, Borrower hereby undertakes and agrees as follows: \n\n" +
+
+"	1. Assignment.   For value received by Borrower, the receipt of which is hereby acknowledged, Borrower\n"+
+"	transfers, sets over, orders, and assigns to Ajejdrikdrik, its successors, and assigns,  any and all amounts\n"+
+"	that may hereafter be due or owing from the Assigned Property, to-wit: \n\n\n" +
+"		" + $F{loan_security_desc} + "\n"+
+"		" + $F{installment_amount_words} + ";\n " + 
+"		" + $F{frequency} + "allotments for" + $F{num_installments_word} +" (" + $F{num_installments} + ") pay period.\n\n\n"  + 
+
+"	2. Designation of Co-Payee. Until such time as the loan is paid in full, Borrower designates Ajejdrikdrik\n"+
+"	as a co-payee on any and all of the payments or items referred to in section 1, above, and the issuer,\n" +
+"	"+$F{loan_type_desc}  + " is requested to identify Ajejdrikdrik as the co-payee on all such payments.\n\n" +
+
+"	3. Limited Power of Attorney.   Borrower designates and appoints Ajejdrikdrik as Borrower's true and\n" +
+"	lawful attorney-in-fact to perform, in Ajejdrikdrik's sole discretion and at the Borrower's expense, the\n" +
+"	following tasks: \n\n"+
+
+"		a. ask, demand, receive, and give receipt for any and all amounts that may be or become due or \n" +
+"		payable to Borrower from the Assigned Property; \n\n"+
+
+"		b. file any claim or take any action or proceeding, either in Ajejdrikdrik's own name or in the \n" +
+"		name of Borrower or otherwise, that Ajejdrikdrik or any successor thereof may deem necessary\n" + 
+"		or desirable in order to collect or enforce the payment of the amounts under this Assignment; \n" +
+"		and \n\n" +
+
+"		c. endorse the name of Borrower in favor of Ajejdrikdrik upon any and all checks, drafts, money\n" +
+"		orders, notes, warrants, or other instruments of payment or collateral that may come into the \n" +
+"		possession of Ajejdrikdrik pursuant to this Assignment.\n\n" +
+
+"	4. Warranties by Borrower.   Borrower represents and warrants that:  \n\n"+
+
+"		a. the Assigned Property or rights or interest therein are not subject to any current conveyance,\n" +
+"		transfer, or assignment;  \n\n"+
+
+"		b. Borrower is not indebted to the Government on account of anything independent of the \n" +
+"		Assigned Property except taxes not yet due and payable to the Government;\n\n"+
+
+"		c. no facts or circumstances exist that may result in any such indebtedness as is referred to in \n" +
+"		subsection (b) or that may give rise to any counter claim or set-off against the money payable \n" +
+"		under the Assigned Property;  and\n"+
+
+"		d. Borrower shall not do anything to impair the value or validity of this Assignment.\n\n"+
+
+"	5. Allotment of Assignment.   Upon receipt of the Assigned Property, Ajejdrikdrik shall credit such amount to repayment of the loan, and, if the loan is repaid in full, shall provide the remaining balance of the Assigned Property to Borrower.\n\n"+
+
+"	6. Assignment as Security.   This Assignment is made as additional security for the payment of any and all loans that have been or may be made by Ajejdrikdrik to Borrower, and of any and all notes that have been or may be issued to evidence any such loans.\n\n"+
+
+"	7. Irrevocability; Duration.   This Assignment shall be irrevocable and shall remain in full force and effect from the date of the assignment until such time as the loan is repaid in full, at which time a release in writing will be given by Ajejdrikdrik to Borrower.\n\n"+
+
+"	8. Collection Expenses.   Borrower will pay all collection or other charges, including reasonable attorney's fees of $120 per hour incurred by Ajejdrikdrik in enforcing any of the terms of this Assignment or of 30% of the amount of principal, interest, and late charges due at the time of judgment, whichever is greater.\n\n"+
+
+"	9. General Provisions. The General Provisions contained in paragraph 11(a)-(i) of the Loan Document are hereby adopted in their entirety and incorporated herein by reference.\n\n"+
+
+
+"	IN WITNESS WHEREOF, the parties have executed this Assignment on the dates indicated below:\n\n"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="10" y="110" width="122" height="13" uuid="44ed4dbd-8192-4db8-a75e-803d5bd0a6c9">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textFieldExpression><![CDATA["Date:	" + $F{run_date}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="290" y="110" width="122" height="13" uuid="1ded375e-08ed-422e-bdd7-ffd00921df7a">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textFieldExpression><![CDATA["Date:	" + $F{run_date}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="10" y="149" width="266" height="60" uuid="00f37744-ae5c-4d20-84c2-747c06d61a77">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textFieldExpression><![CDATA["_______________________________________________\n"+
+$F{cont_name} + " - ("+$F{customer_id}+")\n"+
+"Borrower"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="290" y="150" width="265" height="60" uuid="d94e57f1-4d5f-4e8c-86ec-666c15d1cad7"/>
+				<textFieldExpression><![CDATA["_______________________________________________\n"+
+"Ajejdrikdrik, Incorporated by\n"+
+"Harold Ian B. de la Torre\n"+
+"General Manager"]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<pageFooter>
+		<band height="54" splitType="Stretch">
+			<textField>
+				<reportElement x="-1" y="5" width="555" height="20" uuid="8a28709d-a6cf-4a9c-9eb3-2589040cb2f9"/>
+				<textElement textAlignment="Left" verticalAlignment="Bottom">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Assignment No.: " + $F{acct_no} + " (" + $F{pn_no} + ")\n" +
+$F{institutuion_name}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="25" width="170" height="20" uuid="c46cc3a9-bd5e-42d3-90e5-77a5fff7d4ef"/>
+				<textElement textAlignment="Left">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Page " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+</jasperReport>

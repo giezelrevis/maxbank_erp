@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.3.0.final using JasperReports Library version 6.3.0  -->
+<!-- 2017-04-10T20:15:58 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="PassbookTransactionSA5" pageWidth="612" pageHeight="792" columnWidth="549" leftMargin="43" rightMargin="20" topMargin="50" bottomMargin="20" uuid="c1f72440-9678-4467-a0b7-c96399d62194">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="LOCAL DATA ADAPTER"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="inch"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="inch"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<parameter name="pbId" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[select  
+	id,
+	trim(split_part(pb_line, '|', 1)) as TRNDate, 
+	trim(split_part(pb_line, '|', 2)) as SDesc, 
+	trim(split_part(pb_line, '|', 3)) as Cr_Amt, 
+	trim(split_part(pb_line, '|', 4)) as Dr_Amt,
+	trim(split_part(pb_line, '|', 5)) as Balance,
+	trim(split_part(pb_line, '|', 6)) as LineNo
+from txn_passbook_line
+where pb_code = $P{pbId}
+order by id]]>
+	</queryString>
+	<field name="id" class="java.lang.Long"/>
+	<field name="trndate" class="java.lang.String"/>
+	<field name="sdesc" class="java.lang.String"/>
+	<field name="cr_amt" class="java.lang.String"/>
+	<field name="dr_amt" class="java.lang.String"/>
+	<field name="balance" class="java.lang.String"/>
+	<field name="lineno" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band splitType="Stretch">
+			<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band height="12" splitType="Stretch">
+			<textField isBlankWhenNull="true">
+				<reportElement x="2" y="1" width="80" height="11" uuid="0eeba871-a520-4fe5-ac45-40e7e08b6eab">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{trndate}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="58" y="1" width="60" height="11" uuid="cbff1e67-d5a9-4ae9-832c-13b824ced461"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{sdesc}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="142" y="1" width="60" height="11" uuid="d7954cef-54b6-47f6-a31c-0d752bb4d1ce"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cr_amt}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="202" y="1" width="60" height="11" uuid="297fff17-2122-4000-b861-bb69e323cb6b"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{dr_amt}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="262" y="1" width="60" height="11" uuid="33dc542e-168d-4a11-9f33-830b9ed66919"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{balance}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="319" y="1" width="30" height="11" uuid="61194aad-bb25-43ed-b1ae-e84427c1489a"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{lineno}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="285" splitType="Stretch">
+			<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+		</band>
+	</columnFooter>
+	<pageFooter>
+		<band splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band splitType="Stretch"/>
+	</summary>
+</jasperReport>

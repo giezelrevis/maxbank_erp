@@ -1,0 +1,1385 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.2.1.final using JasperReports Library version 6.2.0  -->
+<!-- 2016-04-28T17:51:18 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="LN-InterestRateandMaturityMatching" pageWidth="842" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="38ba599c-1f76-441d-b414-3f0be5491303">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="NRSBL Data Adapter"/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="ireport.jasperserver.url" value="http://localhost:8080/jasperserver/"/>
+	<property name="ireport.jasperserver.user" value="jasperadmin"/>
+	<property name="ireport.jasperserver.report.resource" value="/ICBS_REPORT/LOANS/LNInterestRateandMaturityMatching_files/MainJrxml"/>
+	<property name="ireport.jasperserver.reportUnit" value="/ICBS_REPORT/LOANS/LNInterestRateandMaturityMatching"/>
+	<style name="Table_TH" mode="Opaque" backcolor="#F0F8FF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Table_CH" mode="Opaque" backcolor="#BFE1FF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Table_TD" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<subDataset name="Empty Dataset1" uuid="b840ccd9-5824-453c-96a6-b60781386af3"/>
+	<parameter name="asofdate" class="java.util.Date"/>
+	<parameter name="branch" class="java.lang.String"/>
+	<queryString language="SQL">
+		<![CDATA[select (SELECT param_value FROM institution WHERE id = '1') as "BANK NAME", 
+*
+from (
+	
+	select  '0.00% -  0.00%' as "Interest",
+
+--ONDEMAND
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0 
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and extract(DAY from (Z.maturity_date-B.run_date)) <=0 )as "OnDemandBalCount",
+
+(select sum(CASE when extract(DAY from (Z.maturity_date-B.run_date)) <=0 then Z.balance_amount else 0 end) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0 
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch} )as "OnDemandBalSum",
+
+
+--1 to 7
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >=1 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=7) )as "1to7BalCount",
+
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >=1 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=7) then Z.balance_amount else 0 end)
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "1to7BalSum",
+
+
+--8 to 30
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >7 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=30) )as "8to30BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >7 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=30) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "8to30BalSum",
+
+
+
+--31 to 90
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >30 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=90) )as "31to90BalCount",
+
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >30 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=90) then Z.balance_amount else 0 end)
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "31to90BalSum",
+
+
+
+
+--91 to 365
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >90 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=365) )as "91to365BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >90 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=365) then Z.balance_amount else 0 end)
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "91to365BalSum",
+
+
+--365 to 730
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >365 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=730) )as "365to730BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >365 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=730) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "365to730BalSum",
+
+--over 730
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >730)) as "over730BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >730)
+then Z.balance_amount else 0 end) from loan Z
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "over730BalSum"
+
+
+
+
+UNION ALL -- 1%
+
+select  '0.01% -  0.01%' as "Interest",
+
+--Ondemand
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.01
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and extract(DAY from (Z.maturity_date-B.run_date)) <=0 )as "OnDemandBalCount",
+
+(select sum(CASE when extract(DAY from (Z.maturity_date-B.run_date)) <=0 then Z.balance_amount else 0 end) 
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.01
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "OnDemandBalSum",
+
+
+--1 to 7
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.01
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >=1 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=7) )as "1to7BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >=1 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=7) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.01
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "1to7BalSum",
+
+-- 8 to 30
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.01
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >7 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=30)) as "8to30BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >7 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=30) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.01
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "8to30BalSum",
+
+
+
+-- 31 to 90
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.01
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >30 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=90)) as "31to90BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >30 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=90) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.01
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "31to90BalSum",
+
+
+
+--91 to 35
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.01
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >90 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=365)) as "91to365BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >90 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=365) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.01
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "91to365BalSum",
+
+
+--365 to 730 
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.01
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >365 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=730)) as "365to730BalCount",
+
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >365 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=730) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.01
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "365to730BalSum",
+
+
+--over 730
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.01
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >730)) as "over730BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >730)
+then Z.balance_amount else 0 end) from loan Z
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.01
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "over730BalSum"
+
+
+
+UNION ALL -- 2%
+
+select  '0.02% -  0.02%' as "Interest",
+
+--on demand
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.02
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and extract(DAY from (Z.maturity_date-B.run_date)) <=0 )as "OnDemandBalCount",
+
+
+(select sum(CASE when extract(DAY from (Z.maturity_date-B.run_date)) <=0 then Z.balance_amount else 0 end) 
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.02
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "OnDemandBalSum",
+
+
+--1 to 7 
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.02
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >=1 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=7) )as "1to7BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >=1 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=7) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.02
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "1to7BalSum",
+
+
+--8 to 30
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.02
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >7 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=30) )as "8to30BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >7 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=30) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.02
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "8to30BalSum",
+
+
+--31 to 90
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.02
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >30 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=90) )as "31to90BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >30 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=90) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.02
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "31to90BalSum",
+
+
+--90 to 365
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.02
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >90 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=365) )as "91to365BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >90 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=365) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.02
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "91to365BalSum",
+
+
+--365 to 730
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.02
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >365 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=730) )as "365to730BalCount",
+
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >365 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=730) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.02
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "365to730BalSum",
+
+
+-- over 730
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.02
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >730) )as "over730BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >730)
+then Z.balance_amount else 0 end) from loan Z
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.02
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "over730BalSum"
+
+
+
+UNION ALL -- 3%
+
+select  '0.03% -  0.03%' as "Interest",
+
+
+--ON DEMAND
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.03
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and extract(DAY from (Z.maturity_date-B.run_date)) <=0 )as "OnDemandBalCount",
+
+(select sum(CASE when extract(DAY from (Z.maturity_date-B.run_date)) <=0 then Z.balance_amount else 0 end) 
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.03
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "OnDemandBalSum",
+
+
+-- 1 to 7 
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.03
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >=1 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=7) )as "1to7BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >=1 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=7) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.03
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "1to7BalSum",
+
+
+-- 8 to 30
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.03
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >7 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=30) )as "8to30BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >7 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=30) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.03
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "8to30BalSum",
+
+
+--31 to 90
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.03
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >30 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=90) )as "31to90BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >30 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=90) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.03
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "31to90BalSum",
+
+--91 to 365
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.03
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >90 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=365) )as "91to365BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >90 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=365) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.03
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "91to365BalSum",
+
+
+--365 to 730
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.03
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >365 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=730) )as "365to730BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >365 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=730) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.03
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "365to730BalSum",
+
+
+--over 730
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.03
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >730) )as "over730BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >730)
+then Z.balance_amount else 0 end) from loan Z
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.03
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "over730BalSum"
+
+
+
+
+UNION ALL -- 4%
+
+select  '0.04% -  0.04%' as "Interest",
+
+
+--ON DEMAND
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.04
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and extract(DAY from (Z.maturity_date-B.run_date)) <=0 )as "OnDemandBalCount",
+
+(select sum(CASE when extract(DAY from (Z.maturity_date-B.run_date)) <=0 then Z.balance_amount else 0 end) 
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.04
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "OnDemandBalSum",
+
+
+-- 1 to 7
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.04
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >=1 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=7) )as "1to7BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >=1 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=7) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.04
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "1to7BalSum",
+
+-- 8 to 30
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.04
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >7 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=30) )as "8to30BalCount",
+
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >7 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=30) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.04
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "8to30BalSum",
+
+
+-- 31 to 90
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.04
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >30 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=90) )as "31to90BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >30 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=90) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.04
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "31to90BalSum",
+
+-- 91 to 365
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.04
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >90 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=365) )as "91to365BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >90 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=365) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.04
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "91to365BalSum",
+
+-- 365 to 730
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.04
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >365 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=730)  )as "365to730BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >365 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=730) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.04
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "365to730BalSum",
+
+-- pver 730
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.04
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >730)  )as "over730BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >730)
+then Z.balance_amount else 0 end) from loan Z
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.04
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "over730BalSum"
+
+
+
+UNION ALL -- 5%
+
+select  '0.05% -  0.05%' as "Interest",
+
+-- ON DEMAND
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.05
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and extract(DAY from (Z.maturity_date-B.run_date)) <=0 )as "OnDemandBalCount",
+
+(select sum(CASE when extract(DAY from (Z.maturity_date-B.run_date)) <=0 then Z.balance_amount else 0 end) 
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.05
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "OnDemandBalSum",
+
+
+-- 1 to 7
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.05
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >=1 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=7) )as "1to7BalCount",
+
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >=1 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=7) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.05
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "1to7BalSum",
+
+--8 to 30
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.05
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >7 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=30) )as "8to30BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >7 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=30) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.05
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "8to30BalSum",
+
+
+--31 to 90
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.05
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >30 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=90) )as "31to90BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >30 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=90) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.05
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "31to90BalSum",
+
+
+--91 to 365
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.05
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >90 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=365) )as "91to365BalCount",
+
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >90 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=365) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.05
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "91to365BalSum",
+
+
+-- 365 to 730
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.05
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >365 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=730) )as "365to730BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >365 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=730) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.05
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "365to730BalSum",
+
+
+--over 730
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.05
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >730) )as "over730BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >730)
+then Z.balance_amount else 0 end) from loan Z
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.05
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "over730BalSum"
+
+
+
+UNION ALL -- 6%
+
+select  '0.06% +       ' as "Interest",
+
+--ON DEMAND
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.06
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and extract(DAY from (Z.maturity_date-B.run_date)) <=0 )as "OnDemandBalCount",
+
+
+(select sum(CASE when extract(DAY from (Z.maturity_date-B.run_date)) <=0 then Z.balance_amount else 0 end) 
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 > 0.06
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "OnDemandBalSum",
+
+-- 1 to 7
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.06
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >=1 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=7) )as "1to7BalCount",
+
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >=1 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=7) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 > 0.06
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "1to7BalSum",
+
+
+--8 to 30
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.06
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >7 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=30) )as "8to30BalCount",
+
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >7 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=30) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 > 0.06
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "8to30BalSum",
+
+--31 to 90 
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.06
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and (extract(DAY from (Z.maturity_date-B.run_date)) >30 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=90) )as "31to90BalCount",
+
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >30 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=90) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 > 0.06
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "31to90BalSum",
+
+--91 to 365
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.06
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and  (extract(DAY from (Z.maturity_date-B.run_date)) >90 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=365)) as "91to365BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >90 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=365) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 > 0.06
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "91to365BalSum",
+
+
+--365 to 730
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.06
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and   (extract(DAY from (Z.maturity_date-B.run_date)) >365 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=730) )as "365to730BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >365 AND
+extract(DAY from (Z.maturity_date-B.run_date)) <=730) then Z.balance_amount else 0 end)
+from loan Z LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 > 0.06
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "365to730BalSum",
+
+-- over 730
+
+(select COUNT(Z.account_no) 
+from loan Z 
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 = 0.06
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch}
+and   (extract(DAY from (Z.maturity_date-B.run_date)) >730) )as "over730BalCount",
+
+(select sum(CASE when (extract(DAY from (Z.maturity_date-B.run_date)) >730)
+then Z.balance_amount else 0 end) from loan Z
+LEFT JOIN branch B on Z.branch_id = B.id
+where Z.status_id <> 6 and Z.balance_amount > 0 and Z.interest_rate/100 > 0.06
+and Z.opening_date <= $P{asofdate} AND B.name =$P{branch})as "over730BalSum"
+	
+)a]]>
+	</queryString>
+	<field name="OnDemandBalSum" class="java.lang.Double"/>
+	<field name="1to7BalSum" class="java.lang.Double"/>
+	<field name="8to30BalSum" class="java.lang.Double"/>
+	<field name="31to90BalSum" class="java.lang.Double"/>
+	<field name="91to365BalSum" class="java.lang.Double"/>
+	<field name="365to730BalSum" class="java.lang.Double"/>
+	<field name="BANK NAME" class="java.lang.String"/>
+	<field name="OnDemandBalCount" class="java.lang.Long"/>
+	<field name="1to7BalCount" class="java.lang.Long"/>
+	<field name="31to90BalCount" class="java.lang.Long"/>
+	<field name="91to365BalCount" class="java.lang.Long"/>
+	<field name="365to730BalCount" class="java.lang.Long"/>
+	<field name="Interest" class="java.lang.String"/>
+	<field name="over730BalCount" class="java.lang.Long"/>
+	<field name="over730BalSum" class="java.lang.Double"/>
+	<field name="8to30BalCount" class="java.lang.Long"/>
+	<variable name="TotalOnDemandBalCount" class="java.lang.Integer" calculation="Sum">
+		<variableExpression><![CDATA[$F{OnDemandBalCount}]]></variableExpression>
+	</variable>
+	<variable name="SumOnDemandBal" class="java.lang.Integer" calculation="Sum">
+		<variableExpression><![CDATA[$F{OnDemandBalSum}]]></variableExpression>
+	</variable>
+	<variable name="Total1to7daysCount" class="java.lang.Integer" calculation="Sum">
+		<variableExpression><![CDATA[$F{1to7BalCount}]]></variableExpression>
+	</variable>
+	<variable name="Sum1to7DaysBal" class="java.lang.Integer" calculation="Sum">
+		<variableExpression><![CDATA[$F{1to7BalSum}]]></variableExpression>
+	</variable>
+	<variable name="Total8to30daysCount" class="java.lang.Integer" calculation="Sum">
+		<variableExpression><![CDATA[$F{8to30BalCount}]]></variableExpression>
+	</variable>
+	<variable name="Sum8to30DaysBal" class="java.lang.Integer" calculation="Sum">
+		<variableExpression><![CDATA[$F{8to30BalSum}]]></variableExpression>
+	</variable>
+	<variable name="Total31to90daysCount" class="java.lang.Integer" calculation="Sum">
+		<variableExpression><![CDATA[$F{31to90BalCount}]]></variableExpression>
+	</variable>
+	<variable name="Sum31to90DaysBal" class="java.lang.Integer" calculation="Sum">
+		<variableExpression><![CDATA[$F{31to90BalSum}]]></variableExpression>
+	</variable>
+	<variable name="Total91to1yrCount" class="java.lang.Integer" calculation="Sum">
+		<variableExpression><![CDATA[$F{91to365BalCount}]]></variableExpression>
+	</variable>
+	<variable name="Sum91to1yrBal" class="java.lang.Integer" calculation="Sum">
+		<variableExpression><![CDATA[$F{91to365BalSum}]]></variableExpression>
+	</variable>
+	<variable name="Total1yrto2yrsCount" class="java.lang.Integer" calculation="Sum">
+		<variableExpression><![CDATA[$F{365to730BalCount}]]></variableExpression>
+	</variable>
+	<variable name="Sum1yrto2yrsBal" class="java.lang.Integer" calculation="Sum">
+		<variableExpression><![CDATA[$F{365to730BalSum}]]></variableExpression>
+	</variable>
+	<variable name="TotalOver2yrsCount" class="java.lang.Integer" calculation="Sum">
+		<variableExpression><![CDATA[$F{over730BalCount}]]></variableExpression>
+	</variable>
+	<variable name="SumOver2yrsBal" class="java.lang.Integer" calculation="Sum">
+		<variableExpression><![CDATA[$F{over730BalSum}]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="4" splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band height="137" splitType="Stretch">
+			<property name="local_mesure_unitheight" value="pixel"/>
+			<property name="com.jaspersoft.studio.unit.height" value="px"/>
+			<staticText>
+				<reportElement x="0" y="97" width="802" height="20" uuid="9b75e78e-546f-4164-84d8-07ad43bfa20b"/>
+				<textElement textAlignment="Center">
+					<font size="14" isBold="true"/>
+				</textElement>
+				<text><![CDATA[ LOAN INTEREST RATE AND MATURITY MATCHING]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="0" y="52" width="802" height="24" uuid="1f2adba3-fd20-4a22-9bce-ff6cedcf2d47">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="18" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BANK NAME}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="77" width="802" height="20" uuid="7ab6c0e5-350a-403a-ba62-8db224c7df07"/>
+				<textElement textAlignment="Center">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{branch} + " Branch"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="117" width="802" height="20" uuid="d64846a7-39f3-4069-a1d3-fcad0e0c3378"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["As of " + (new SimpleDateFormat("MMMM dd, yyyy").format($P{asofdate}))]]></textFieldExpression>
+			</textField>
+			<image>
+				<reportElement x="0" y="0" width="50" height="50" uuid="3210e0b2-5b90-436f-9b4c-1a2ffa1948fe"/>
+				<imageExpression><![CDATA["repo:logo.png"]]></imageExpression>
+			</image>
+			<textField pattern="MMMMM dd, yyyy">
+				<reportElement positionType="Float" x="702" y="26" width="100" height="13" uuid="890f9a44-74f5-42c9-b565-4eae2a3547b9">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField pattern="HH:mm">
+				<reportElement positionType="Float" x="702" y="13" width="100" height="13" uuid="dbba02f1-e7a1-44ad-9a50-f3c2d5d8ddd9">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="702" y="0" width="100" height="13" uuid="1c7aacee-4dc8-455b-b2dd-756499663dfb">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA["Page: " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="35" splitType="Stretch">
+			<staticText>
+				<reportElement x="80" y="0" width="107" height="30" uuid="4c47f013-8b55-42bf-beaa-8403bb2b1b73">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="local_mesure_unitwidth" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[ON DEMAND]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="187" y="0" width="102" height="30" uuid="00e82182-23aa-4eff-877e-86a55c4c5fef">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[1 - 7 DAYS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="289" y="0" width="102" height="30" uuid="4d3aa895-4657-44c1-ba7f-0daebb4c1316">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="local_mesure_unitwidth" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[8 - 30 DAYS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="391" y="0" width="102" height="30" uuid="2f5bceb8-e8f5-4370-95ae-96879960710a">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="local_mesure_unitwidth" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[31 - 90 DAYS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="493" y="0" width="102" height="30" uuid="4ec425b4-ac4a-43ce-b724-3d7a1b772c53">
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[91 DAYS - 1 YR]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="595" y="0" width="102" height="30" uuid="08cf1f80-0a46-41c2-a51a-dffff62b9c47">
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[1 YR - 2 YRS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="697" y="0" width="103" height="30" uuid="11ced5fb-247b-4fea-ac09-6b0806f52954">
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="local_mesure_unitheight" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[OVER 2 YRS]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="35">
+			<textField isBlankWhenNull="true">
+				<reportElement x="0" y="1" width="80" height="22" uuid="2e037c52-9dfe-4996-905e-cf39ae5a7754"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{Interest}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="110" y="1" width="77" height="22" uuid="a463c864-bcfe-4dd8-964b-d1525d85405c"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{OnDemandBalSum}]]></textFieldExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="true">
+				<reportElement x="187" y="1" width="23" height="22" uuid="514c7a74-cf58-479d-b240-6a662878372a"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{1to7BalCount}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="210" y="1" width="79" height="22" uuid="5b1c1bc4-5498-468a-819b-7c459f7d5246"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{1to7BalSum}]]></textFieldExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="true">
+				<reportElement x="289" y="1" width="25" height="22" uuid="d79921ef-0cf2-4b01-aaf3-a78cd8f6cdad">
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{8to30BalCount}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="314" y="1" width="77" height="22" uuid="7e2448ed-150f-43fc-8936-7f90e3c7de00"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{8to30BalSum}]]></textFieldExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="true">
+				<reportElement x="391" y="1" width="25" height="22" uuid="4b7307c7-9afe-48c4-94aa-2376f73baeb5">
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{31to90BalCount}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="416" y="1" width="77" height="22" uuid="56d85a2f-8c67-4705-af9e-a4419424b3f2"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{31to90BalSum}]]></textFieldExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="true">
+				<reportElement x="493" y="1" width="25" height="22" uuid="de991fce-8cae-407c-92ec-2260efd467fb">
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{91to365BalCount}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="518" y="1" width="77" height="22" uuid="29e64005-dcdf-49f4-b4e4-fa4d6061430e"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{91to365BalSum}]]></textFieldExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="true">
+				<reportElement x="595" y="1" width="25" height="22" uuid="3ce469e7-78cb-4d2d-985e-d497be562c47"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{365to730BalCount}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="620" y="1" width="77" height="22" uuid="a81a06d7-dbbc-4263-9f50-eebf0efbc2bb"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{365to730BalSum}]]></textFieldExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="true">
+				<reportElement x="697" y="1" width="25" height="22" uuid="d6cd72a2-ec27-4840-bfd1-3a7e8798681c">
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{over730BalCount}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="722" y="1" width="78" height="22" uuid="261c08f4-62f7-4581-ac42-1ef16f31ed87"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{over730BalSum}]]></textFieldExpression>
+			</textField>
+			<textField pattern="">
+				<reportElement x="80" y="1" width="29" height="22" uuid="ba447ed9-2dc1-4058-b352-2c68be7b3ecf"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{OnDemandBalCount}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="19" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="47" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="7" width="82" height="25" uuid="75b2b73b-f5ce-4177-aa05-08306c0770ab">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Left">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Grand Total:]]></text>
+			</staticText>
+			<textField pattern="">
+				<reportElement x="82" y="7" width="28" height="25" uuid="325e9f76-243b-455f-bf4c-1412d810817a"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{TotalOnDemandBalCount}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="110" y="7" width="77" height="25" uuid="8cb6040a-4116-4517-8816-2e680b600504"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{SumOnDemandBal}]]></textFieldExpression>
+			</textField>
+			<textField pattern="">
+				<reportElement x="187" y="7" width="23" height="25" uuid="40c81923-ce61-4508-b745-675d6ca105b9"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{Total1to7daysCount}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="210" y="7" width="79" height="25" uuid="7e07e0fe-9978-4f41-9c11-32cbb704c7c7"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{Sum1to7DaysBal}]]></textFieldExpression>
+			</textField>
+			<textField pattern="">
+				<reportElement x="289" y="7" width="25" height="25" uuid="2087eb40-070f-4648-84ab-52689f36c17d"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{Total8to30daysCount}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="314" y="7" width="77" height="25" uuid="7c637efa-18b3-479e-81ee-e12b892ca6bb"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{Sum8to30DaysBal}]]></textFieldExpression>
+			</textField>
+			<textField pattern="">
+				<reportElement x="391" y="7" width="25" height="25" uuid="8fdc2f28-8ab9-4f66-9931-7d07b3485eac"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{Total31to90daysCount}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="416" y="7" width="77" height="25" uuid="013f45ba-6e50-4015-a03d-c31295934c7d"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{Sum31to90DaysBal}]]></textFieldExpression>
+			</textField>
+			<textField pattern="">
+				<reportElement x="493" y="7" width="25" height="25" uuid="7dbc6c1a-7858-435d-a840-327e898b7e2f"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{Total91to1yrCount}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="518" y="7" width="77" height="25" uuid="9a0f477f-483b-4291-bed5-5adf76280ce9"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{Sum91to1yrBal}]]></textFieldExpression>
+			</textField>
+			<textField pattern="">
+				<reportElement x="595" y="7" width="25" height="25" uuid="332d5138-5b86-49de-958e-5fbbb968bb10"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{Total1yrto2yrsCount}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="620" y="7" width="77" height="25" uuid="bc4061b2-b9ed-4c7f-b324-351b6a94f5d4"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{Sum1yrto2yrsBal}]]></textFieldExpression>
+			</textField>
+			<textField pattern="">
+				<reportElement x="697" y="7" width="25" height="25" uuid="c12b0114-1695-4015-a495-07fe69a8ad1f"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{TotalOver2yrsCount}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="722" y="7" width="78" height="25" uuid="2a0542e9-ae0a-4eb9-971b-ecac71508be8"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{SumOver2yrsBal}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<summary>
+		<band height="42" splitType="Stretch"/>
+	</summary>
+	<noData>
+		<band height="108">
+			<textField pattern="MMMMM dd, yyyy">
+				<reportElement x="690" y="26" width="112" height="13" uuid="533632d6-b509-4798-8a64-1371c69c7d6e">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="690" y="0" width="112" height="13" uuid="625c60c7-c0f9-402c-a0b8-6822c9215f62">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA["Page: " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="h:mm a">
+				<reportElement x="690" y="13" width="112" height="13" uuid="4a8f3dee-8e9b-4659-86e1-792bc593af57">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="80" y="66" width="600" height="13" uuid="61e0fd63-6440-4dd0-bef3-e3dd35c81a84">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="10"/>
+				</textElement>
+				<text><![CDATA[NO DATA FOR REPORT]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="80" y="43" width="600" height="21" uuid="8a64a2cf-41b3-47e1-81fd-c93b47d38f09">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="16" isBold="true"/>
+				</textElement>
+				<text><![CDATA[ LOAN INTEREST RATE AND MATURITY MATCHING]]></text>
+			</staticText>
+			<image>
+				<reportElement x="0" y="0" width="50" height="50" uuid="76ecb3b2-ce70-4d8b-bbbe-8a2296de4300"/>
+				<imageExpression><![CDATA["repo:logo.png"]]></imageExpression>
+			</image>
+		</band>
+	</noData>
+</jasperReport>

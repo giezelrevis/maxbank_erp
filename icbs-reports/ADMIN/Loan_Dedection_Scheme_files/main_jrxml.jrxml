@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.2.1.final using JasperReports Library version 6.2.0  -->
+<!-- 2016-04-28T16:06:50 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Loan_Dedection_Scheme" pageWidth="612" pageHeight="792" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="572" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="01d92ed5-73ac-4af7-9fc5-144322ee7e1e">
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<property name="ireport.jasperserver.url" value="http://localhost:8080/jasperserver/"/>
+	<property name="ireport.jasperserver.user" value="jasperadmin"/>
+	<property name="ireport.jasperserver.report.resource" value="/ICBS_REPORT/ADMIN/Loan_Dedection_Scheme_files/main_jrxml"/>
+	<property name="ireport.jasperserver.reportUnit" value="/ICBS_REPORT/ADMIN/Loan_Dedection_Scheme"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="ICBS"/>
+	<queryString language="SQL">
+		<![CDATA[select loan_deduction_scheme.code, 
+	loan_deduction_scheme.name, 
+	amount, 
+	divisor,
+	rate,
+	config_item_status.description as config_item_status_description,
+	loan_deduction_calculation_type.description as loan_deduction_calculation_type_description,
+	A.param_value as "Bank Name"
+from 	loan_deduction_scheme
+inner join config_item_status on config_item_status.id = status_id
+inner join loan_deduction_calculation_type on loan_deduction_calculation_type.id = type_id
+inner join (select param_value from institution where id = '1') A on A.param_value is not null]]>
+	</queryString>
+	<field name="code" class="java.lang.String"/>
+	<field name="name" class="java.lang.String"/>
+	<field name="amount" class="java.lang.Double"/>
+	<field name="divisor" class="java.lang.Integer"/>
+	<field name="rate" class="java.lang.Double"/>
+	<field name="config_item_status_description" class="java.lang.String"/>
+	<field name="loan_deduction_calculation_type_description" class="java.lang.String"/>
+	<field name="Bank Name" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band height="98" splitType="Stretch">
+			<textField>
+				<reportElement x="80" y="42" width="400" height="24" uuid="ce7e0b3e-1966-4731-a76b-24d35a15946b"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="18" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{Bank Name}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="80" y="67" width="400" height="31" uuid="e0c928f9-5ccb-4f95-b227-c4d4053d35cc"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="16" isBold="true"/>
+				</textElement>
+				<text><![CDATA[LOAN DEDUCTION SCHEME]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="460" y="0" width="112" height="13" uuid="16492221-4fd9-4b9e-be33-08af11bf1403">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA["Page: " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="h:mm a">
+				<reportElement x="460" y="13" width="112" height="13" uuid="6ecab29f-1eaa-446c-adac-1b3ca2c349db">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField pattern="MMMMM dd, yyyy">
+				<reportElement x="460" y="26" width="112" height="13" uuid="b4457cf7-04c6-47bd-929e-63db62fee3ce">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<image>
+				<reportElement x="0" y="0" width="50" height="50" uuid="6cefa6e4-b15d-49a1-a78a-7f26ccf937d5"/>
+				<imageExpression><![CDATA["repo:logo.png"]]></imageExpression>
+			</image>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="17" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="4" width="40" height="13" uuid="b30052a2-5199-46e0-81e8-99d1987fed46">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CODE:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="40" y="4" width="180" height="13" uuid="5ebefd89-e3ac-437d-9c50-c653a7404f06">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NAME:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="488" y="4" width="69" height="13" uuid="a0da1785-3b93-4844-bd03-cd5aed65b11f">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[STATUS:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="220" y="4" width="60" height="13" uuid="aabcfa44-5ff0-4a75-925b-91b075b8baf3">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[TYPE:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="313" y="4" width="60" height="13" uuid="dbc3ec78-6abf-428b-90f7-49fd3e36e859">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[AMOUNT:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="390" y="4" width="42" height="13" uuid="268bbc96-2ed5-4e06-92f4-0d051dd7726a">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[RATE:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="432" y="4" width="50" height="13" uuid="6b65acba-c497-43a5-a26c-69fd74e48ee1">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[DIVISOR:]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="13" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="0" width="40" height="13" uuid="b40a3828-517e-4017-a7fa-1594c6edaff3">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{code}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="40" y="0" width="180" height="13" uuid="2b477c14-4f0d-4e9f-94f2-dd2595be2f67">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{name}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="280" y="0" width="80" height="13" uuid="9a3570ae-a19b-4b2b-bdba-286782aad862">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{amount}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="374" y="0" width="47" height="13" uuid="a23910e2-4767-4dbe-8961-1f66dc7a26f7">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.text.DecimalFormat("#,##0.00").format($F{rate})+"%"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="432" y="0" width="50" height="13" uuid="3487a953-2102-4f20-8fa8-b346622ffdcd">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{divisor}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="488" y="0" width="89" height="13" uuid="2f340929-1949-4479-b98f-11196f05e726">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{config_item_status_description}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="220" y="0" width="60" height="13" uuid="952eb69b-39b3-4016-8027-0f81546c30ae">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{loan_deduction_calculation_type_description}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="5" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="54" splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band height="42" splitType="Stretch"/>
+	</summary>
+	<noData>
+		<band height="135">
+			<staticText>
+				<reportElement x="80" y="67" width="400" height="31" uuid="6ebb388e-571a-425b-a4a6-da2c1189d204"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="16" isBold="true"/>
+				</textElement>
+				<text><![CDATA[LOAN DEDUCTION SCHEME]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="460" y="0" width="112" height="13" uuid="0ea89624-882d-42ec-a28a-15c80152270a">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA["Page: " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="h:mm a">
+				<reportElement x="460" y="13" width="112" height="13" uuid="a1c766b3-cfb6-433c-b22f-f9a5c7f75868">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField pattern="MMMMM dd, yyyy">
+				<reportElement x="460" y="26" width="112" height="13" uuid="5d3efbf1-cabf-49f9-96e9-7a49903bfa3b">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="79" y="104" width="400" height="31" uuid="e7f6e0c2-9a81-48a3-b0af-5d6b66c2a4e7"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[NO DATA FOR REPORT]]></text>
+			</staticText>
+			<image>
+				<reportElement x="0" y="0" width="50" height="50" uuid="4faf7e9c-f881-43df-b297-16550627946e"/>
+				<imageExpression><![CDATA["repo:logo.png"]]></imageExpression>
+			</image>
+		</band>
+	</noData>
+</jasperReport>

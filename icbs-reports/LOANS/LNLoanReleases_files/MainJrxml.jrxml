@@ -1,0 +1,1475 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.2.1.final using JasperReports Library version 6.2.0  -->
+<!-- 2016-04-28T17:51:49 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="LN-LoanReleases" pageWidth="842" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="b24836be-04f3-462e-ad70-ac2a9ef150a9">
+	<property name="ireport.jasperserver.url" value="http://localhost:8080/jasperserver/"/>
+	<property name="ireport.jasperserver.user" value="jasperadmin"/>
+	<property name="ireport.jasperserver.report.resource" value="/ICBS_REPORT/LOANS/LNLoanReleases_files/MainJrxml"/>
+	<property name="ireport.jasperserver.reportUnit" value="/ICBS_REPORT/LOANS/LNLoanReleases"/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="NRSBL Data Adapter"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<parameter name="MonthFrom" class="java.lang.Integer" isForPrompting="false">
+		<defaultValueExpression><![CDATA[new java.lang.Integer(1)]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Year" class="java.lang.Integer" isForPrompting="false">
+		<defaultValueExpression><![CDATA[new java.lang.Integer(2015)]]></defaultValueExpression>
+	</parameter>
+	<parameter name="MonthTo" class="java.lang.Integer" isForPrompting="false">
+		<defaultValueExpression><![CDATA[new java.lang.Integer(1)]]></defaultValueExpression>
+	</parameter>
+	<parameter name="branch" class="java.util.ArrayList" isForPrompting="false"/>
+	<queryString language="SQL">
+		<![CDATA[select 
+	(select param_value from institution WHERE id = '1') as "BANK NAME",
+	* from (
+
+select * from (
+
+select *, 1 as "ORDER" from 
+(
+select C.name,B.description,
+count(A.account_no) as "AllCounter",sum(A.balance_amount) as "AllSum",
+D."Counter" as "1YearLessCount",D."Sum" as "1YearLessSum",
+E."Counter" as "5YearLessCount",E."Sum" as "5YearLessSum",
+F."Counter" as "5YearGreaterCount",F."Sum" as "5YearGreaterSum"
+from loan A
+INNER JOIN loan_project B on A.loan_project_id = B."id"
+INNER JOIN branch C on A.branch_id = C.id
+INNER JOIN (select C.name,B.description,count(A.account_no) as "Counter",
+sum(A.balance_amount) as "Sum" from loan A
+INNER JOIN loan_project B on A.loan_project_id = B."id"
+INNER JOIN branch C on A.branch_id = C.id
+where extract(DAY from (A.maturity_date-A.opening_date)) <= 360
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year} 
+group by C.name,B.description order by B.description
+)D on C.name = D.name and B.description = D.description
+INNER JOIN (select C.name,B.description,count(A.account_no) as "Counter",
+sum(A.balance_amount) as "Sum" from loan A
+INNER JOIN loan_project B on A.loan_project_id = B."id"
+INNER JOIN branch C on A.branch_id = C.id
+where (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800)
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+group by C.name,B.description order by B.description
+)E on C.name = E.name and B.description = E.description
+INNER JOIN (select C.name,B.description,count(A.account_no) as "Counter",
+sum(A.balance_amount) as "Sum" from loan A
+INNER JOIN loan_project B on A.loan_project_id = B."id"
+INNER JOIN branch C on A.branch_id = C.id
+where extract(DAY from (A.maturity_date-A.opening_date)) > 1800
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+group by C.name,B.description order by B.description
+)F on C.name = F.name and B.description = F.description
+where extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+group by C.name,B.description,D."Counter",D."Sum",
+E."Counter",E."Sum",F."Counter",F."Sum"
+order by C.name,B.description
+)A
+
+
+
+UNION ALL -------By Size
+
+select * from (
+select *, 2 as "ORDER" from (
+select 
+Z."name",'A. 15,000 and below' as "description",
+C."AllCounter",C."AllSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where A.balance_amount <= 15000 and extract(DAY from (A.maturity_date-A.opening_date)) <= 360
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name) as "1YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where A.balance_amount <= 15000 and extract(DAY from (A.maturity_date-A.opening_date)) <= 360
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name)as "1YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where A.balance_amount <= 15000 and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800)
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name) as "5YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where A.balance_amount <= 15000 and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800)
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name)as "5YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where A.balance_amount <= 15000 and extract(DAY from (A.maturity_date-A.opening_date)) > 1800
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name) as "5YearGreaterCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where A.balance_amount <= 15000 and extract(DAY from (A.maturity_date-A.opening_date)) > 1800
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name)as "5YearGreaterSum"
+from loan A
+INNER JOIN branch Z on A.branch_id = Z.id
+INNER JOIN (select B.name,count(account_no) as "AllCounter",
+sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where A.balance_amount <= 15000 and extract(month from A.opening_date) BETWEEN 1 and 2
+GROUP BY B.name)C on Z.name = C.NAME
+GROUP BY Z.name,C."AllCounter",C."AllSum"
+
+UNION ALL
+
+select 
+Z."name",'B. 15,000.01 - 40,000' as "description",
+C."AllCounter",C."AllSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 15000 and A.balance_amount <= 40000) and extract(DAY from (A.maturity_date-A.opening_date)) <= 360
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name) as "1YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 15000 and A.balance_amount <= 40000) and extract(DAY from (A.maturity_date-A.opening_date)) <= 360
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name)as "1YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 15000 and A.balance_amount <= 40000) and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800)
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name) as "5YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 15000 and A.balance_amount <= 40000) and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800)
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name)as "5YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 15000 and A.balance_amount <= 40000) and extract(DAY from (A.maturity_date-A.opening_date)) > 1800
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name) as "5YearGreaterCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 15000 and A.balance_amount <= 40000) and extract(DAY from (A.maturity_date-A.opening_date)) > 1800
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name)as "5YearGreaterSum"
+from loan A
+INNER JOIN branch Z on A.branch_id = Z.id
+INNER JOIN (select B.name,count(account_no) as "AllCounter",
+sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 15000 and A.balance_amount <= 40000) and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year} 
+GROUP BY B.name)C on Z.name = C.NAME
+GROUP BY Z.name,C."AllCounter",C."AllSum"
+
+UNION ALL
+
+select 
+Z."name",'C. 40,000.01 - 60,000' as "description",
+C."AllCounter",C."AllSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 40000 and A.balance_amount <= 60000) and extract(DAY from (A.maturity_date-A.opening_date)) <= 360
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name) as "1YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 40000 and A.balance_amount <= 60000) and extract(DAY from (A.maturity_date-A.opening_date)) <= 360
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name)as "1YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 40000 and A.balance_amount <= 60000) and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800)
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name) as "5YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 40000 and A.balance_amount <= 60000) and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800)
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name)as "5YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 15000 and A.balance_amount <= 40000) and extract(DAY from (A.maturity_date-A.opening_date)) > 1800
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name) as "5YearGreaterCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 40000 and A.balance_amount <= 60000) and extract(DAY from (A.maturity_date-A.opening_date)) > 1800
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name)as "5YearGreaterSum"
+from loan A
+INNER JOIN branch Z on A.branch_id = Z.id
+INNER JOIN (select B.name,count(account_no) as "AllCounter",
+sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 40000 and A.balance_amount <= 60000) and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year} 
+GROUP BY B.name)C on Z.name = C.NAME
+GROUP BY Z.name,C."AllCounter",C."AllSum"
+
+UNION ALL
+
+select 
+Z."name",'D. 60,000.01 - 80,000' as "description",
+C."AllCounter",C."AllSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 60000 and A.balance_amount <= 80000) and extract(DAY from (A.maturity_date-A.opening_date)) <= 360
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name) as "1YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 60000 and A.balance_amount <= 80000) and extract(DAY from (A.maturity_date-A.opening_date)) <= 360
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name)as "1YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 60000 and A.balance_amount <= 80000) and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800)
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name) as "5YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 60000 and A.balance_amount <= 80000) and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800)
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name)as "5YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 60000 and A.balance_amount <= 80000) and extract(DAY from (A.maturity_date-A.opening_date)) > 1800
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name) as "5YearGreaterCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 60000 and A.balance_amount <= 80000) and extract(DAY from (A.maturity_date-A.opening_date)) > 1800
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name)as "5YearGreaterSum"
+from loan A
+INNER JOIN branch Z on A.branch_id = Z.id
+INNER JOIN (select B.name,count(account_no) as "AllCounter",
+sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 60000 and A.balance_amount <= 80000) and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year} 
+GROUP BY B.name)C on Z.name = C.name
+GROUP BY Z.name,C."AllCounter",C."AllSum"
+
+UNION ALL
+
+select 
+Z."name",'E. 80,000.01 - 100,000' as "description",
+C."AllCounter",C."AllSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 80000 and A.balance_amount <= 100000) and extract(DAY from (A.maturity_date-A.opening_date)) <= 360
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name) as "1YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 80000 and A.balance_amount <= 100000) and extract(DAY from (A.maturity_date-A.opening_date)) <= 360
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name)as "1YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 80000 and A.balance_amount <= 100000) and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800)
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name) as "5YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 80000 and A.balance_amount <= 100000) and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800)
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name)as "5YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 80000 and A.balance_amount <= 100000) and extract(DAY from (A.maturity_date-A.opening_date)) > 1800
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name) as "5YearGreaterCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 80000 and A.balance_amount <= 100000) and extract(DAY from (A.maturity_date-A.opening_date)) > 1800
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name)as "5YearGreaterSum"
+from loan A
+INNER JOIN branch Z on A.branch_id = Z.id
+INNER JOIN (select B.name,count(account_no) as "AllCounter",
+sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 80000 and A.balance_amount <= 100000) and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year} 
+GROUP BY B.name)C on Z.name = C.NAME
+GROUP BY Z.name,C."AllCounter",C."AllSum"
+
+UNION ALL
+
+select 
+Z."name",'F. 100,000.01 - 125,000' as "description",
+C."AllCounter",C."AllSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 100000 and A.balance_amount <= 125000) and extract(DAY from (A.maturity_date-A.opening_date)) <= 360
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name) as "1YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 100000 and A.balance_amount <= 125000) and extract(DAY from (A.maturity_date-A.opening_date)) <= 360
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name)as "1YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 100000 and A.balance_amount <= 125000) and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800)
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name) as "5YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 100000 and A.balance_amount <= 125000) and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800)
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name)as "5YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 100000 and A.balance_amount <= 125000) and extract(DAY from (A.maturity_date-A.opening_date)) > 1800
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name) as "5YearGreaterCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 100000 and A.balance_amount <= 125000) and extract(DAY from (A.maturity_date-A.opening_date)) > 1800
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name)as "5YearGreaterSum"
+from loan A
+INNER JOIN branch Z on A.branch_id = Z.id
+INNER JOIN (select B.name,count(account_no) as "AllCounter",
+sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 100000 and A.balance_amount <= 125000) and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year} 
+GROUP BY B.name)C on Z.name = C.NAME
+GROUP BY Z.name,C."AllCounter",C."AllSum"
+
+UNION ALL
+
+select 
+Z."name",'G. 125,000.01 - 150,000' as "description",
+C."AllCounter",C."AllSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 125000 and A.balance_amount <= 150000) and extract(DAY from (A.maturity_date-A.opening_date)) <= 360
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name) as "1YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 125000 and A.balance_amount <= 150000) and extract(DAY from (A.maturity_date-A.opening_date)) <= 360
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name)as "1YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 125000 and A.balance_amount <= 150000) and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800)
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name) as "5YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 125000 and A.balance_amount <= 150000) and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800)
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name)as "5YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 125000 and A.balance_amount <= 150000) and extract(DAY from (A.maturity_date-A.opening_date)) > 1800
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name) as "5YearGreaterCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 125000 and A.balance_amount <= 150000) and extract(DAY from (A.maturity_date-A.opening_date)) > 1800
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name)as "5YearGreaterSum"
+from loan A
+INNER JOIN branch Z on A.branch_id = Z.id
+INNER JOIN (select B.name,count(account_no) as "AllCounter",
+sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 125000 and A.balance_amount <= 150000) and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year} 
+GROUP BY B.name)C on Z.name = C.NAME
+GROUP BY Z.name,C."AllCounter",C."AllSum"
+
+UNION ALL
+
+select 
+Z."name",'H. 150,000.01 - 200,000' as "description",
+C."AllCounter",C."AllSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 150000 and A.balance_amount <= 200000) and extract(DAY from (A.maturity_date-A.opening_date)) <= 360
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name) as "1YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 150000 and A.balance_amount <= 200000) and extract(DAY from (A.maturity_date-A.opening_date)) <= 360
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name)as "1YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 150000 and A.balance_amount <= 200000) and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800)
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name) as "5YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 150000 and A.balance_amount <= 200000) and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800)
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name)as "5YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 150000 and A.balance_amount <= 200000) and extract(DAY from (A.maturity_date-A.opening_date)) > 1800
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name) as "5YearGreaterCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 150000 and A.balance_amount <= 200000) and extract(DAY from (A.maturity_date-A.opening_date)) > 1800
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name)as "5YearGreaterSum"
+from loan A
+INNER JOIN branch Z on A.branch_id = Z.id
+INNER JOIN (select B.name,count(account_no) as "AllCounter",
+sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.balance_amount > 150000 and A.balance_amount <= 200000) and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year} 
+GROUP BY B.name)C on Z.name = C.NAME
+GROUP BY Z.name,C."AllCounter",C."AllSum"
+
+UNION ALL
+
+select 
+Z."name",'I. Over 200,000' as "description",
+C."AllCounter",C."AllSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where A.balance_amount > 200000 and extract(DAY from (A.maturity_date-A.opening_date)) <= 360
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name) as "1YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where A.balance_amount > 200000 and extract(DAY from (A.maturity_date-A.opening_date)) <= 360
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name)as "1YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where A.balance_amount > 200000 and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800)
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name) as "5YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where A.balance_amount > 200000 and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800)
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name)as "5YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where A.balance_amount > 200000 and extract(DAY from (A.maturity_date-A.opening_date)) > 1800
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name) as "5YearGreaterCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where A.balance_amount > 200000 and extract(DAY from (A.maturity_date-A.opening_date)) > 1800
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and B.name = Z.name
+GROUP BY B.name)as "5YearGreaterSum"
+from loan A
+INNER JOIN branch Z on A.branch_id = Z.id
+INNER JOIN (select B.name,count(account_no) as "AllCounter",
+sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where A.balance_amount > 200000 and extract(month from A.opening_date) 
+BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year} GROUP BY B.name)C
+on Z.name = C.NAME GROUP BY Z.name,C."AllCounter",C."AllSum"
+)A ORDER BY A.name,A.description
+)B
+
+UNION ALL ------- By SECURITY
+
+select * from (
+select *, 3 as "ORDER" from (
+select B."name",'A. Secured' as "description",count(A.account_no) as "AllCounter",Sum(A.balance_amount) as "AllSum",
+(select count(A.account_no) as "AllCounter" from loan A
+INNER JOIN branch Z on A.branch_id = Z.id
+INNER JOIN loan_application C on A.loan_application_id = C.id
+INNER JOIN loan_application_collaterals D on C.id = D.loan_application_id
+where D.collateral_id <> 5 and extract(DAY from (A.maturity_date-A.opening_date)) <= 360
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B."name"
+GROUP BY Z."name")as "1YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch Z on A.branch_id = Z.id
+INNER JOIN loan_application C on A.loan_application_id = C.id
+INNER JOIN loan_application_collaterals D on C.id = D.loan_application_id
+where D.collateral_id <> 5 and extract(DAY from (A.maturity_date-A.opening_date)) <= 360
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B."name"
+GROUP BY Z."name")as "1YearLessSum",
+(select count(A.account_no) as "AllCounter" from loan A
+INNER JOIN branch Z on A.branch_id = Z.id
+INNER JOIN loan_application C on A.loan_application_id = C.id
+INNER JOIN loan_application_collaterals D on C.id = D.loan_application_id
+where D.collateral_id <> 5 and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800)
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B."name"
+GROUP BY Z."name")as "5YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch Z on A.branch_id = Z.id
+INNER JOIN loan_application C on A.loan_application_id = C.id
+INNER JOIN loan_application_collaterals D on C.id = D.loan_application_id
+where D.collateral_id <> 5 and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800)
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B."name"
+GROUP BY Z."name")as "5YearLessSum",
+(select count(A.account_no) as "AllCounter" from loan A
+INNER JOIN branch Z on A.branch_id = Z.id
+INNER JOIN loan_application C on A.loan_application_id = C.id
+INNER JOIN loan_application_collaterals D on C.id = D.loan_application_id
+where D.collateral_id <> 5 and extract(DAY from (A.maturity_date-A.opening_date)) > 1800
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B."name"
+GROUP BY Z."name")as "5YearGreaterCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch Z on A.branch_id = Z.id
+INNER JOIN loan_application C on A.loan_application_id = C.id
+INNER JOIN loan_application_collaterals D on C.id = D.loan_application_id
+where D.collateral_id <> 5 and extract(DAY from (A.maturity_date-A.opening_date)) > 1800
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B."name"
+GROUP BY Z."name")as "5YearGreaterSum"
+from loan A
+INNER JOIN branch B on A.branch_id = B.id
+INNER JOIN loan_application C on A.loan_application_id = C.id
+INNER JOIN loan_application_collaterals D on C.id = D.loan_application_id
+where D.collateral_id <> 5 and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+GROUP BY B."name"
+
+union ALL
+
+select B."name",'B. Unsecured' as "description",count(A.account_no) as "AllCounter",Sum(A.balance_amount) as "AllSum",
+(select count(A.account_no) as "AllCounter" from loan A
+INNER JOIN branch Z on A.branch_id = Z.id
+INNER JOIN loan_application C on A.loan_application_id = C.id
+INNER JOIN loan_application_collaterals D on C.id = D.loan_application_id
+where D.collateral_id = 5 and extract(DAY from (A.maturity_date-A.opening_date)) <= 360
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B."name"
+GROUP BY Z."name")as "1YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch Z on A.branch_id = Z.id
+INNER JOIN loan_application C on A.loan_application_id = C.id
+INNER JOIN loan_application_collaterals D on C.id = D.loan_application_id
+where D.collateral_id = 5 and extract(DAY from (A.maturity_date-A.opening_date)) <= 360
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B."name"
+GROUP BY Z."name")as "1YearLessSum",
+(select count(A.account_no) as "AllCounter" from loan A
+INNER JOIN branch Z on A.branch_id = Z.id
+INNER JOIN loan_application C on A.loan_application_id = C.id
+INNER JOIN loan_application_collaterals D on C.id = D.loan_application_id
+where D.collateral_id = 5 and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800)
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B."name"
+GROUP BY Z."name")as "5YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch Z on A.branch_id = Z.id
+INNER JOIN loan_application C on A.loan_application_id = C.id
+INNER JOIN loan_application_collaterals D on C.id = D.loan_application_id
+where D.collateral_id = 5 and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800)
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B."name"
+GROUP BY Z."name")as "5YearLessSum",
+(select count(A.account_no) as "AllCounter" from loan A
+INNER JOIN branch Z on A.branch_id = Z.id
+INNER JOIN loan_application C on A.loan_application_id = C.id
+INNER JOIN loan_application_collaterals D on C.id = D.loan_application_id
+where D.collateral_id = 5 and extract(DAY from (A.maturity_date-A.opening_date)) > 1800
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B."name"
+GROUP BY Z."name")as "5YearGreaterCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch Z on A.branch_id = Z.id
+INNER JOIN loan_application C on A.loan_application_id = C.id
+INNER JOIN loan_application_collaterals D on C.id = D.loan_application_id
+where D.collateral_id = 5 and extract(DAY from (A.maturity_date-A.opening_date)) > 1800
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B."name"
+GROUP BY Z."name")as "5YearGreaterSum"
+from loan A
+INNER JOIN branch B on A.branch_id = B.id
+INNER JOIN loan_application C on A.loan_application_id = C.id
+INNER JOIN loan_application_collaterals D on C.id = D.loan_application_id
+where D.collateral_id = 5 and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+GROUP BY B."name"
+)A ORDER BY A."name",A."description"
+)B
+
+UNION ALL  ---------------By Interest Rate
+
+
+select * from (
+select *, 4 as "ORDER" from (
+select B.name,'A. Non-interest Bearing' as "description",C."AllCounter",C."AllSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where A.interest_rate = 0.00 and extract(DAY from (A.maturity_date-A.opening_date)) <= 360
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "1YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch Z on A.branch_id =Z."id"
+where A.interest_rate = 0.00 and extract(DAY from (A.maturity_date-A.opening_date)) <= 360 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "1YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where A.interest_rate = 0.00 and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800) 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "5YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where A.interest_rate = 0.00 and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800) 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "5YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where A.interest_rate = 0.00 and extract(DAY from (A.maturity_date-A.opening_date)) > 1800 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "5YearGreaterCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where A.interest_rate = 0.00 and extract(DAY from (A.maturity_date-A.opening_date)) > 1800 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "5YearGreaterSum"
+from loan A
+INNER JOIN branch B on A.branch_id = B."id"
+INNER JOIN (select B.name,count(account_no) as "AllCounter",sum(A.balance_amount) as "AllSum" 
+from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where A.interest_rate = 0.00 and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year} 
+GROUP BY B.name)C on B.name = C.name
+GROUP BY B.name,C."AllCounter",C."AllSum"
+UNION ALL
+select B.name,'B. 5 % and Below' as "description",C."AllCounter",C."AllSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 0.00 and A.interest_rate <= 5.00) and extract(DAY from (A.maturity_date-A.opening_date)) <= 360 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "1YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 0.00 and A.interest_rate <= 5.00) and extract(DAY from (A.maturity_date-A.opening_date)) <= 360 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "1YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 0.00 and A.interest_rate <= 5.00) and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800) 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "5YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 0.00 and A.interest_rate <= 5.00) and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800) 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "5YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 0.00 and A.interest_rate <= 5.00) and extract(DAY from (A.maturity_date-A.opening_date)) > 1800 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "5YearGreaterCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 0.00 and A.interest_rate <= 5.00) and extract(DAY from (A.maturity_date-A.opening_date)) > 1800 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "5YearGreaterSum"
+from loan A
+INNER JOIN branch B on A.branch_id = B."id"
+INNER JOIN (select B.name,count(account_no) as "AllCounter",sum(A.balance_amount) as "AllSum" 
+from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.interest_rate > 0.00 and A.interest_rate <= 5.00) and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+GROUP BY B.name)C on B.name = C.name
+GROUP BY B.name,C."AllCounter",C."AllSum"
+UNION ALL
+select B.name,'C. Over 5% to 10%' as "description",C."AllCounter",C."AllSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 5.00 and A.interest_rate <= 10.00) and extract(DAY from (A.maturity_date-A.opening_date)) <= 360 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "1YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 5.00 and A.interest_rate <= 10.00) and extract(DAY from (A.maturity_date-A.opening_date)) <= 360 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "1YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 5.00 and A.interest_rate <= 10.00) and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800) 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "5YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 5.00 and A.interest_rate <= 10.00) and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800) 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "5YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 5.00 and A.interest_rate <= 10.00) and extract(DAY from (A.maturity_date-A.opening_date)) > 1800 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "5YearGreaterCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 5.00 and A.interest_rate <= 10.00) and extract(DAY from (A.maturity_date-A.opening_date)) > 1800 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "5YearGreaterSum"
+from loan A
+INNER JOIN branch B on A.branch_id = B."id"
+INNER JOIN (select B.name,count(account_no) as "AllCounter",sum(A.balance_amount) as "AllSum" 
+from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.interest_rate > 5.00 and A.interest_rate <= 10.00) and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year} 
+GROUP BY B.name)C on B.name = C.name
+GROUP BY B.name,C."AllCounter",C."AllSum"
+UNION ALL
+select B.name,'D. Over 10% to 15%' as "description",C."AllCounter",C."AllSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 10.00 and A.interest_rate <= 15.00) and extract(DAY from (A.maturity_date-A.opening_date)) <= 360 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "1YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 10.00 and A.interest_rate <= 15.00) and extract(DAY from (A.maturity_date-A.opening_date)) <= 360 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "1YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 10.00 and A.interest_rate <= 15.00) and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800) 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "5YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 10.00 and A.interest_rate <= 15.00) and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800) 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "5YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 10.00 and A.interest_rate <= 15.00) and extract(DAY from (A.maturity_date-A.opening_date)) > 1800 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "5YearGreaterCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 10.00 and A.interest_rate <= 15.00) and extract(DAY from (A.maturity_date-A.opening_date)) > 1800 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "5YearGreaterSum"
+from loan A
+INNER JOIN branch B on A.branch_id = B."id"
+INNER JOIN (select B.name,count(account_no) as "AllCounter",sum(A.balance_amount) as "AllSum" 
+from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.interest_rate > 10.00 and A.interest_rate <= 15.00) and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year} 
+GROUP BY B.name)C on B.name = C.name
+GROUP BY B.name,C."AllCounter",C."AllSum"
+UNION ALL
+select B.name,'E. Over 15% to 20%' as "description",C."AllCounter",C."AllSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 15.00 and A.interest_rate <= 20.00) and extract(DAY from (A.maturity_date-A.opening_date)) <= 360 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "1YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 15.00 and A.interest_rate <= 20.00) and extract(DAY from (A.maturity_date-A.opening_date)) <= 360 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "1YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 15.00 and A.interest_rate <= 20.00) and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800) 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "5YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 15.00 and A.interest_rate <= 20.00) and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800) 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "5YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 15.00 and A.interest_rate <= 20.00) and extract(DAY from (A.maturity_date-A.opening_date)) > 1800 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "5YearGreaterCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 15.00 and A.interest_rate <= 20.00) and extract(DAY from (A.maturity_date-A.opening_date)) > 1800 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "5YearGreaterSum"
+from loan A
+INNER JOIN branch B on A.branch_id = B."id"
+INNER JOIN (select B.name,count(account_no) as "AllCounter",sum(A.balance_amount) as "AllSum" 
+from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.interest_rate > 15.00 and A.interest_rate <= 20.00) and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year} 
+GROUP BY B.name)C on B.name = C.name
+GROUP BY B.name,C."AllCounter",C."AllSum"
+UNION ALL
+select B.name,'F. Over 20% to 25%' as "description",C."AllCounter",C."AllSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 20.00 and A.interest_rate <= 25.00) and extract(DAY from (A.maturity_date-A.opening_date)) <= 360 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "1YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 20.00 and A.interest_rate <= 25.00) and extract(DAY from (A.maturity_date-A.opening_date)) <= 360 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "1YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 20.00 and A.interest_rate <= 25.00) and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800) 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "5YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 20.00 and A.interest_rate <= 25.00) and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800) 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "5YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 20.00 and A.interest_rate <= 25.00) and extract(DAY from (A.maturity_date-A.opening_date)) > 1800 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "5YearGreaterCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where (A.interest_rate > 0.00 and A.interest_rate <= 5.00) and extract(DAY from (A.maturity_date-A.opening_date)) > 1800 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "5YearGreaterSum"
+from loan A
+INNER JOIN branch B on A.branch_id = B."id"
+INNER JOIN (select B.name,count(account_no) as "AllCounter",sum(A.balance_amount) as "AllSum" 
+from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where (A.interest_rate > 20.00 and A.interest_rate <= 25.00) and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year} 
+GROUP BY B.name)C on B.name = C.name
+GROUP BY B.name,C."AllCounter",C."AllSum"
+UNION ALL
+select B.name,'G. Over 25%' as "description",C."AllCounter",C."AllSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where A.interest_rate > 25.00 and extract(DAY from (A.maturity_date-A.opening_date)) <= 360 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "1YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where A.interest_rate > 25.00 and extract(DAY from (A.maturity_date-A.opening_date)) <= 360 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "1YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where A.interest_rate > 25.00 and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800) 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "5YearLessCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where A.interest_rate > 25.00 and (extract(DAY from (A.maturity_date-A.opening_date)) > 360
+and extract(DAY from (A.maturity_date-A.opening_date)) <= 1800) 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "5YearLessSum",
+(select count(account_no) as "AllCounter" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where A.interest_rate > 25.00 and extract(DAY from (A.maturity_date-A.opening_date)) > 1800 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "5YearGreaterCount",
+(select sum(A.balance_amount) as "AllSum" from loan A
+INNER JOIN branch Z on A.branch_id = Z."id"
+where A.interest_rate > 25.00 and extract(DAY from (A.maturity_date-A.opening_date)) > 1800 
+and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year}
+and Z.name = B.name
+GROUP BY Z.name) as "5YearGreaterSum"
+from loan A
+INNER JOIN branch B on A.branch_id = B."id"
+INNER JOIN (select B.name,count(account_no) as "AllCounter",sum(A.balance_amount) as "AllSum" 
+from loan A
+INNER JOIN branch B on A.branch_id = B.id
+where A.interest_rate > 25.00 and extract(month from A.opening_date) BETWEEN 1 and $P{MonthTo} AND cast(extract(year from A.opening_date)as integer)  = $P{Year} 
+GROUP BY B.name)C on B.name = C.name
+GROUP BY B.name,C."AllCounter",C."AllSum"
+)A ORDER BY A.name,A."description"
+)B
+
+)C ORDER BY C.name,C."ORDER",C."description"
+) M]]>
+	</queryString>
+	<field name="BANK NAME" class="java.lang.String"/>
+	<field name="name" class="java.lang.String"/>
+	<field name="description" class="java.lang.String"/>
+	<field name="AllCounter" class="java.lang.Long"/>
+	<field name="AllSum" class="java.lang.Double"/>
+	<field name="1YearLessCount" class="java.lang.Long"/>
+	<field name="1YearLessSum" class="java.lang.Double"/>
+	<field name="5YearLessCount" class="java.lang.Long"/>
+	<field name="5YearLessSum" class="java.lang.Double"/>
+	<field name="5YearGreaterCount" class="java.lang.Long"/>
+	<field name="5YearGreaterSum" class="java.lang.Double"/>
+	<field name="ORDER" class="java.lang.Integer"/>
+	<variable name="TotsAllCounter" class="java.lang.Long" resetType="Group" resetGroup="Group2" calculation="Sum">
+		<variableExpression><![CDATA[$F{AllCounter}]]></variableExpression>
+	</variable>
+	<variable name="TotsAllSum" class="java.lang.Double" resetType="Group" resetGroup="Group2" calculation="Sum">
+		<variableExpression><![CDATA[$F{AllSum}]]></variableExpression>
+	</variable>
+	<variable name="Tots1YearLessCount" class="java.lang.Long" resetType="Group" resetGroup="Group2" calculation="Sum">
+		<variableExpression><![CDATA[$F{1YearLessCount}]]></variableExpression>
+	</variable>
+	<variable name="Tots1YearLessSum" class="java.lang.Double" resetType="Group" resetGroup="Group2" calculation="Sum">
+		<variableExpression><![CDATA[$F{1YearLessSum}]]></variableExpression>
+	</variable>
+	<variable name="Tots5YearLessCount" class="java.lang.Long" resetType="Group" resetGroup="Group2" calculation="Sum">
+		<variableExpression><![CDATA[$F{5YearLessCount}]]></variableExpression>
+	</variable>
+	<variable name="Tots5YearLessSum" class="java.lang.Double" resetType="Group" resetGroup="Group2" calculation="Sum">
+		<variableExpression><![CDATA[$F{5YearLessSum}]]></variableExpression>
+	</variable>
+	<variable name="Tots5YearGreaterCount" class="java.lang.Long" resetType="Group" resetGroup="Group2" calculation="Sum">
+		<variableExpression><![CDATA[$F{5YearGreaterCount}]]></variableExpression>
+	</variable>
+	<variable name="Tots5YearGreaterSum" class="java.lang.Double" resetType="Group" resetGroup="Group2" calculation="Sum">
+		<variableExpression><![CDATA[$F{5YearGreaterSum}]]></variableExpression>
+	</variable>
+	<group name="Group1" isStartNewPage="true" isReprintHeaderOnEachPage="true">
+		<groupExpression><![CDATA[$F{name}]]></groupExpression>
+		<groupHeader>
+			<band height="24">
+				<textField>
+					<reportElement x="0" y="4" width="179" height="20" uuid="3f1b4974-9c70-4440-9270-a3992037d5da">
+						<property name="local_mesure_unitheight" value="pixel"/>
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{name} + " Branch"]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+	</group>
+	<group name="Group2" isReprintHeaderOnEachPage="true">
+		<groupExpression><![CDATA[$F{ORDER}]]></groupExpression>
+		<groupHeader>
+			<band height="23">
+				<textField>
+					<reportElement x="0" y="3" width="180" height="20" uuid="deb13168-5e64-4b35-aee3-c34983f2071c">
+						<property name="local_mesure_unitheight" value="pixel"/>
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{ORDER}.equals(1) ? "By Particulars" :
+$F{ORDER}.equals(2) ? "By Size" :
+$F{ORDER}.equals(3) ? "By Security" :
+$F{ORDER}.equals(4) ? "By Interest Rate" : ""]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="36">
+				<textField evaluationTime="Group" evaluationGroup="Group2" isBlankWhenNull="true">
+					<reportElement x="150" y="0" width="69" height="20" uuid="eb740cc0-6eee-4f32-a1ab-a80ced2576e8"/>
+					<textElement textAlignment="Center">
+						<font isBold="true" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{TotsAllCounter}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group2" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="219" y="0" width="100" height="20" uuid="0402a6b0-0e54-4429-988e-d04be52d0699"/>
+					<textElement textAlignment="Center">
+						<font isBold="true" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{TotsAllSum}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group2" isBlankWhenNull="true">
+					<reportElement x="319" y="0" width="61" height="20" uuid="ff0c3259-bdd3-44c6-82e9-b3c11281c2f7"/>
+					<textElement textAlignment="Center">
+						<font isBold="true" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{Tots1YearLessCount}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group2" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="380" y="0" width="100" height="20" uuid="7855a023-f1ad-4f76-8e60-09d7a7903317"/>
+					<textElement textAlignment="Center">
+						<font isBold="true" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{Tots1YearLessSum}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group2" isBlankWhenNull="true">
+					<reportElement x="480" y="0" width="69" height="20" uuid="0e630971-3c33-46f0-b4e1-afeadf40da1d"/>
+					<textElement textAlignment="Center">
+						<font isBold="true" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{Tots5YearLessCount}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group2" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="549" y="0" width="101" height="20" uuid="75cf70e2-c6a7-4c46-b8fd-ac6fe4c4cfb2"/>
+					<textElement textAlignment="Center">
+						<font isBold="true" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{Tots5YearLessSum}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group2" isBlankWhenNull="true">
+					<reportElement x="650" y="0" width="60" height="20" uuid="89d5ecc4-3906-4ce2-a64b-4349a652c99a"/>
+					<textElement textAlignment="Center">
+						<font isBold="true" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{Tots5YearGreaterCount} == null ? "0" : $V{Tots5YearGreaterCount}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group2" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="710" y="0" width="88" height="20" uuid="03ccc254-5e2a-4894-8a18-cca938e07d2c"/>
+					<textElement textAlignment="Center">
+						<font isBold="true" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{Tots5YearGreaterSum} == null ? "0.00" : $V{Tots5YearGreaterSum}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="0" y="0" width="70" height="20" uuid="78e8c0f3-c750-404e-a41b-fd32198d1a00"/>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+					<text><![CDATA[Total :]]></text>
+				</staticText>
+			</band>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band height="150" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="97" width="802" height="20" uuid="81dc4ec3-7116-42c9-b2f1-d193d045576a"/>
+				<textElement textAlignment="Center">
+					<font size="14" isBold="true"/>
+				</textElement>
+				<text><![CDATA[SCHEDULE OF LOAN RELEASES]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="0" y="53" width="802" height="24" uuid="90ffebfe-7c66-4adf-a455-cc5a09943dc5">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="18" isBold="true" isItalic="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BANK NAME}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="77" width="802" height="20" uuid="f22ee304-f561-41ff-b104-c928b7efb7e4"/>
+				<textElement textAlignment="Center">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{name} + " Branch"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="117" width="419" height="20" uuid="01eeeb76-999d-4196-baa2-10f9a6c40461">
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{MonthFrom}.equals(1)? "" +"JANUARY"+ ", "+ $P{Year} : 
+ $P{MonthFrom}.equals(2)? "" +"FEBRUARY"+ ", "+ $P{Year} :
+  $P{MonthFrom}.equals(3)? "" +"MARCH"+ ", "+ $P{Year} :
+   $P{MonthFrom}.equals(4)? "" +"APRIL"+ ", "+ $P{Year} :
+    $P{MonthFrom}.equals(5)? "" +"MAY"+ ", "+ $P{Year} :
+     $P{MonthFrom}.equals(6)? "" +"JUNE"+ ", "+ $P{Year} : 
+      $P{MonthFrom}.equals(7)? "" +"JULY"+ ", "+ $P{Year} :
+       $P{MonthFrom}.equals(8)? "" +"AUGUST"+ ", "+ $P{Year} :
+        $P{MonthFrom}.equals(9)? "" +"SEPTEMBER"+ ", "+ $P{Year} :
+         $P{MonthFrom}.equals(10)? "" +"OCTOBER"+ ", "+ $P{Year} :
+          $P{MonthFrom}.equals(11)? "" +"NOVEMBER"+ ", "+ $P{Year} : 
+           $P{MonthFrom}.equals(12)? "" +"DECEMBER"+ ", "+ $P{Year} :
+         	$P{MonthTo}.equals(1)? " - " +"JANUARY"+ ", "+ $P{Year} : ""]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="420" y="117" width="378" height="20" uuid="d66f3089-7a7e-47bc-9ac0-70285c09edce">
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Left">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{MonthTo}.equals(1)? " - " +"JANUARY"+ ", "+ $P{Year} : 
+ $P{MonthTo}.equals(2)? " - " +"FEBRUARY"+ ", "+ $P{Year} :
+  $P{MonthTo}.equals(3)? " - " +"MARCH"+ ", "+ $P{Year} :
+   $P{MonthTo}.equals(4)? " - " +"APRIL"+ ", "+ $P{Year} :
+    $P{MonthTo}.equals(5)? " - " +"MAY"+ ", "+ $P{Year} :
+     $P{MonthTo}.equals(6)? " - " +"JUNE"+ ", "+ $P{Year} : 
+      $P{MonthTo}.equals(7)? " - " +"JULY"+ ", "+ $P{Year} :
+       $P{MonthTo}.equals(8)? " - " +"AUGUST"+ ", "+ $P{Year} :
+        $P{MonthTo}.equals(9)? " - " +"SEPTEMBER"+ ", "+ $P{Year} :
+         $P{MonthTo}.equals(10)? " - " +"OCTOBER"+ ", "+ $P{Year} :
+          $P{MonthTo}.equals(11)? " - " +"NOVEMBER"+ ", "+ $P{Year} : 
+           $P{MonthTo}.equals(12)? " - " +"DECEMBER"+ ", "+ $P{Year} :""]]></textFieldExpression>
+			</textField>
+			<image>
+				<reportElement x="0" y="0" width="50" height="50" uuid="d7ff1915-8ee2-4634-ab8d-3a80a4457212"/>
+				<imageExpression><![CDATA["repo:logo.png"]]></imageExpression>
+			</image>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="74" splitType="Stretch">
+			<staticText>
+				<reportElement x="150" y="20" width="169" height="20" uuid="81ece321-b10a-4c7d-9cef-038975df3215"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[TOTAL]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="40" width="69" height="30" uuid="ea321377-c7a5-4d3a-9675-75d447a15595"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[NO. OF ACCOUNTS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="219" y="40" width="100" height="30" uuid="7c19a0aa-6f66-4c62-ad02-4bfb3393e892"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[AMOUNT 
+(IN PESOS)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="319" y="20" width="161" height="20" uuid="3ca1ee5d-eac7-4277-9b38-4d2f1cf41ead"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[SHORT TERM]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="319" y="40" width="61" height="30" uuid="5a0b21ea-185c-41a0-9309-3afca4bbec15"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[NO. OF ACCOUNTS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="380" y="40" width="100" height="30" uuid="8eaec2ed-7d5f-4983-b9ee-741f33c0b9a7"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[AMOUNT 
+(IN PESOS)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="480" y="0" width="170" height="20" uuid="24eacf9c-0615-46ae-b2f1-9f57bc284b2c"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[OVER 1 YR TO 5 YRS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="480" y="40" width="69" height="30" uuid="4867a884-8943-4e2d-b356-ae88eea92c2f"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[NO. OF ACCOUNTS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="549" y="40" width="101" height="30" uuid="86ac1f8f-82d0-4253-b65f-0a4cf0b291c7"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[AMOUNT 
+(IN PESOS)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="480" y="20" width="170" height="20" uuid="716f2fad-c8ed-477c-9a4e-0b7b6ebdf68e">
+					<property name="local_mesure_unitwidth" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[MEDIUM TERM]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="650" y="0" width="148" height="20" uuid="b2b3a87a-5446-4ddc-a4ea-0ae97fae8cc5"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[OVER 5 YRS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="650" y="20" width="148" height="20" uuid="1a542235-5f7b-4ff7-ba6d-17cbf098cc35"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[LONG TERM]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="650" y="40" width="60" height="30" uuid="84203e60-8f14-411f-a7aa-ce98245232ed"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[NO. OF ACCOUNTS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="710" y="40" width="88" height="30" uuid="e966032b-604c-41f4-a907-b59bfc868709"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[AMOUNT 
+(IN PESOS)]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="23" splitType="Stretch">
+			<textField isBlankWhenNull="true">
+				<reportElement x="150" y="0" width="69" height="20" uuid="52492f0b-2d86-4be5-97ec-0e55a49e52db">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{AllCounter}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="219" y="0" width="100" height="20" uuid="4a78c1a9-364d-435c-b969-e8659f020930">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{AllSum}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="319" y="0" width="61" height="20" uuid="9667ac86-3c19-448e-b032-a595214d4a63">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{1YearLessCount}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="380" y="0" width="100" height="20" uuid="a719c87d-901c-4f3f-92cb-92d595e43646">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{1YearLessSum}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="480" y="0" width="69" height="20" uuid="6ebaed0a-cc9e-46b5-a5b8-0bb6a233b91f">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{5YearLessCount}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="549" y="0" width="101" height="20" uuid="87be64d1-290e-4ece-9e8a-4982db2d2d83">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{5YearLessSum}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="650" y="0" width="60" height="20" uuid="d1d5d6fd-ea68-4c98-836f-b69b632bdde6">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{5YearGreaterCount} == null ? "0" : $F{5YearGreaterCount}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="710" y="0" width="88" height="20" uuid="cabefe42-8aa3-498d-8cc7-53548205e793">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{5YearGreaterSum} == null ? "0.00" :$F{5YearGreaterSum}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="0" y="1" width="150" height="19" uuid="6cc13ce5-b50f-43f1-bfe2-cba313c54708">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Left"/>
+				<textFieldExpression><![CDATA[$F{description}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band splitType="Stretch"/>
+	</summary>
+	<noData>
+		<band height="117">
+			<textField pattern="MMMMM dd, yyyy">
+				<reportElement x="690" y="26" width="112" height="13" uuid="ace668d1-1e7c-4392-b2af-a7f7b0a4f205">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="690" y="0" width="112" height="13" uuid="9a86dd98-524e-4b77-a497-5108f8d81e2f">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA["Page: " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="h:mm a">
+				<reportElement x="690" y="13" width="112" height="13" uuid="1898fc50-9cdc-44e5-b19c-86f758f3651c">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<image>
+				<reportElement x="0" y="0" width="50" height="50" uuid="a23816e4-f2f0-4316-b962-64085a1e0318"/>
+				<imageExpression><![CDATA["repo:logo.png"]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement x="0" y="52" width="802" height="20" uuid="9865816d-abc5-498e-8232-2f14c0c50c34"/>
+				<textElement textAlignment="Center">
+					<font size="14" isBold="true"/>
+				</textElement>
+				<text><![CDATA[SCHEDULE OF LOAN RELEASES]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="80" y="75" width="600" height="13" uuid="575ef46d-fede-48a5-9fbd-ebacd9ea3a49">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="10"/>
+				</textElement>
+				<text><![CDATA[NO DATA FOR REPORT]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

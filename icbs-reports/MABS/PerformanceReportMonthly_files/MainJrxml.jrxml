@@ -1,0 +1,989 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.2.1.final using JasperReports Library version 6.2.0  -->
+<!-- 2016-04-28T16:16:36 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Performance Report Monthly" pageWidth="1150" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="1110" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="2fcf14e4-ead9-4033-82c7-938251208764">
+	<property name="ireport.jasperserver.url" value="http://localhost:8080/jasperserver/"/>
+	<property name="ireport.jasperserver.user" value="jasperadmin"/>
+	<property name="ireport.jasperserver.report.resource" value="/ICBS_REPORT/MABS/PerformanceReportMonthly_files/MainJrxml"/>
+	<property name="ireport.jasperserver.reportUnit" value="/ICBS_REPORT/MABS/PerformanceReportMonthly"/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<property name="net.sf.jasperreports.export.xls.freeze.column.edge" value="left"/>
+	<property name="net.sf.jasperreports.export.xls.freeze.row.edge" value="bottom"/>
+	<property name="net.sf.jasperreports.export.xls.ignore.graphics" value="false"/>
+	<property name="net.sf.jasperreports.export.xls.collapse.row.span" value="false"/>
+	<property name="net.sf.jasperreports.export.xls.ignore.cell.border" value="false"/>
+	<property name="net.sf.jasperreports.export.xls.remove.empty.space.between.rows" value="true"/>
+	<property name="net.sf.jasperreports.export.xls.ignore.cell.background" value="true"/>
+	<property name="net.sf.jasperreports.export.xls.pattern" value="MMMM D, YYYY"/>
+	<property name="net.sf.jasperreports.export.xls.detect.cell.type" value="true"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="NRBSL"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<parameter name="asofdate" class="java.util.Date" isForPrompting="false"/>
+	<queryString language="SQL">
+		<![CDATA[select DISTINCT * FROM(
+select
+'1' as "one", 
+(select param_value from institution where id = '1') as "BANK NAME",
+A.run_date as "RUNDATE",
+A.name || ' - MABS' as "Branch",
+B."Account Officer",
+C."count" as "No. of Borrowers",
+C."sum" as "Loan Account Balance",
+sum(B."count") as "# Loans Disbursed",
+sum(B."sum") as "Amount of Loans Disbursed",
+F."count" as "# New Loans Disbursed",
+F."sum" as "Amount New Loans Disbursed",
+G."count" as "# Repeat Loans Disbursed",
+G."sum" as "Amount Repeat Loans Disbursed",
+D."count" as "# of Loans w/Overdue Amount",
+case when (C."count" = 0 or C."count" is NULL) OR (D."count" = 0 OR D."count" is NULL) THEN 0 ELSE
+round(cast((COALESCE(D."count",0)/COALESCE(C."count",0)::DOUBLE PRECISION)*100 as NUMERIC),2) END as "# of Loans w/Overdue Amount(%)",
+E."Balance" as "Portfolio at Risk",
+case when (C."sum" = 0 or C."sum" is NULL) or (E."Balance" = 0 or E."Balance" is NULL) THEN 0 ELSE
+round(cast((COALESCE(E."Balance",0)/COALESCE(C."sum",0)::DOUBLE PRECISION)*100 as NUMERIC),2)END as "Portfolio at Risk(%)",
+(C."Interest"+C."PastDue"+C."Penalty"+C."SC") as "Total Revenue"
+from branch A
+
+LEFT JOIN 
+(select D.name as "Branch",
+C."Account Officer",
+count(A.account_no),
+sum(A.balance_amount) from loan A
+LEFT JOIN (select * from loan_application)B on A.loan_application_id = B.id
+LEFT JOIN (select id,name1||' '||name2 as "Account Officer"from user_master)C on B.account_officer:: INTEGER = C.id
+LEFT JOIN (select id,name from branch)D on A.branch_id = D.id
+LEFT JOIN (select * from product where is_microfinance = true)E on A.product_id = E.id
+where E.name is not null and E.name like '%Microfinance MABS%' 
+GROUP BY C."Account Officer",D.name ORDER BY D.name,C."Account Officer"
+)B on A."name" = B."Branch"
+
+LEFT JOIN (SELECT B.name, D.name1 ||' '|| D.name2 as "Account Officer", count(A.account_no), sum(A.balance_amount),
+sum(G.interest_amt) as "Interest",sum(G.past_due_interest_amt) as "PastDue",
+sum(G.penalty_amt) as "Penalty",sum(G.service_charge_amt) as "SC" from loan A
+LEFT JOIN (SELECT * from branch)B on A.branch_id = B.id
+LEFT JOIN (select * from loan_application)C on A.loan_application_id = C."id"
+LEFT JOIN (select * from user_master)D on C.account_officer:: INTEGER = D.id
+LEFT JOIN (select * from product)F on A.product_id = F.id	
+LEFT JOIN (select acct_id,acct_no,branch_id,interest_amt,past_due_interest_amt,
+penalty_amt,service_charge_amt from txn_loan_payment_details)G on G.acct_id = A.id
+and B.id = G.branch_id where F.is_microfinance = true and F.name like '%Microfinance MABS%' 
+group by D.name1, D.name2, B.name order by B.name, D.name1, D.name2)C on A."name" = C."name"
+and B."Account Officer" = C."Account Officer"
+
+LEFT JOIN (SELECT B.name,D.name1 ||' '|| D.name2 as "Account Officer",
+count(A.account_no) from loan A 
+LEFT JOIN (SELECT * from branch)B on A.branch_id = B.id
+LEFT JOIN (select * from loan_application)C on A.loan_application_id = C."id"
+LEFT JOIN (select * from user_master)D on C.account_officer:: INTEGER = D.id
+LEFT JOIN (select * from product)F on A.product_id = F.id	
+where F.is_microfinance = true and F.name like '%Microfinance MABS%' 
+and A.status_id = 4 group by D.name1,D.name2,B.name order by B.name,D.name2,D.name1)D on A."name" = D."name"
+and B."Account Officer" = D."Account Officer"
+
+LEFT JOIN (select B."name",D."Account Officer",sum(A.balance_amount) as "Balance" from loan A
+LEFT JOIN (select id,name,run_date from branch)B on A.branch_id = B.id
+LEFT JOIN (select * from loan_application)C on A.loan_application_id = C."id"
+LEFT JOIN (select id,name1||' '||name2 as "Account Officer" from user_master)D on C.account_officer:: INTEGER = D.id
+LEFT JOIN (select * from product)F on A.product_id = F.id	
+where F.is_microfinance = true and F.name like '%Microfinance MABS%'
+GROUP BY D."Account Officer",B."name")E on A."name" = E."name" and B."Account Officer" = E."Account Officer" 
+
+LEFT JOIN (select Z."Branch",Z."Account Officer",sum(Z."count") as "count",sum(Z."sum") from
+(select B.name as "Branch",E."Account Officer",C.display_name,count(A.account_no),sum(A.balance_amount) from loan A
+LEFT JOIN (SELECT id,name from branch)B on A.branch_id = B.id
+LEFT JOIN (SELECT id,display_name from customer)C on A.customer_id = C."id"
+LEFT JOIN (select * from loan_application)D on A.loan_application_id = D.id
+LEFT JOIN (select id,name1||' '||name2 as "Account Officer" from user_master)E on D.account_officer:: INTEGER = E.id
+LEFT JOIN (select * from product where is_microfinance = true)F on A.product_id = F.id
+where A.status_id = 6 and F.name is not null and F.name like '%Microfinance MABS%' 
+group by B.name,C.display_name,E."Account Officer" ORDER BY B.name,E."Account Officer"
+)Z where Z."count" = 1 group by Z."Branch",Z."Account Officer")F ON A."name" = F."Branch" and B."Account Officer" = F."Account Officer"
+
+LEFT JOIN (select Z."Branch",Z."Account Officer",sum(Z."count") as "count",sum(Z."sum") from
+(select B.name as "Branch",E."Account Officer",C.display_name,count(A.account_no),sum(A.balance_amount) from loan A
+LEFT JOIN (SELECT id,name from branch)B on A.branch_id = B.id
+LEFT JOIN (SELECT id,display_name from customer)C on A.customer_id = C."id"
+LEFT JOIN (select * from loan_application)D on A.loan_application_id = D.id
+LEFT JOIN (select id,name1||' '||name2 as "Account Officer" from user_master)E on D.account_officer:: INTEGER = E.id
+LEFT JOIN (select * from product where is_microfinance = true)F on A.product_id = F.id
+where A.status_id = 6 and F.name is not null and F.name like '%Microfinance MABS%' 
+group by B.name,C.display_name,E."Account Officer" ORDER BY B.name,E."Account Officer"
+)Z where Z."count" > 1 group by Z."Branch",Z."Account Officer")G ON A."name" = G."Branch" and B."Account Officer" = G."Account Officer"
+group by A.name,B."Account Officer",C."count",C."sum",D."count",E."Balance",
+F."count",F."sum",G."count",G."sum", A.run_date,
+C."Interest",C."PastDue",C."Penalty",C."SC" --ORDER BY A.name
+
+
+UNION ALL
+
+
+select 
+'2' as "one",
+(select param_value from institution where caption = 'Institution Name') as "BANK NAME",
+A.run_date as "RUNDATE",
+A.name || ' - GRAMEEN' as "Branch",
+B."Account Officer",
+C."count" as "No. of Borrowers",
+C."sum" as "Loan Account Balance",
+sum(B."count") as "# Loans Disbursed",
+sum(B."sum") as "Amount of Loans Disbursed",
+F."count" as "# New Loans Disbursed",
+F."sum" as "Amount New Loans Disbursed",
+G."count" as "# Repeat Loans Disbursed",
+G."sum" as "Amount Repeat Loans Disbursed",
+D."count" as "# of Loans w/Overdue Amount",
+case when (C."count" = 0 or C."count" is NULL) OR (D."count" = 0 OR D."count" is NULL) THEN 0 ELSE
+round(cast((COALESCE(D."count",0)/COALESCE(C."count",0)::DOUBLE PRECISION)*100 as NUMERIC),2) END as "# of Loans w/Overdue Amount(%)",
+E."Balance" as "Portfolio at Risk",
+case when (C."sum" = 0 or C."sum" is NULL) or (E."Balance" = 0 or E."Balance" is NULL) THEN 0 ELSE
+round(cast((COALESCE(E."Balance",0)/COALESCE(C."sum",0)::DOUBLE PRECISION)*100 as NUMERIC),2)END as "Portfolio at Risk(%)",
+(C."Interest"+C."PastDue"+C."Penalty"+C."SC") as "Total Revenue"
+from branch A
+
+LEFT JOIN 
+(select D.name as "Branch",
+C."Account Officer",
+count(A.account_no),
+sum(A.balance_amount) from loan A
+LEFT JOIN (select * from loan_application)B on A.loan_application_id = B.id
+LEFT JOIN (select id,name1||' '||name2 as "Account Officer"from user_master)C on B.account_officer:: INTEGER = C.id
+LEFT JOIN (select id,name from branch)D on A.branch_id = D.id
+LEFT JOIN (select * from product where is_microfinance = true)E on A.product_id = E.id
+where E.name is not null and E.name like '%Microfinance GRAMEEN%' 
+GROUP BY C."Account Officer",D.name ORDER BY D.name,C."Account Officer"
+)B on A."name" = B."Branch"
+
+LEFT JOIN (SELECT B.name, D.name1 ||' '|| D.name2 as "Account Officer", count(A.account_no), sum(A.balance_amount),
+sum(G.interest_amt) as "Interest",sum(G.past_due_interest_amt) as "PastDue",
+sum(G.penalty_amt) as "Penalty",sum(G.service_charge_amt) as "SC" from loan A
+LEFT JOIN (SELECT * from branch)B on A.branch_id = B.id
+LEFT JOIN (select * from loan_application)C on A.loan_application_id = C."id"
+LEFT JOIN (select * from user_master)D on C.account_officer:: INTEGER = D.id
+LEFT JOIN (select * from product)F on A.product_id = F.id	
+LEFT JOIN (select acct_id,acct_no,branch_id,interest_amt,past_due_interest_amt,
+penalty_amt,service_charge_amt from txn_loan_payment_details)G on G.acct_id = A.id
+and B.id = G.branch_id where F.is_microfinance = true and F.name like '%Microfinance GRAMEEN%' 
+group by D.name1, D.name2, B.name order by B.name, D.name1, D.name2)C on A."name" = C."name"
+and B."Account Officer" = C."Account Officer"
+
+LEFT JOIN (SELECT B.name,D.name1 ||' '|| D.name2 as "Account Officer",
+count(A.account_no) from loan A 
+LEFT JOIN (SELECT * from branch)B on A.branch_id = B.id
+LEFT JOIN (select * from loan_application)C on A.loan_application_id = C."id"
+LEFT JOIN (select * from user_master)D on C.account_officer:: INTEGER = D.id
+LEFT JOIN (select * from product)F on A.product_id = F.id	
+where F.is_microfinance = true and F.name like '%Microfinance GRAMEEN%' 
+and A.status_id = 4 group by D.name1,D.name2,B.name order by B.name,D.name2,D.name1)D on A."name" = D."name"
+and B."Account Officer" = D."Account Officer"
+
+LEFT JOIN (select B."name",D."Account Officer",sum(A.balance_amount) as "Balance" from loan A
+LEFT JOIN (select id,name,run_date from branch)B on A.branch_id = B.id
+LEFT JOIN (select * from loan_application)C on A.loan_application_id = C."id"
+LEFT JOIN (select id,name1||' '||name2 as "Account Officer" from user_master)D on C.account_officer:: INTEGER = D.id
+LEFT JOIN (select * from product)F on A.product_id = F.id	
+where F.is_microfinance = true and F.name like '%Microfinance GRAMEEN%'
+GROUP BY D."Account Officer",B."name")E on A."name" = E."name" and B."Account Officer" = E."Account Officer" 
+
+LEFT JOIN (select Z."Branch",Z."Account Officer",sum(Z."count") as "count",sum(Z."sum") from
+(select B.name as "Branch",E."Account Officer",C.display_name,count(A.account_no),sum(A.balance_amount) from loan A
+LEFT JOIN (SELECT id,name from branch)B on A.branch_id = B.id
+LEFT JOIN (SELECT id,display_name from customer)C on A.customer_id = C."id"
+LEFT JOIN (select * from loan_application)D on A.loan_application_id = D.id
+LEFT JOIN (select id,name1||' '||name2 as "Account Officer" from user_master)E on D.account_officer:: INTEGER = E.id
+LEFT JOIN (select * from product where is_microfinance = true)F on A.product_id = F.id
+where A.status_id = 6 and F.name is not null and F.name like '%Microfinance GRAMEEN%' 
+group by B.name,C.display_name,E."Account Officer" ORDER BY B.name,E."Account Officer"
+)Z where Z."count" = 1 group by Z."Branch",Z."Account Officer")F ON A."name" = F."Branch" and B."Account Officer" = F."Account Officer"
+
+LEFT JOIN (select Z."Branch",Z."Account Officer",sum(Z."count") as "count",sum(Z."sum") from
+(select B.name as "Branch",E."Account Officer",C.display_name,count(A.account_no),sum(A.balance_amount) from loan A
+LEFT JOIN (SELECT id,name from branch)B on A.branch_id = B.id
+LEFT JOIN (SELECT id,display_name from customer)C on A.customer_id = C."id"
+LEFT JOIN (select * from loan_application)D on A.loan_application_id = D.id
+LEFT JOIN (select id,name1||' '||name2 as "Account Officer" from user_master)E on D.account_officer:: INTEGER = E.id
+LEFT JOIN (select * from product where is_microfinance = true)F on A.product_id = F.id
+where A.status_id = 6 and F.name is not null and F.name like '%Microfinance GRAMEEN%' 
+group by B.name,C.display_name,E."Account Officer" ORDER BY B.name,E."Account Officer"
+)Z where Z."count" > 1 group by Z."Branch",Z."Account Officer")G ON A."name" = G."Branch" and B."Account Officer" = G."Account Officer"
+group by A.name,B."Account Officer",C."count",C."sum",D."count",E."Balance",
+F."count",F."sum",G."count",G."sum", A.run_date,
+C."Interest",C."PastDue",C."Penalty",C."SC" 
+--ORDER BY A.name
+)X 
+where X."Branch" is not NULL
+ORDER BY X."one", X."Branch"]]>
+	</queryString>
+	<field name="one" class="java.lang.String"/>
+	<field name="BANK NAME" class="java.lang.String"/>
+	<field name="RUNDATE" class="java.sql.Timestamp"/>
+	<field name="Branch" class="java.lang.String"/>
+	<field name="Account Officer" class="java.lang.String"/>
+	<field name="No. of Borrowers" class="java.lang.Long"/>
+	<field name="Loan Account Balance" class="java.lang.Double"/>
+	<field name="# Loans Disbursed" class="java.math.BigDecimal"/>
+	<field name="Amount of Loans Disbursed" class="java.lang.Double"/>
+	<field name="# New Loans Disbursed" class="java.math.BigDecimal"/>
+	<field name="Amount New Loans Disbursed" class="java.lang.Double"/>
+	<field name="# Repeat Loans Disbursed" class="java.math.BigDecimal"/>
+	<field name="Amount Repeat Loans Disbursed" class="java.lang.Double"/>
+	<field name="# of Loans w/Overdue Amount" class="java.lang.Long"/>
+	<field name="# of Loans w/Overdue Amount(%)" class="java.math.BigDecimal"/>
+	<field name="Portfolio at Risk" class="java.lang.Double"/>
+	<field name="Portfolio at Risk(%)" class="java.math.BigDecimal"/>
+	<field name="Total Revenue" class="java.lang.Double"/>
+	<variable name="SubTotsNo. of Borrowers" class="java.lang.Double" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[$F{No. of Borrowers}]]></variableExpression>
+	</variable>
+	<variable name="SubTotsLoan Account Balance" class="java.lang.Double" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[$F{Loan Account Balance}]]></variableExpression>
+	</variable>
+	<variable name="SubTots# Loans Disbursed" class="java.math.BigDecimal" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[$F{# Loans Disbursed}]]></variableExpression>
+	</variable>
+	<variable name="SubTotsAmount of Loans Disbursed" class="java.lang.Double" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[$F{Amount of Loans Disbursed}]]></variableExpression>
+	</variable>
+	<variable name="SubTots# New Loans Disbursed" class="java.math.BigDecimal" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[$F{# New Loans Disbursed}]]></variableExpression>
+	</variable>
+	<variable name="SubTotsAmount New Loans Disbursed" class="java.lang.Double" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[$F{Amount New Loans Disbursed}]]></variableExpression>
+	</variable>
+	<variable name="SubTots# Repeat Loans Disbursed" class="java.math.BigDecimal" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[$F{# Repeat Loans Disbursed}]]></variableExpression>
+	</variable>
+	<variable name="SubTots# of Loans w/Overdue Amount" class="java.lang.Double" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[$F{# of Loans w/Overdue Amount}]]></variableExpression>
+	</variable>
+	<variable name="SubTots# of Loans w/Overdue Amount(%)" class="java.lang.Double" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[($V{SubTots# of Loans w/Overdue Amount} / $V{SubTotsNo. of Borrowers} * 100)]]></variableExpression>
+	</variable>
+	<variable name="SubTotsPortfolio at Risk" class="java.lang.Double" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[$F{Portfolio at Risk}]]></variableExpression>
+	</variable>
+	<variable name="SubTotsPortfolio at Risk(%)" class="java.math.BigDecimal" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[$F{Portfolio at Risk(%)}]]></variableExpression>
+	</variable>
+	<variable name="GrandTotsNo. of Borrowers" class="java.lang.Double" calculation="Sum">
+		<variableExpression><![CDATA[$F{No. of Borrowers}]]></variableExpression>
+	</variable>
+	<variable name="GrandTotsLoan Account Balance" class="java.lang.Double" calculation="Sum">
+		<variableExpression><![CDATA[$F{Loan Account Balance}]]></variableExpression>
+	</variable>
+	<variable name="GrandTots# Loans Disbursed" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{# Loans Disbursed}]]></variableExpression>
+	</variable>
+	<variable name="GrandTotsAmount of Loans Disbursed" class="java.lang.Double" calculation="Sum">
+		<variableExpression><![CDATA[$F{Amount of Loans Disbursed}]]></variableExpression>
+	</variable>
+	<variable name="GrandTots# New Loans Disbursed" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{# New Loans Disbursed}]]></variableExpression>
+	</variable>
+	<variable name="GrandTotsAmount New Loans Disbursed" class="java.lang.Double" calculation="Sum">
+		<variableExpression><![CDATA[$F{Amount New Loans Disbursed}]]></variableExpression>
+	</variable>
+	<variable name="GrandTots# Repeat Loans Disbursed" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{# Repeat Loans Disbursed}]]></variableExpression>
+	</variable>
+	<variable name="GrandTots# of Loans w/Overdue Amount" class="java.lang.Long" calculation="Sum">
+		<variableExpression><![CDATA[$F{# of Loans w/Overdue Amount}]]></variableExpression>
+	</variable>
+	<variable name="GrandTots# of Loans w/Overdue Amount(%)" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{# of Loans w/Overdue Amount(%)}]]></variableExpression>
+	</variable>
+	<variable name="GrandTotsPortfolio at Risk" class="java.lang.Double" calculation="Sum">
+		<variableExpression><![CDATA[$F{Portfolio at Risk}]]></variableExpression>
+	</variable>
+	<variable name="GrandTotsPortfolio at Risk(%)" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{Portfolio at Risk(%)}]]></variableExpression>
+	</variable>
+	<variable name="SubTotAmount Repeat Loans Disbursed" class="java.lang.Double" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[$F{Amount Repeat Loans Disbursed}]]></variableExpression>
+	</variable>
+	<variable name="Amount Repeat Loans Disbursed1" class="java.lang.Double" calculation="Sum">
+		<variableExpression><![CDATA[$F{Amount Repeat Loans Disbursed}]]></variableExpression>
+	</variable>
+	<variable name="SubTotsTotal Revenue" class="java.lang.Double" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[$F{Total Revenue}]]></variableExpression>
+	</variable>
+	<variable name="GrandTotal Revenue" class="java.lang.Double" calculation="Sum">
+		<variableExpression><![CDATA[$F{Total Revenue}]]></variableExpression>
+	</variable>
+	<group name="Group1" isReprintHeaderOnEachPage="true" minHeightToStartNewPage="3">
+		<groupExpression><![CDATA[$F{Branch}]]></groupExpression>
+		<groupHeader>
+			<band height="20">
+				<textField>
+					<reportElement x="0" y="0" width="1110" height="20" uuid="a14e8692-5326-40c8-a3b4-5c0a185b6e8f"/>
+					<textElement verticalAlignment="Middle">
+						<font isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{Branch}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="25">
+				<textField isBlankWhenNull="false">
+					<reportElement x="0" y="5" width="84" height="20" uuid="eca8123d-cf73-4a6d-b63e-190b90dc67b9">
+						<property name="local_mesure_unitheight" value="pixel"/>
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+						<property name="local_mesure_unitwidth" value="pixel"/>
+						<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					</reportElement>
+					<textElement verticalAlignment="Top" markup="html">
+						<font isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA["SUB TOTAL : "]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group1" pattern="###00" isBlankWhenNull="true">
+					<reportElement x="84" y="5" width="56" height="20" uuid="49af3f0e-853a-4f86-8329-1ea51fd4e9bb">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement verticalAlignment="Top">
+						<font size="9" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{SubTotsNo. of Borrowers}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group1" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="140" y="5" width="80" height="20" uuid="bfa8dcaa-e194-45a9-84f1-26433b65b834">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement verticalAlignment="Top">
+						<font size="9" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{SubTotsLoan Account Balance}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group1" isBlankWhenNull="true">
+					<reportElement x="220" y="5" width="60" height="20" uuid="74cf13f8-e7a2-4599-953d-4cfc1ec54563">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement verticalAlignment="Top">
+						<font size="9" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{SubTots# Loans Disbursed}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group1" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="280" y="5" width="100" height="20" uuid="694782ea-df5f-479c-929e-8d67aaabe05b">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement verticalAlignment="Top">
+						<font size="9" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{SubTotsAmount of Loans Disbursed}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group1" isBlankWhenNull="true">
+					<reportElement x="380" y="5" width="70" height="20" uuid="db858847-6671-4f07-923e-f0db57654415">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement verticalAlignment="Top">
+						<font size="9" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{SubTots# New Loans Disbursed}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group1" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="450" y="5" width="94" height="20" uuid="1ca0e08d-a97d-47d6-bbea-a7db2c45b08a">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement verticalAlignment="Top">
+						<font size="9" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{SubTotsAmount New Loans Disbursed}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group1" isBlankWhenNull="true">
+					<reportElement x="544" y="5" width="76" height="20" uuid="e0fb043c-648e-46ee-aebe-5fcb5065a87f">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement verticalAlignment="Top">
+						<font size="9" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{SubTots# Repeat Loans Disbursed}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group1" pattern="###00" isBlankWhenNull="true">
+					<reportElement x="700" y="5" width="80" height="20" uuid="3cadd337-f3f3-4f38-a4ec-a77d8b6e00b6">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement verticalAlignment="Top">
+						<font size="9" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{SubTots# of Loans w/Overdue Amount}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group1" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="900" y="5" width="60" height="20" uuid="a074fc99-be7c-4991-a4aa-224415414069">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement verticalAlignment="Top">
+						<font size="9" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{SubTotsPortfolio at Risk}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group1" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="620" y="5" width="80" height="20" uuid="9c052f22-a16e-42c3-8614-323e873265b9">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement verticalAlignment="Top"/>
+					<textFieldExpression><![CDATA[$V{SubTotAmount Repeat Loans Disbursed}]]></textFieldExpression>
+				</textField>
+				<textField isBlankWhenNull="true">
+					<reportElement x="780" y="5" width="120" height="20" uuid="cf36e11e-cc62-4b0d-a050-76dcaa03627b">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement verticalAlignment="Top"/>
+					<textFieldExpression><![CDATA[new java.text.DecimalFormat("##.00").format($V{SubTots# of Loans w/Overdue Amount} / $V{SubTotsNo. of Borrowers} * 100) + "%"]]></textFieldExpression>
+				</textField>
+				<textField isBlankWhenNull="true">
+					<reportElement x="960" y="5" width="60" height="20" uuid="acef0555-47ba-4361-8ebd-0b696aa2f5e5">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement verticalAlignment="Top"/>
+					<textFieldExpression><![CDATA[new java.text.DecimalFormat("##.00").format($V{SubTotsPortfolio at Risk} / $V{SubTotsLoan Account Balance} * 100) + "%"]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="1020" y="5" width="90" height="20" uuid="cf3fe6af-cfb9-4ddd-bcbd-852463e4a347">
+						<property name="local_mesure_unitheight" value="pixel"/>
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement verticalAlignment="Top"/>
+					<textFieldExpression><![CDATA[$V{SubTotsTotal Revenue}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<pageHeader>
+		<band height="76" splitType="Stretch">
+			<textField>
+				<reportElement x="220" y="18" width="800" height="22" uuid="4e8debb1-51a1-4fe2-a419-8aa4d6f9532c"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Performance Report by Account Officer"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="220" y="0" width="800" height="18" uuid="dee2fc36-2706-44f2-b1f5-cc805bc09974">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BANK NAME}.toUpperCase()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="1020" y="0" width="90" height="18" uuid="9773346f-02b7-42de-9889-f099068c4648">
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["PAGE " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="MMMM dd, yyyy">
+				<reportElement x="84" y="0" width="136" height="18" uuid="570aa93a-d85b-4dbe-99df-a41142465621">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField pattern="HH:mm a">
+				<reportElement x="84" y="18" width="136" height="22" uuid="f37adf6e-be4e-4837-b17e-844b0c2ffeb8">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="10" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="220" y="40" width="800" height="20" uuid="bb35de51-a62c-4a2c-9d7a-4d2ad0577c80"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["As of " + new SimpleDateFormat("MMMM dd, yyyy").format($P{asofdate})]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="84" y="40" width="136" height="20" uuid="ead3b827-ff68-4ad8-9ee4-cdbb482787ff"/>
+				<textFieldExpression><![CDATA[" "]]></textFieldExpression>
+			</textField>
+			<image>
+				<reportElement x="0" y="0" width="50" height="50" uuid="9dc7dc41-1787-46a0-af62-95a12f980ddb"/>
+				<imageExpression><![CDATA["repo:logo.png"]]></imageExpression>
+			</image>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="38" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="84" height="38" uuid="1e694eb1-032c-4521-8103-74bc76883526">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="local_mesure_unitheight" value="pixel"/>
+				</reportElement>
+				<textElement verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Account Officer]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="84" y="0" width="56" height="38" uuid="b69d9a87-3d27-47a2-949b-6893c5c49278">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Left" verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[No. of 
+Borrowers]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="140" y="0" width="80" height="38" uuid="fcfaafad-f04f-4a75-8de3-a4f066640425">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Loan Account Balance]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="220" y="0" width="60" height="38" uuid="0f7c6e19-b9d3-46b3-b7d5-5509c00cac2a">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[# Loans Disbursed]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="280" y="0" width="100" height="38" uuid="692f1b7e-d85a-4c53-83e9-db4dd7cc537f">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Amount of Loans Disbursed]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="450" y="0" width="94" height="38" uuid="fa7821c5-4fdc-43e0-ae5e-5cc8ce05116a">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Amount New Loans Disbursed]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="544" y="0" width="76" height="38" uuid="dd98190f-0625-47c7-a547-960f0e30a0c4">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[# Repeat Loans Disbursed]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="700" y="0" width="80" height="38" uuid="716bf7b6-7551-4d3c-b7b4-c79edd31c717">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[# of Loans w/Overdue Amount]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="780" y="0" width="120" height="38" uuid="3d14a8ef-0110-4e65-a90e-52fc9e7d7c46">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[# of Loans w/Overdue Amount(%)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="900" y="0" width="60" height="38" uuid="b1311206-52a1-417a-a902-6ecb3a826a51">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Portfolio at Risk]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1020" y="0" width="90" height="38" uuid="45ae029b-1515-4f00-8a33-826725fa11b5">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="local_mesure_unitwidth" value="pixel"/>
+				</reportElement>
+				<textElement verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total Revenue]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="620" y="0" width="80" height="38" uuid="d1e715d3-07e1-4e5e-b302-2b7be6b4b166">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="local_mesure_unitheight" value="pixel"/>
+				</reportElement>
+				<textElement verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Amount Repeat Loan Disbursed]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="960" y="0" width="60" height="38" uuid="b4cc5b59-cf32-466c-a805-1c7378f930c1">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Portfolio at Risk(%)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="380" y="0" width="70" height="38" uuid="49d8691d-504c-47ac-9143-9869aa3dc0cd">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement verticalAlignment="Top">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[# New Loans Disbursed]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="22" splitType="Stretch">
+			<textField isBlankWhenNull="true">
+				<reportElement x="0" y="2" width="84" height="20" uuid="c393082e-56bf-42ee-8a5d-169f3197bdba">
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{Account Officer}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="84" y="2" width="56" height="20" uuid="d88c0dee-6114-45f3-a49b-d19607791f2c">
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{No. of Borrowers}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="140" y="2" width="80" height="20" uuid="b6b0e97d-0a04-48da-9383-a6041f40b3ce">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{Loan Account Balance}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="220" y="2" width="60" height="20" uuid="8603e270-a531-4ca5-b886-9b1a25ea91ad">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{# Loans Disbursed}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="280" y="2" width="100" height="20" uuid="500bb163-0eee-4a88-a628-34d537c5fdb5">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{Amount of Loans Disbursed}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="380" y="2" width="70" height="20" uuid="d6b6b4d6-64f7-470d-9e3d-d5dbc1fc07c5">
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{# New Loans Disbursed}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="450" y="2" width="94" height="20" uuid="45fed5cf-d3eb-4b39-8b5e-6c0459c9393b">
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{Amount New Loans Disbursed}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="544" y="2" width="76" height="20" uuid="0a02d42f-39ba-42b5-9623-2e992ee507d6">
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{# Repeat Loans Disbursed}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="700" y="2" width="80" height="20" uuid="fed5e2ab-9925-4b49-a6e5-b373ea7c2107">
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{# of Loans w/Overdue Amount}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="780" y="2" width="120" height="20" uuid="19bc24a0-650e-4bed-a10c-b46aea2e807b">
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.text.DecimalFormat("#,##0.00").format($F{# of Loans w/Overdue Amount(%)}) + "%"]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="900" y="2" width="60" height="20" uuid="5e4e0606-6e8e-4abf-ac6b-f959eb139e90">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{Portfolio at Risk}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="620" y="2" width="80" height="20" uuid="6fb5d395-15d4-4d24-9c2b-8735e6c731d6">
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{Amount Repeat Loans Disbursed}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="960" y="2" width="60" height="20" uuid="815d46ad-733a-4740-b126-52373824cc2c">
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.text.DecimalFormat("#,##0.00").format($F{Portfolio at Risk(%)}) + "%"]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="1020" y="2" width="90" height="20" uuid="4a4ffde2-8e95-41a2-83ee-f276c82879e7">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Total Revenue}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="21" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="84" height="21" uuid="56a80ec4-0b5a-456e-8d58-3ed752c05f6f"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[GRAND TOTAL  : ]]></text>
+			</staticText>
+			<textField pattern="###00" isBlankWhenNull="true">
+				<reportElement x="84" y="0" width="56" height="21" uuid="c8e9c709-432b-4a54-8927-1bfedb530ab1">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="9" isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{GrandTotsNo. of Borrowers}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="140" y="0" width="80" height="21" uuid="9876f011-ac5d-4504-a1b9-85d1865ccf23">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="9" isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{GrandTotsLoan Account Balance}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="220" y="0" width="60" height="21" uuid="b61ca061-b10b-437d-acbe-8799cffb4995">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="9" isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{GrandTots# Loans Disbursed}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="280" y="0" width="100" height="21" uuid="d12c32da-2d29-4fc0-95dd-9d7c614088a6">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="9" isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{GrandTotsAmount of Loans Disbursed}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="380" y="0" width="70" height="21" uuid="b55366fa-53de-4d57-ba15-7c377af3e369">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="9" isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{GrandTots# New Loans Disbursed}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00 " isBlankWhenNull="true">
+				<reportElement x="450" y="0" width="94" height="21" uuid="938ef802-c03b-4861-9d06-02828f8d7bff">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="9" isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{GrandTotsAmount New Loans Disbursed}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="544" y="0" width="76" height="21" uuid="4ef6137f-7784-44c8-9011-d6aad1d2ee82">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="9" isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{GrandTots# Repeat Loans Disbursed}]]></textFieldExpression>
+			</textField>
+			<textField pattern="###00" isBlankWhenNull="true">
+				<reportElement x="700" y="0" width="80" height="21" uuid="2d1e81fc-27ab-4088-b13c-b6659a9f7744">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="9" isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{GrandTots# of Loans w/Overdue Amount}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="900" y="0" width="60" height="21" uuid="9e868b7b-0c01-4860-bdbb-3534820e8819">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="9" isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{GrandTotsPortfolio at Risk}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="620" y="0" width="80" height="21" uuid="2470d695-9066-4847-937e-4a91368b5aa1"/>
+				<textFieldExpression><![CDATA[$V{Amount Repeat Loans Disbursed1}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="780" y="0" width="120" height="21" uuid="93e77231-4e93-47a1-8ae1-9c659ff44243"/>
+				<textFieldExpression><![CDATA[new java.text.DecimalFormat("##.00").format($V{GrandTots# of Loans w/Overdue Amount} / $V{GrandTotsNo. of Borrowers} * 100) + "%"]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="960" y="0" width="60" height="21" uuid="b5a5caab-fbde-4199-8222-b41c988573d7"/>
+				<textFieldExpression><![CDATA[new java.text.DecimalFormat("##.00").format($V{GrandTotsPortfolio at Risk} / $V{GrandTotsLoan Account Balance} * 100) + "%"]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="1020" y="0" width="90" height="21" uuid="f0eb8154-f61b-4338-9d4b-8704a16dad16"/>
+				<textFieldExpression><![CDATA[$V{GrandTotal Revenue}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+	<noData>
+		<band height="108">
+			<textField>
+				<reportElement x="998" y="0" width="112" height="13" uuid="889a3d23-2c51-46b0-963b-a0a4ff5ebedf">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA["Page: " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="MMMMM dd, yyyy">
+				<reportElement x="998" y="26" width="112" height="13" uuid="0e33c138-ce94-4db6-8c4a-d08a25bf41bb">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField pattern="h:mm a">
+				<reportElement x="998" y="13" width="112" height="13" uuid="48433fb2-1383-400d-b564-0b9d02f9c5eb">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="64" width="1110" height="13" uuid="4c2e934e-1e13-4229-bb54-2317a6da4b03">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="10"/>
+				</textElement>
+				<text><![CDATA[NO DATA FOR REPORT]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="43" width="1110" height="21" uuid="9a687571-759a-4ead-bd5d-cbca4c7ab8dd">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="16" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PERFORMANCE REPORT MONTHLY]]></text>
+			</staticText>
+			<image>
+				<reportElement x="0" y="0" width="50" height="50" uuid="f81c79fe-49df-489f-856a-c25faf883ce5"/>
+				<imageExpression><![CDATA["repo:logo.png"]]></imageExpression>
+			</image>
+		</band>
+	</noData>
+</jasperReport>

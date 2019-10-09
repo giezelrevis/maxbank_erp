@@ -1,0 +1,56 @@
+<%@ page import="icbs.tellering.TxnDepositAcctLedger" %>
+
+<div class="form-group">
+    <label class="control-label">Transaction Type</label>
+    <div class="col-sm-6">
+        <select id="txnType" name="txnType" class="many-to-one form-control">
+            <option selected="selected" disabled="true">-- Select a transaction type --</option>
+            <g:each in="${icbs.admin.TxnTemplate.findAllByTxnType(icbs.lov.TxnType.read(3))}" var="txnTemplateInstance">
+                <option value="${txnTemplateInstance.id}" data-require-passbook="${txnTemplateInstance.requirePassbook}">${txnTemplateInstance.codeDescription}</option>
+            </g:each>
+        </select>
+    </div>
+</div>
+
+<fieldset class="form-group">
+    <g:if test="${!txnCashDepositInstance?.acct}">
+        <input type="button" href="#" class="btn btn-primary" onclick="initializeDepositAcctSearchModal();modal.show()" value="Search Account"/>
+    </g:if>
+</fieldset>
+
+<div id="depositDetDiv">
+    <fieldset class="form-group">
+        <g:render template='/tellering/details/depositDetails' model="[depositInstance:txnCashDepositInstance?.acct]"/>
+        <g:if test="${txnCashDepositInstance?.acct}">
+            <g:render template='/tellering/details/signatureDetails' model="[depositInstance:txnCashDepositInstance?.acct]"/>
+            <g:render template='/tellering/details/signatoryDetails' model="[depositInstance:txnCashDepositInstance?.acct]"/>
+        </g:if>
+    </fieldset>
+</div>
+
+<div class="fieldcontain form-group ${hasErrors(bean: txnCashDepositInstance, field: 'passbookBal', 'has-error')} required">
+    <label class="control-label">Passbook Balance</label>
+    <div class="col-sm-6">
+        <g:textField type="number" name="passbookBal" required="" disabled="disabled" value="${txnCashDepositInstance?.passbookBal}"class="form-control"/>
+    </div>
+    <div class="col-sm-2">
+        <i id="passbookValidate" class="glyphicon hide" style="margin-top: 10px;"></i>
+    </div>
+</div>
+
+<div class="fieldcontain form-group ${hasErrors(bean: txnCashDepositInstance, field: 'creditAmt', 'has-error')} required">
+    <label class="control-label">Deposit Amount</label>
+    <div class="col-sm-6">
+        <g:textField id="creditAmt" type="number" name="creditAmt" required="" value="${txnCashDepositInstance?.creditAmt}"class="form-control"/>
+   </div>             
+</div>
+
+
+<div class="fieldcontain form-group ${hasErrors(bean: txnCashDepositInstance, field: 'txnRef', 'has-error')} required">
+    <label class="control-label col-sm-4" for="txnRef">
+        <g:message code="txnCashDeposit.txnRef.label" default="Transaction Reference" />
+    </label>
+    <div class="col-sm-6">
+        <g:textArea name="txnRef" required="" value="${txnCashDepositInstance?.txnRef}"class="form-control"/>
+    </div>             
+</div>

@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.2.1.final using JasperReports Library version 6.2.0  -->
+<!-- 2016-04-28T17:36:09 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Summary Of TD As To Maturity Listing" pageWidth="612" pageHeight="792" whenNoDataType="NoDataSection" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="bf8dceb0-11b9-45c6-9c8f-06d8c17012a0">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="NRSBL Data Adapter"/>
+	<property name="ireport.jasperserver.url" value="http://localhost:8080/jasperserver/"/>
+	<property name="ireport.jasperserver.user" value="jasperadmin"/>
+	<property name="ireport.jasperserver.report.resource" value="/ICBS_REPORT/DEPOSIT/ListingOfTDAsToMaturity_files/main_jrxml"/>
+	<property name="ireport.jasperserver.reportUnit" value="/ICBS_REPORT/DEPOSIT/ListingOfTDAsToMaturity"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<parameter name="branch" class="java.lang.String"/>
+	<queryString language="SQL">
+		<![CDATA[SELECT C.param_value as "BANK NAME",
+	B.name as "BRANCH NAME",
+	E.end_date as "MATURITY DATE",
+	A.date_closed as "SAMPLE_DATE",
+	A.acct_no as "NUMBER OF ACCOUNTS",
+	A.available_bal_amt as "ACCOUNT BALANCE",
+	UPPER(D.name) as "CURRENCY"
+FROM deposit A
+	INNER JOIN  branch B on A.branch_id = B.ID
+	INNER JOIN  rollover E on A.ID = E.deposit
+	INNER join (select param_value from institution where id ='1') C on C.param_value is not null
+	INNER JOIN product F on F.id = A.product_id
+	INNER JOIN currency D on D.id = F.currency_id
+WHERE A.type_id = 3 
+AND A.status_id = 2 
+AND B.name = $P{branch}]]>
+	</queryString>
+	<field name="BANK NAME" class="java.lang.String"/>
+	<field name="BRANCH NAME" class="java.lang.String"/>
+	<field name="MATURITY DATE" class="java.sql.Timestamp"/>
+	<field name="SAMPLE_DATE" class="java.sql.Timestamp"/>
+	<field name="NUMBER OF ACCOUNTS" class="java.lang.String"/>
+	<field name="ACCOUNT BALANCE" class="java.lang.Double"/>
+	<field name="CURRENCY" class="java.lang.String"/>
+	<variable name="ACCOUNT BALANCE3" class="java.lang.Double" resetType="Column" calculation="Sum">
+		<variableExpression><![CDATA[$F{ACCOUNT BALANCE}]]></variableExpression>
+	</variable>
+	<variable name="NUMBER OF ACCOUNTS4" class="java.lang.Integer" resetType="Column" calculation="Count">
+		<variableExpression><![CDATA[$F{NUMBER OF ACCOUNTS}]]></variableExpression>
+	</variable>
+	<group name="branch&amp;currency">
+		<groupExpression><![CDATA[$F{CURRENCY} + $F{BRANCH NAME}]]></groupExpression>
+		<groupHeader>
+			<band height="50">
+				<textField>
+					<reportElement x="0" y="0" width="360" height="13" uuid="3e623972-0634-4912-9646-a59caa19f3a8">
+						<property name="local_mesure_unitheight" value="pixel"/>
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement textAlignment="Left">
+						<font isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA["CURRENCY: " + $F{CURRENCY}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="54" y="31" width="110" height="17" uuid="805660b0-f4b8-4f02-955d-d1727fa68a1f"/>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+					<text><![CDATA[MATURITY DATE]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="187" y="31" width="130" height="17" uuid="0b806e9b-6331-4a99-9500-690039c71a38"/>
+					<textElement textAlignment="Left">
+						<font isBold="true"/>
+					</textElement>
+					<text><![CDATA[ACCOUNT NUMBER:]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="370" y="31" width="130" height="17" uuid="f43096e0-1f39-49dd-ab4a-233479dbafcb"/>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+					<text><![CDATA[ACCOUNT BALANCE]]></text>
+				</staticText>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band/>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="1" splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band height="135" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="100" width="572" height="22" uuid="26a9007c-7ecb-4794-9bea-256c35c85fc2">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="14" isBold="true"/>
+				</textElement>
+				<text><![CDATA[LISTING OF TD AS TO MATURITY ]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="0" y="52" width="572" height="24" uuid="a87f57ea-751f-4ae0-bb90-b1120c9f8cbd">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="18" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BANK NAME}]]></textFieldExpression>
+			</textField>
+			<image>
+				<reportElement x="0" y="0" width="50" height="50" uuid="316a1f19-99a7-4e6c-bbc6-a1c9ce07fba2"/>
+				<imageExpression><![CDATA["repo:logo.png"]]></imageExpression>
+			</image>
+			<textField pattern="h:mm a">
+				<reportElement x="460" y="13" width="112" height="13" uuid="e80403e2-8f6e-4a09-b6be-e47234c12508">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField pattern="MMMMM dd, yyyy">
+				<reportElement x="460" y="26" width="112" height="13" uuid="1713c16d-dff2-4467-bc3f-accbdf73aa02">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="460" y="0" width="112" height="13" uuid="c1f6cb79-28ea-4212-8c56-c561335f1096">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA["Page: " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="76" width="572" height="24" uuid="fe85585b-d19c-4ca1-9e9e-aa66380322da">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BRANCH NAME} + " BRANCH"]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band height="13" splitType="Stretch">
+			<textField pattern="MMM d, yyyy" isBlankWhenNull="true">
+				<reportElement x="50" y="0" width="130" height="13" uuid="cc829476-fb16-4be2-b32e-e4c2fa95228b">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{MATURITY DATE}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="180" y="0" width="130" height="13" uuid="e9a692eb-9fe2-4a11-a023-f296d7fc0970">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{NUMBER OF ACCOUNTS}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="310" y="0" width="160" height="13" uuid="8b507afa-477c-4053-aac1-7beae5148533">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{ACCOUNT BALANCE}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band height="42" splitType="Stretch">
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="310" y="11" width="160" height="13" uuid="e7e18579-399c-4276-bafa-e82482a6eb97">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{ACCOUNT BALANCE3}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="220" y="11" width="86" height="13" uuid="1def1918-257b-48be-9c06-08c5b7778658">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{NUMBER OF ACCOUNTS4}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="74" y="11" width="100" height="13" uuid="c48c3049-ce16-4f12-8f7b-c5794fa3cc66">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total Per Branch:]]></text>
+			</staticText>
+		</band>
+	</summary>
+	<noData>
+		<band height="108">
+			<textField pattern="MMMMM dd, yyyy">
+				<reportElement x="460" y="26" width="112" height="13" uuid="2f0d3360-d96b-4f32-bd32-9d7580a71c54">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField pattern="h:mm a">
+				<reportElement x="460" y="13" width="112" height="13" uuid="39b45d93-2ae5-48f2-a097-65a8282a72c4">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="460" y="0" width="112" height="13" uuid="53c9ad01-4e3d-4204-9cf5-f51f3e62cc44">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA["Page: " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="80" y="73" width="400" height="13" uuid="bd5ef7ea-8808-458c-9a35-c1c4a46f5f70">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="10"/>
+				</textElement>
+				<text><![CDATA[NO DATA FOR REPORT]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="80" y="43" width="400" height="30" uuid="fcada499-6648-46e5-9da4-68bcedd401df"/>
+				<textElement textAlignment="Center">
+					<font size="16" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Listing Of TD As To Maturity ]]></text>
+			</staticText>
+			<image>
+				<reportElement x="0" y="0" width="50" height="50" uuid="00d4394c-81ea-41c6-82c1-dec170ca1d2d"/>
+				<imageExpression><![CDATA["repo:logo.png"]]></imageExpression>
+			</image>
+		</band>
+	</noData>
+</jasperReport>

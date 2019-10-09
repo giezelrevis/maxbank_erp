@@ -1,0 +1,105 @@
+<%@ page import="icbs.tellering.TxnCOCI" %>
+
+
+<div class="form-group">
+    <label class="control-label">Transaction Type</label>
+    <div class="col-sm-6">
+        <select id="txnTemplate" name="txnTemplate" class="many-to-one form-control">
+            <option selected="selected" disabled="true">-- Select a transaction type --</option>
+            <g:each in="${icbs.admin.TxnTemplate.findAllByTxnType(icbs.lov.TxnType.read(22))}" var="txnTemplateInstance">
+                <option value="${txnTemplateInstance.id}">${txnTemplateInstance.codeDescription}</option>
+            </g:each>
+        </select>
+    </div>
+</div>
+
+<div class="fieldcontain form-group ${hasErrors(bean: txnCheckToCOCIInstance, field: 'totalChecks', 'has-error')} ">
+    <label class="control-label col-sm-4" for="totalChecks">
+        <g:message code="txnCheckToCOCI.totalChecks.label" default="Total Checks" />
+    </label>
+
+    <div class="col-sm-6">
+        <g:textField name="totalChecks" value="${fieldValue(bean: txnCheckToCOCIInstance, field: 'totalChecks')}" class="form-control"/>
+    </div>             
+</div>
+
+<div class="form-group">
+<div class="table-responsive">
+    <table class="table table-hover table-condensed table-bordered table-striped">
+        <thead>
+                <tr>
+
+                        <g:sortableColumn property="id" title="${message(code: 'txnCOCI.id.label', default: 'ID')}" />
+
+                        <g:sortableColumn property="checkType" title="${message(code: 'txnCOCI.checkType.label', default: 'Check Type')}" />
+
+                        <g:sortableColumn property="bank" title="${message(code: 'txnCOCI.bank.label', default: 'Bank')}" />
+
+                        <th><g:message code="txnCOCI.acctNo.label" default="Account No." /></th>
+                        
+                        <g:sortableColumn property="checkDate" title="${message(code: 'txnCOCI.checkDate.label', default: 'Check Date')}" />
+                        
+                        <g:sortableColumn property="checkNo" title="${message(code: 'txnCOCI.checkNo.label', default: 'Check No.')}" />
+
+                        <g:sortableColumn property="clearingDate" title="${message(code: 'txnCOCI.clearingDate.label', default: 'Clearing Date')}" />
+
+                        <g:sortableColumn property="checkAmt" title="${message(code: 'txnCOCI.checkAmt.label', default: 'Check Amount')}" />
+                        
+                        <g:sortableColumn property="status" title="${message(code: 'txnCOCI.status.label', default: 'Status')}" />
+
+                        <th>To Clear</th>
+                        
+                </tr>
+        </thead>
+        <tbody>
+           
+            
+        <g:each in="${TxnCOCIList}"  status="i" var="txnCOCIInstance">
+                <tr class="${(i % 2) == 0 ? 'even' : 'odd'}">
+                    
+                        <td><g:link action="show" i="${txnCOCIInstance.id}">${fieldValue(bean: txnCOCIInstance, field: "id")}</g:link></td>
+
+                        <td>${fieldValue(bean: txnCOCIInstance, field: "checkType.description")}</td>
+                        
+                        <td>${fieldValue(bean: txnCOCIInstance, field: "bank.name")}</td>
+
+                        <td>${fieldValue(bean: txnCOCIInstance, field: "acctNo")}</td>
+
+                        <td>${fieldValue(bean: txnCOCIInstance, field: "checkDate")}</td>
+
+                        <td>${fieldValue(bean: txnCOCIInstance, field: "checkNo")}</td>
+                        
+                        <td>${fieldValue(bean: txnCOCIInstance, field: "clearingDate")}</td>
+                        
+                        <td>${fieldValue(bean: txnCOCIInstance, field: "checkAmt")}</td>
+                        
+                         <td>${fieldValue(bean: txnCOCIInstance, field: "status")}</td>
+                        
+                        <td><g:checkBox name="cleared" value="${txnCOCIInstance?.cleared}" checked="false" onclick="${remoteFunction(action:'toggleCheckStatus', id:txnCOCIInstance.id, params:'\'cleared=\' + this.checked')}" /></td>             
+
+                </tr>
+        </g:each>
+        </tbody>
+    </table>
+</div>
+</div>
+
+<div class="fieldcontain form-group ${hasErrors(bean: txnCheckToCOCIInstance, field: 'txnAmt', 'has-error')} ">
+    <label class="control-label col-sm-4" for="txnAmt">
+        <g:message code="txnCheckToCOCI.txnAmt.label" default="Check Control Total" />
+    </label>
+
+    <div class="col-sm-6">
+        <g:field name="txnAmt" disabled="" default="${txnCheckToCOCIInstance?.checkAmt}" value="${fieldValue(bean: txnCheckToCOCIInstance, field: 'txnAmt')}" class="form-control"/>
+    </div>             
+</div>
+
+<div class="fieldcontain form-group ${hasErrors(bean: txnCheckToCOCIInstance, field: 'txnRef', 'has-error')} ">
+    <label class="control-label col-sm-4" for="txnRef">
+            <g:message code="txnCheckToCOCI.txnRef.label" default="Transaction Reference" />
+    </label>
+
+    <div class="col-sm-6">
+        <g:textArea name="txnRef" value="${txnCheckToCOCIInstance?.txnRef}"class="form-control"/>
+    </div>             
+</div>

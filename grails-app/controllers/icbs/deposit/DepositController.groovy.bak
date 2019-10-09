@@ -1,0 +1,1475 @@
+package icbs.deposit
+
+import icbs.cif.Customer
+import icbs.lov.ConfigItemStatus
+import icbs.lov.MemoTxnType
+import icbs.lov.MemoType
+import icbs.lov.RolloverType
+import icbs.lov.DepositType
+import icbs.lov.SweepType
+import icbs.admin.TxnTemplate
+import icbs.admin.UserMaster
+import icbs.admin.Product
+import static org.springframework.http.HttpStatus.*
+import grails.transaction.Transactional
+import grails.converters.JSON
+import org.codehaus.groovy.grails.web.json.JSONObject
+import icbs.gl.TxnGlLink
+class DepositController {
+    def depositService
+    static allowedMethods = [save: "POST", update: "PUT", delete: "DELETE"]
+    
+    def createReport(){
+        if(params.type=="sizing"){
+            
+        }
+        if(params.type=="listing"){
+             render(view:"reports/listing/view",model:[])
+        }
+    }
+    /*Customer View More Information*/
+    def depositViewMoreInformation(){
+        if(params.id){
+           def depositInstance = Deposit.read(params.id)
+           respond depositInstance
+        }
+    }
+    def saveReverseFundTransfer(){
+        
+    }
+    def viewReverseFundTransfer(){
+        
+    }
+    def changeFundTransferCreditAcct(){
+        def fundTransferInstance = new fundTransferCommand(fundingAcct:Deposit.get(params.fundingAcct),destinationAcct:Deposit.get(params.destinationAcct))
+        def jsonObject =new JSONObject();
+        jsonObject = jsonObject.put('creditAcct', g.render (template:'fundTransfer/templates/creditAccount',model:[fundTransferInstance:fundTransferInstance]))
+        jsonObject = jsonObject.put('txnDetails',g.render (template:'fundTransfer/templates/transactionDetails',model:[fundTransferInstance:fundTransferInstance]))
+        render jsonObject
+    }
+    def saveFundTransfer(fundTransferCommand cmd){
+        if(!cmd.hasErrors()){
+            def result = depositService.fundTransfer(params)
+            if(!result.error) {
+                flash.message = "Fund Transfer Successfully Made"
+                def fundTransferInstance = new fundTransferCommand(fundingAcct:result.fundingAcct)
+                render(view:"fundTransfer/view",model:[fundTransferInstance:fundTransferInstance])
+                return
+            }
+        }else{
+            render(view:"fundTransfer/view",model:[fundTransferInstance:cmd]) as JSON
+            return
+        }
+    }
+    def viewFundTransfer(){
+        if(params.id){
+            def fundTransferInstance = new fundTransferCommand(fundingAcct:Deposit.get(params.id))
+            render(view:"fundTransfer/view",model:[fundTransferInstance:fundTransferInstance])
+        }else{
+            notFound()
+        }  
+    }
+    def clearChecksFormAjax(){
+        
+    }
+    def viewClearChecksManually(){
+        if(params.id){
+            
+            
+            
+            
+            
+            
+            
+            render(view:"clearChecksManually/view",model:[depositInstance:Deposit.get(params.id)])
+        }else{
+            notFound()
+        }  
+    }
+    def updateManualRollover(){
+        
+        
+    }
+     def createManualRolloverAjax(){
+        /*Calling customer is valid*/
+        println "id" +params.id 
+        if(params.id){
+            def rolloverInstance = new Rollover()
+            rolloverInstance.deposit = Deposit.read(params.id)
+            if(!rolloverInstance.deposit){
+                notFound()
+                return
+            }
+            render (template:'manualFdRollover/create',model:[rolloverInstance:rolloverInstance]) as JSON
+        }else{
+            notFound()
+            return
+        }
+    }
+    def saveManualRollover(){
+        println params
+        def result = depositService.saveManualRollover(params)
+        if(!result.error) {
+            flash.message = " Manual Rollover Successfully Created"
+            render (template:'manualFdRollover/create',model:[rolloverInstance:new Rollover(deposit:result.rolloverInstance.deposit)]) as JSON
+            return
+        }else{
+            render (template:'manualFdRollover/create',model:[rolloverInstance:result.rolloverInstance]) as JSON
+            return
+        }
+    }
+    def viewManualFdRollover(){
+        if(params.id){
+            render(view:"manualFdRollover/view",model:[depositInstance:Deposit.get(params.id)])
+        }else{
+            notFound()
+        }  
+    }
+    def interestRateFormAjax(){
+        println"interest rate form"+params
+        if(params.id){
+            render(template:"interestRateMaintenance/template/allAccounts",model:[depositInterestSchemeInstance:DepositInterestScheme.get(params.id)])
+        }else{
+            notFound()
+        }  
+    }
+    @Transactional
+    def updateInterestRate(){
+        println"update interest rate"+params
+        if(params.type){
+            if(params.type.equals('0')){
+                //all accts
+                println"pumasok sa all Accounts"
+                def depositInterestSchemeInstance = DepositInterestScheme.get(params.id)
+                bindData(depositInterestSchemeInstance,params,[include:['interestRate']])
+                println "interest rate=" +depositInterestSchemeInstance.interestRate
+                depositInstance.validate()
+                if(depositInstance.hasErrors()){
+                    render(view:'interestRateMaintenance/view',model:[depositInterestSchemeInstance:depositInterestSchemeInstance,depositInstance:Deposit.get(params.deposit)])
+                    return
+                }else{
+                    println("depositInterestSchemeInstance"+depositInterestSchemeInstance)
+                    depositInterestSchemeInstance.save flush:true
+                    flash.message = "Deposit Interest Scheme:"+depositInterestSchemeInstance.name+" successfully changed"
+                    render(view:'interestRateMaintenance/view',model:[depositInstance:Deposit.get(params.deposit)])
+                    return
+                }
+            }else if(params.type.equals('1')){
+                println"pumasok sa individual"
+                if(params.deposit){
+                    def depositInstance = Deposit.read(params.deposit)
+                    bindData(depositInstance,params,[include:['interestRate']])
+                    depositInstance.validate()
+                    if(depositInstance.hasErrors()){
+                        println "may error!"
+                        render(view:'interestRateMaintenance/view',model:[depositInstance:depositInstance])
+                        return
+                    }else{
+                        println "walang error!"
+                        println("depositInstance"+depositInstance)
+                        depositInstance.save flush:true
+                        flash.message = "Deposit Account:"+depositInstance.id+" Successfully Changed"
+                        render(view:'interestRateMaintenance/view',model:[depositInstance:depositInstance])
+                        return
+                    } 
+                } 
+            }
+        }
+        else{
+            notFound()
+        }  
+    }
+    def viewInterestRateMaintenance(){
+        println "interest rate maintenance"+params 
+        if(params.id){
+            def depositInstance = Deposit.get(params.id)
+            render(view:'interestRateMaintenance/view',model:[depositInstance:depositInstance])  
+        }else{
+            notFound()
+        }   
+    }
+    
+    def viewSweep(){
+        println "Sweep"+params 
+        if(params.id){
+            def depositInstance = Deposit.get(params.id)
+            if(!depositInstance){
+                notFound()
+                return
+            }
+            render(view:'sweep/view',model:[depositInstance:depositInstance])
+        }else{
+            notFound()
+        }   
+    }
+    def showSweepFormAjax(){
+        if(params.id){
+            def depositInstance = Deposit.read(params.id)
+            if(!depositInstance){
+                notFound()
+                return
+            }
+            render(template:"sweep/viewGrid",model:[depositInstance:depositInstance]) as JSON
+            return
+        }else{
+            notFound()
+            return     
+        }
+    }
+    
+    def editSweepAjax(){
+        if(params.id){
+            def sweepInstance = Sweep.get(params.id)
+            if(!sweepInstance){
+                notFound()
+                return
+            }
+            render (template:'sweep/edit',model:[sweepInstance:sweepInstance]) as JSON
+        }else{
+            notFound()
+            return
+        }
+    }
+    def createSweepAjax(){
+        println "create Sweep Order params = "+params
+        /*Calling customer is valid*/
+        if(params.id){
+            def sweepInstance = new Sweep()
+            sweepInstance.fundingDeposit = Deposit.read(params.id)
+            if(!sweepInstance.fundingDeposit){
+                notFound()
+                return
+            }
+            //galing sa search
+            if(params.deposit){
+                println "pumasok dito search deposit sweep"
+                sweepInstance.fundedDeposit = Deposit.get(params.deposit)
+                    if(!sweepInstance.fundedDeposit){
+                    notFound()
+                    return
+                }
+            }   
+            render (template:'sweep/create',model:[sweepInstance:sweepInstance]) as JSON
+        }else{
+            notFound()
+            return
+        }
+    }
+    def saveSweepAjax(){
+        def result = depositService.saveSweep(params)
+        if(!result.error) {
+            flash.message = "Sweep Successfully Created"
+            render (template:'sweep/create',model:[sweepInstance:new Sweep(fundingDeposit:result.sweepInstance.fundingDeposit)]) as JSON
+            return
+        }else{
+            render (template:'sweep/create',model:[sweepInstance:result.sweepInstance]) as JSON
+            return
+        }
+    }
+    def updateSweepAjax(){
+        def result = depositService.updateSweep(params)
+        if(!result.error) {
+            flash.message = "Sweep Successfully Updated"
+            render (template:'sweep/edit',model:[sweepInstance:result.sweepInstance]) as JSON
+            return
+        }
+        if(result.error.code == "default.not.found") {
+            notFound()
+            return
+        }
+        render (template:'sweep/edit',model:[sweepInstance:result.sweepInstance.attach()]) as JSON
+    }
+    
+    def viewDepositStatus(){
+        println "View Status"+params 
+        if(params.id){
+            def depositInstance = Deposit.get(params.id)
+            render(view:'update/status/view',model:[depositInstance:depositInstance])
+        }else{
+            notFound()
+            return
+        }   
+    }
+    @Transactional
+    def updateDepositStatus(){
+        println'update deposit status' + params
+        if(params.deposit){
+            def depositInstance = Deposit.get(params.deposit)
+            bindData(depositInstance, params)
+            if(!depositInstance.validate()){
+                println 'errors'+depositInstance.errors
+                render(view:'update/status/view',model:[depositInstance:depositInstance])
+                return
+            }else{
+                depositInstance.save flush:true
+                flash.message = "Deposit Status Successfully Updated"
+                render(view:'update/status/view',model:[depositInstance:depositInstance])
+                return
+            }
+        }else{
+            notFound()
+            return
+        }
+    }
+    /*Di kelangan nasa Inquiry*/
+    def viewInwardCheckClearing(inwardCheckClearingCommand cmd){
+        if(params.checkClearing){
+            def f = request.getFile('checkClearing')
+            if (f.empty) {
+                flash.message = 'file cannot be empty'
+                render(view:"inwardCheckClearing/view",model:[domainInstance:cmd,disabledProcessing:"disabled"])
+                return
+            }else{
+                //change position as needed
+                def chequeNoPos = 2
+                def amountPos = 1
+                //parse
+                BufferedReader reader = new BufferedReader(new InputStreamReader(f.getInputStream(), "UTF-8"));
+                def lineCount = -1
+                try {
+                    for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+                        ++lineCount
+                        if (lineCount==0){
+                            continue
+                        }
+                        String[] fields = line.split();
+
+                        def cmd2 = new checkCommand()
+                        println fields
+                        cmd2.chequeNo = fields[chequeNoPos].toLong()
+                        cmd2.amt =Double.parseDouble(fields[amountPos].replace(",", ""))
+                        cmd.checks.push(cmd2)
+                        cmd.count++
+                    }
+                    println "count!"+ cmd.count
+
+                } finally {
+                  reader.close();
+                }  
+                cmd.validate()
+                render(view:"inwardCheckClearing/view",model:[domainInstance:cmd])
+                return
+            }
+        }
+        render(view:"inwardCheckClearing/view",model:[domainInstance:cmd,disabledProcessing:"disabled"])
+    }
+    def processInwardCheckClearing(inwardCheckClearingCommand cmd){
+        depositService.inwardCheckClearing(cmd)
+        flash.message = "Inward Check Clearing Tapos na!"
+        render(view:"inwardCheckClearing/view",model:[disabledProcessing:"disabled"])
+    }
+    
+    def saveMemoBillsPayment(memoDebitBillsPaymentCommand cmd){
+        //println params
+        if(!cmd.hasErrors()){
+            params.user = UserMaster.get(session.user_id)
+            params.branch = UserMaster.get(session.user_id).branch
+            def result = depositService.memoBillsPayment(params)
+            if(!result.error) {
+                flash.message = "Bills Payment Successfully Made"
+                 render(view:"memo/view",model:[depositInstance:cmd.acct])
+                return
+            }else{
+               flash.errors = result.error
+            }
+        }
+        render(view:"memo/view",model:[depositInstance:cmd.acct,billsPaymentInstance:cmd])
+        return
+        //redirect(action:"viewMemo",params:[deposit:params.deposit])
+    }
+    def saveMemoRemittance(memoDebitCreditRemittanceCommand cmd){
+        println params
+        if(!cmd.hasErrors()){
+            params.user = UserMaster.get(session.user_id)
+            params.branch = UserMaster.get(session.user_id).branch
+            def result = depositService.memoRemittance(params)
+            if(!result.error) {
+                 flash.message = "Memo Remittance Successfully Made"
+                render(view:"memo/view",model:[depositInstance:cmd.acct])
+                return
+            }else{
+               flash.errors = result.error
+            }
+        }
+        render(view:"memo/view",model:[depositInstance:cmd.acct,remittanceInstance:cmd])
+        return
+    }
+    def saveMemoAdjustment(memoDebitCreditAdjustmentCommand cmd){
+        println "tae"
+        if(!cmd.hasErrors()){
+            params.user = UserMaster.get(session.user_id)
+            params.branch = UserMaster.get(session.user_id).branch
+            def result = depositService.memoAdjustment(params)
+            if(!result.error) {
+                flash.message = "Memo Adjustment Successfully Made"
+                render(view:"memo/view",model:[depositInstance:cmd.acct])
+                return
+            }else{
+               flash.errors = result.error
+            }
+        }
+        render(view:"memo/view",model:[depositInstance:cmd.acct,adjustmentInstance:cmd])
+        return
+    }
+    def changeRolloverFormAjax(int type){
+        println params
+        def fixedDepositTermScheme = null
+        def currentRollover = new Rollover()
+        def product = params.product
+        def interestPaymentMode = params.interestPaymentMode
+        def fundedDeposit = params.fundedDeposit
+        currentRollover.type = icbs.lov.RolloverType.read(type)
+        if(fundedDeposit&&fundedDeposit.isLong()){
+            fundedDeposit = Deposit.read(fundedDeposit.toLong())
+        }else{
+            fundedDeposit = null
+        }
+        if(params.endDate){
+            currentRollover.endDate = new Date(params.endDate);
+        }else{
+            if(params.fixedDepositTermScheme){
+                currentRollover.endDate = new Date()+ FixedDepositTermScheme.read(params.fixedDepositTermScheme).value.toInteger()
+            }
+        }
+        if(params.fixedDepositTermScheme){
+            fixedDepositTermScheme = params.fixedDepositTermScheme
+        }
+        
+        render (template:'form/rollover/form',model:[currentRollover:currentRollover,interestPaymentMode:interestPaymentMode,fundedDeposit:fundedDeposit]) as JSON
+    }
+    def changeMemoFormAjax(int formType){
+        println params
+        if(formType==0){
+            def  adjustmentInstance= new memoDebitCreditAdjustmentCommand()
+            bindData(adjustmentInstance,params)
+            if(adjustmentInstance?.type?.id==1){
+                render (template:'memo/form/creditAdjustment/debit/form',model:[adjustmentInstance:adjustmentInstance]) as JSON
+            }else{
+                render (template:'memo/form/creditAdjustment/credit/form',model:[adjustmentInstance:adjustmentInstance]) as JSON
+            }
+            return
+        }
+        if(formType==1){
+            def remittanceInstance  = new memoDebitCreditRemittanceCommand()
+            bindData(remittanceInstance,params)
+            if(remittanceInstance?.type?.id==1){
+                render (template:'memo/form/remittance/debit/form',model:[remittanceInstance:remittanceInstance]) as JSON
+            }else{
+                render (template:'memo/form/remittance/credit/form',model:[remittanceInstance:remittanceInstance]) as JSON
+            }
+            return
+            
+        }
+        if(formType==2){
+             def billsPaymentInstance = memoDebitBillsPaymentCommand()
+             bindData(billsPaymentInstance,params)
+            if(billsPaymentInstance?.type?.id=="1"){
+                render (template:'memo/form/billsPayment/debit/form',model:[billsPaymentInstance:billsPaymentInstance]) as JSON
+            }else{
+                render (template:'memo/form/billsPayment/credit/form',model:[billsPaymentInstance:billsPaymentInstance]) as JSON
+            }
+            return 
+        }
+    }
+    def viewMemo(){
+        println "Memo"+params 
+        if(params.id){
+            def depositInstance = Deposit.get(params.id)
+            if(!depositInstance){
+                notFound()
+            }else{
+                render(view:'memo/view',model:[depositInstance:depositInstance])
+            }
+        }
+    }
+    def viewStopPaymentOrder(){
+        println "Stop Payment"+params 
+        if(params.id){
+            def depositInstance = Deposit.get(params.id)
+            if(!depositInstance){
+                notFound()
+                return
+            }
+            def stopPaymentOrderList = StopPaymentOrder.findAll{cheque.issueCheque.deposit.id == params.id.toInteger()}
+            render(view:'stopPaymentOrder/view',model:[depositInstance:depositInstance,stopPaymentOrderList:stopPaymentOrderList])
+        }else{
+            notFound()
+        }   
+    }
+    def showStopPaymentOrderFormAjax(){
+        if(params.id){
+            def depositInstance = Deposit.read(params.id)
+            if(!depositInstance){
+                notFound()
+                return
+            }
+            def stopPaymentOrderList = StopPaymentOrder.findAll{cheque.chequebook.deposit.id == params.id.toInteger()}
+            render(template:"stopPaymentOrder/viewGrid",model:[depositInstance:depositInstance,stopPaymentOrderList:stopPaymentOrderList]) as JSON
+            return
+        }else{
+            notFound()
+            return     
+        }
+    }
+    def createStopPaymentOrderAjax(){
+        println "create Stop Payment Order params = "+params
+        /*Calling customer is valid*/
+        if(params.deposit){
+            def stopPaymentOrderInstance = new StopPaymentOrder()
+            stopPaymentOrderInstance.deposit = Deposit.read(params.deposit)
+            if(!stopPaymentOrderInstance.deposit){
+                notFound()
+                return
+            }
+            render (template:'stopPaymentOrder/create',model:[stopPaymentOrderInstance:stopPaymentOrderInstance]) as JSON
+        }else{
+           notFound()
+           return
+        }
+    }
+    def editStopPaymentOrderAjax(){
+        if(params.id){
+            def stopPaymentOrderInstance = StopPaymentOrder.get(params.id)
+            if(!stopPaymentOrderInstance){
+                notFound()
+                return
+            }
+            render (template:'stopPaymentOrder/edit',model:[stopPaymentOrderInstance:stopPaymentOrderInstance]) as JSON
+        }else{
+            notFound()
+            return
+        }
+    }
+    def saveStopPaymentOrderAjax(){
+        def result = depositService.saveStopPaymentOrder(params)
+        if(!result.error) {
+            flash.message = "Stop Payment Order Successfully Created"
+            render (template:'stopPaymentOrder/create',model:[stopPaymentOrderInstance:new StopPaymentOrder(deposit:result.stopPaymentOrderInstance.deposit)]) as JSON
+            return
+        }else{
+            render (template:'stopPaymentOrder/create',model:[stopPaymentOrderInstance:result.stopPaymentOrderInstance]) as JSON
+            return
+        }
+    }
+    def updateStopPaymentOrderAjax(){
+        def result = depositService.updateStopPaymentOrder(params)
+        if(!result.error) {
+            flash.message = "Stop Payment Order Successfully Updated"
+            render (template:'stopPaymentOrder/edit',model:[stopPaymentOrderInstance:result.stopPaymentOrderInstance]) as JSON
+            return
+        }
+        if(result.error.code == "default.not.found") {
+            notFound()
+            return
+        }
+        render (template:'stopPaymentOrder/edit',model:[stopPaymentOrderInstance:result.stopPaymentOrderInstance.attach()]) as JSON
+    }
+    
+    def viewStandingOrder(){
+        println "Standing Order"+params 
+        if(params.id){
+            def depositInstance = Deposit.read(params.id)
+            if(!depositInstance){
+                notFound()
+                return
+            }
+            render(view:'standingOrder/view',model:[depositInstance:depositInstance])
+        }else{
+            notFound()
+        }   
+    }
+    def showStandingOrderFormAjax(){
+        if(params.id){
+            def depositInstance = Deposit.read(params.id)
+            if(!depositInstance){
+                notFound()
+                return
+            }
+            render(template:"standingOrder/viewGrid",model:[depositInstance:depositInstance]) as JSON
+            return
+        }else{
+            notFound()
+            return     
+        }
+    }
+    def createStandingOrderAjax(){
+        println "create Standing Order params = "+params
+        /*Calling customer is valid*/
+        if(params.id){
+            def standingOrderInstance = new StandingOrder()
+            standingOrderInstance.fundingDeposit = Deposit.read(params.id)
+            if(!standingOrderInstance.fundingDeposit){
+                notFound()
+                return
+            }
+            //galing sa search
+            if(params.deposit){
+                println "pumasok dito search deposit standing ordeer!"
+                standingOrderInstance.fundedDeposit = Deposit.read(params.deposit)
+                if(!standingOrderInstance.fundedDeposit){
+                    notFound()
+                    return
+                }
+            }   
+            render (template:'standingOrder/create',model:[standingOrderInstance:standingOrderInstance]) as JSON
+        }else{
+            notFound()
+            return
+        }
+    }
+    def editStandingOrderAjax(){
+        if(params.id){
+            def standingOrderInstance = StandingOrder.read(params.id)
+            if(!standingOrderInstance){
+                notFound()
+                return
+            }
+            render (template:'standingOrder/edit',model:[standingOrderInstance:standingOrderInstance]) as JSON
+        }else{
+            notFound()
+            return
+        }
+    }
+    def saveStandingOrderAjax(){
+        def result = depositService.saveStandingOrder(params)
+        if(!result.error) {
+            flash.message = "Standing Order Successfully Created"
+            render (template:'standingOrder/create',model:[standingOrderInstance:new StandingOrder(fundingDeposit:result.standingOrderInstance.fundingDeposit)]) as JSON
+            return
+        }else{
+            render (template:'standingOrder/create',model:[standingOrderInstance:result.standingOrderInstance]) as JSON
+            return
+        }
+    }
+    def updateStandingOrderAjax(){
+        def result = depositService.updateStandingOrder(params)
+        if(!result.error) {
+            flash.message = "Standing Order Successfully Updated"
+            render (template:'standingOrder/edit',model:[standingOrderInstance:result.standingOrderInstance]) as JSON
+            return
+        }
+        if(result.error.code == "default.not.found") {
+            notFound()
+            return
+        }
+        render (template:'standingOrder/edit',model:[standingOrderInstance:result.standingOrderInstance.attach()]) as JSON
+    }
+    def viewHold(){
+        println "hold"+params 
+        if(params.id){
+            def depositInstance = Deposit.read(params.id)
+            if(!depositInstance){
+                notFound()
+                return
+            }
+            render(view:'hold/view',model:[depositInstance:depositInstance])
+        }else{
+            notFound()
+        }   
+    }
+    def showHoldFormAjax(){
+        if(params.id){
+            def depositInstance = Deposit.read(params.id)
+            if(!depositInstance){
+                notFound()
+                return
+            }
+            render(template:"hold/viewGrid",model:[depositInstance:depositInstance]) as JSON
+            return
+        }else{
+            notFound()
+            return     
+        }   
+    }
+    def createHoldAjax(){
+        println "create Hold params = "+params
+        /*Calling customer is valid*/
+        if(params.id){
+            def holdInstance = new Hold()
+            holdInstance.deposit = Deposit.read(params.id)
+            if(!holdInstance.deposit){
+                notFound()
+                return
+            }
+            render (template:'hold/create',model:[holdInstance:holdInstance]) as JSON
+        }else{
+            notFound()
+            return
+        }
+    }
+    def editHoldAjax(){
+        if(params.id){
+            def holdInstance = Hold.read(params.id)
+            if(!holdInstance){
+                notFound()
+                return
+            }
+            render (template:'hold/edit',model:[holdInstance:holdInstance]) as JSON
+        }else{
+            notFound()
+            return
+        }
+    }
+    def saveHoldAjax(){
+        def result = depositService.saveHold(params)
+        if(!result.error) {
+            flash.message = "Hold Successfully Issued"
+            render (template:'hold/create',model:[holdInstance:new Hold(deposit:result.holdInstance.deposit)]) as JSON
+            return
+        }else{
+            render (template:'hold/create',model:[holdInstance:result.holdInstance]) as JSON
+            return
+        }
+    }
+    def updateHoldAjax(){
+        def result = depositService.updateHold(params)
+        if(!result.error) {
+            flash.message = "Hold Successfully Updated"
+            render (template:'hold/edit',model:[holdInstance:result.holdInstance]) as JSON
+            return
+        }
+        if(result.error.code == "default.not.found") {
+            notFound()
+            return
+        }
+        render (template:'hold/edit',model:[holdInstance:result.holdInstance.attach()]) as JSON
+    } 
+    def viewChecksAjax(){
+        if(params.id){
+            def chequebookInstance = Chequebook.read(params.id)
+            if(!chequebookInstance){
+                notFound()
+                return
+            }
+            render (template:'chequebook/checks/checkGrid',model:[chequebookInstance:chequebookInstance]) as JSON
+        }else{
+            notFound()
+            return
+        }
+        
+    }
+    def viewCheckbook(){
+        println "chequebook"+params 
+        if(params.id){
+            def depositInstance = Deposit.read(params.id)
+            if(!depositInstance){
+                notFound()
+                return
+            }
+            render(view:'chequebook/view',model:[depositInstance:depositInstance])
+        }else{
+            notFound()
+            return
+        }   
+    }
+    def showCheckbookFormAjax(){
+        if(params.id){
+            def depositInstance = Deposit.read(params.id)
+            if(!depositInstance){
+                notFound()
+                return
+            }
+            render(template:"chequebook/viewGrid",model:[depositInstance:depositInstance]) as JSON
+            return
+        }else{
+            notFound()          
+        }    
+    }
+    def createCheckbookAjax(){
+        println "create chequebook params = "+params
+        /*Calling customer is valid*/
+        if(params.id){
+            def chequebookInstance = new Chequebook()
+            chequebookInstance.deposit = Deposit.read(params.id)
+            if(!chequebookInstance.deposit){
+                notFound()
+                return
+            }
+            render (template:'chequebook/create',model:[chequebookInstance:chequebookInstance]) as JSON
+        }else{
+            notFound()
+            return
+        }
+    }
+    def editCheckbookAjax(){
+        if(params.id){
+            def chequebookInstance = Chequebook.read(params.id)
+            if(!chequebookInstance){
+                notFound()
+                return
+            }
+            render (template:'chequebook/edit',model:[chequebookInstance:chequebookInstance]) as JSON
+        }else{
+            notFound()
+            return
+        }
+    }
+    def saveCheckbookAjax(){
+        def result = depositService.saveChequebook(params)
+        if(!result.error) {
+            flash.message = "Checkbook Successfully Issued"
+            render (template:'chequebook/create',model:[chequebookInstance:new Chequebook(deposit:result.chequebookInstance.deposit)]) as JSON
+            return
+        }else{
+            render (template:'chequebook/create',model:[chequebookInstance:result.chequebookInstance]) as JSON
+            return
+        }
+    }
+    def updateCheckbookAjax(){
+            def result = depositService.updateChequebook(params)
+            if(!result.error) {
+                flash.message = "Checkbook Successfully Updated"
+                render (template:'chequebook/edit',model:[chequebookInstance:result.chequebookInstance]) as JSON
+                return
+            }
+            if(result.error.code == "default.not.found") {
+                notFound()
+                return
+            }
+            render (template:'chequebook/edit',model:[chequebookInstance:result.chequebookInstance.attach()]) as JSON
+        
+    }
+     def printPassbook={
+        println params
+        def list
+        list = Customer.list(fetch:[branch:"eager"]) 
+            //println customers
+        chain(controller:'jasper',action:'index',model:[data:list],params:params)
+        //def customers = Customer.findAll("from Customer as c left join c.contacts as a where a.status.id=2 and a.isPrimaryPhone=true")
+    }
+    def viewPassbook(){
+        println "passbook"+params 
+        if(params.id){
+            def depositInstance = Deposit.read(params.id)
+            if(!depositInstance){
+                notFound()
+                return
+            }
+            render(view:'passbook/view',model:[depositInstance:depositInstance])
+        }else{
+            notFound()
+            return
+        }      
+    }
+    def showPassbookFormAjax(){
+        if(params.id){
+            def depositInstance = Deposit.read(params.id)
+            if(!depositInstance){
+                notFound()
+                return
+            }
+            render(template:"passbook/viewGrid",model:[depositInstance:depositInstance]) as JSON
+            return
+        }else{
+            notFound()
+            return   
+        }  
+    }
+    def createPassbookAjax(){
+        println "create passbook params = "+params
+        /*Calling customer is valid*/
+   
+        if(params.id){
+            def issuePassbookInstance = new IssuePassbook()
+            issuePassbookInstance.deposit = Deposit.read(params.id)
+            if(!issuePassbookInstance.deposit){
+                notFound()
+                return
+            }
+            render (template:'passbook/create',model:[issuePassbookInstance:issuePassbookInstance]) as JSON
+        }else{
+            notFound()
+            return
+        }
+    }
+    def editPassbookAjax(){
+        if(params.id){
+            def issuePassbookInstance = IssuePassbook.read(params.id)
+            if(!issuePassbookInstance){
+                notFound()
+                return
+            }
+            render (template:'passbook/edit',model:[issuePassbookInstance:issuePassbookInstance]) as JSON
+        }else{
+            notFound()
+            return
+        }
+    }
+    def savePassbookAjax(){
+        def result = depositService.savePassbook(params)
+        if(!result.error) {
+            println "Save passbook Successful"
+            flash.message = "Passbook Successfully Issued"
+            render (template:'passbook/create',model:[issuePassbookInstance:new IssuePassbook(deposit:result.issuePassbookInstance.deposit)]) as JSON
+            return
+        }else{
+            render (template:'passbook/create',model:[issuePassbookInstance:result.issuePassbookInstance]) as JSON
+            return
+        }
+    }
+    def updatePassbookAjax(){
+        def result = depositService.updatePassbook(params)
+        if(!result.error) {
+            flash.message = "Passbook Successfully Updated"
+            render (template:'passbook/edit',model:[issuePassbookInstance:result.issuePassbookInstance]) as JSON
+            return
+        }
+        if(result.error.code == "default.not.found") {
+            notFound()
+            return
+        }
+        render (template:'passbook/edit',model:[issuePassbookInstance:result.issuePassbookInstance.attach()]) as JSON
+    }
+    def printCTD={
+        println params
+        def list = IssueCTD.findAllById(params.id.toLong()) 
+            //println customers
+        chain(controller:'jasper',action:'index',model:[data:list],params:params)
+        
+        //def customers = Customer.findAll("from Customer as c left join c.contacts as a where a.status.id=2 and a.isPrimaryPhone=true")
+    }
+    def viewCTD(){
+        if(params.id){
+            def depositInstance = Deposit.get(params.id)
+            if(!depositInstance){
+                notFound()
+                return
+            }
+            render(view:'ctd/view',model:[depositInstance:depositInstance])
+        }else{
+            notFound()
+        }
+    } 
+    def createCTDAjax(){
+        println "create CTD params = "+params
+        /*Calling customer is valid*/
+        if(params.id){
+            def issueCTDInstance = new IssueCTD()
+            issueCTDInstance.deposit = Deposit.read(params.id)
+            if(!issueCTDInstance.deposit){
+                notFound()
+                return
+            }
+            render (template:'ctd/create',model:[issueCTDInstance:issueCTDInstance]) as JSON
+        }else{
+            notFound()
+            return
+        }
+    }
+    def editCTDAjax(){
+        if(params.id){
+            def issueCTDInstance = IssueCTD.read(params.id)
+            if(!issueCTDInstance){
+                notFound()
+                return
+            }
+            render (template:'ctd/edit',model:[issueCTDInstance:issueCTDInstance]) as JSON
+        }else{
+            notFound()
+            return
+        }
+    }
+    def showCTDFormAjax(){
+        if(params.id){
+            def depositInstance = Deposit.read(params.id)
+            if(!depositInstance){
+                notFound()
+                return
+            }
+            render(template:"ctd/viewGrid",model:[depositInstance:depositInstance]) as JSON
+            return
+        }else{
+            notFound()
+            return   
+        }  
+    }
+     def saveCTDAjax(){
+         println params
+        def result = depositService.saveCTD(params)
+        if(!result.error) {
+            println "Save CTD Successful"
+            flash.message = "CTD Successfully Issued"
+            render (template:'ctd/create',model:[issueCTDInstance:new IssueCTD(deposit:result.issueCTDInstance.deposit)]) as JSON
+            return
+        }else{
+            render (template:'ctd/create',model:[issueCTDInstance:result.issueCTDInstance]) as JSON
+            return
+        }
+    }
+    def updateCTDAjax(){
+        def result = depositService.updateCTD(params)
+         println("update ctd success!")
+         println params
+        if(!result.error) {
+            println("update ctd success!")
+            flash.message = "CTD Successfully Updated"
+            render (template:'ctd/edit',model:[issueCTDInstance:result.issueCTDInstance]) as JSON
+            return
+        }
+        if(result.error.code == "default.not.found") {
+            notFound()
+            return
+        }
+        render (template:'ctd/edit',model:[issueCTDInstance:result.issueCTDInstance.attach()]) as JSON
+    }
+    def index() {
+        def module
+        if (params?.module)
+            module = params?.module
+        else
+            module = getModule(request?.forwardURI)
+        //def title = getTitle(module)
+        redirect(action:'depositSearch', params:[module:module])
+    }
+    def getModule(String url) {
+        println url
+        if (url =~ /^.*\/deposit\/edit.*$/) {
+            return "edit"
+        }
+        if (url =~ /^.*\/deposit\/viewCheckbook.*$/) {
+            return "checkbook"
+        }
+        else if (url =~ /^.*\/deposit\/viewPassbook.*$/) {
+            return "passbook"
+        }
+        else if (url =~ /^.*\/deposit\/viewCTD.*$/) {
+            return "ctd"
+        }
+        else if (url =~ /^.*\/deposit\/viewHold.*$/) {
+            return "hold"
+        } 
+        else if (url =~ /^.*\/deposit\/viewStandingOrder.*$/) {
+            return "standingorder"
+        }
+        else if (url =~ /^.*\/deposit\/viewMemo.*$/) {
+            return "memo"
+        } 
+        else if (url =~ /^.*\/deposit\/viewStopPaymentOrder.*$/) {
+            return "spo"
+        } 
+        else if (url =~ /^.*\/deposit\/viewDepositStatus.*$/) {
+            return "close"
+        } 
+        else if (url =~ /^.*\/deposit\/viewInterestRateMaintenance.*$/) {
+            return "irm"
+        } 
+        else if (url =~ /^.*\/deposit\/viewSweep.*$/) {
+            return "sweep"
+        }
+        else if (url =~ /^.*\/deposit\/viewFundTransfer.*$/) {
+            return "fundtransfer"
+        } 
+        else if (url =~ /^.*\/deposit\/viewClearChecksManually.$/) {
+            return "clearchecksmanually"
+        } 
+        else if (url =~ /^.*\/deposit\/viewManualFdRollover.*$/) {
+            return "manualfdrollover"
+        }    
+    }
+    def depositSearch(String module){
+        if(module){
+            params.module = module
+        }
+        params.actionTemplate = 'depositInquirySearchAction';
+        println params
+        render(view:'search/depositSearch', model:[params:params])
+    }
+    def depositInquiry(){
+        println(params)
+        if(params.id){
+           def depositInstance = Deposit.get(params.id)
+           render(view:"inquiry/depositInquiry",model:[depositInstance:depositInstance])
+        }
+        else {
+           render(view:'inquiry/depositInquiry')
+        }
+    }
+    def addSignatoryFormAjax(){
+        println params
+        if(params.signatory){
+            def signatory = new Signatory()
+            signatory.signatory = Customer.read(params.signatory);
+            def i 
+            //if Update
+            if(params.deposit){
+                def depositInstance = Deposit.read(params.deposit)
+                    depositInstance?.signatories.eachWithIndex { obj, v ->
+                        println "${v}: ${obj}"
+                    }
+                i = (depositInstance?.signatories.findIndexOf{it?.signatory?.id==params.signatory})  // Start with B.{key,value-> value?.signatory ==params.signatory})?.key
+                println i  +  "i#1";
+                if(i==null||i==-1){
+                    if(depositInstance?.signatories!=null){
+                        i = depositInstance?.signatories.size()
+                         println i  +  "i#2";
+                    }else{
+                        i=0
+                    }   
+                }
+            }else{
+                i = params.i
+            }
+            println(i + "ung i!")
+            render (template:'form/signatory/onetomany/signatory',model:[signatory:signatory,i:i]) as JSON
+        }else{
+            render "" as JSON
+        }
+    }
+    def showCustomerDetailsAjax(){
+        if(params.customer){
+            def customerInstance = Customer.read(params.customer)
+            render (template:'/customer/details/customerDetails',model:[customerInstance:customerInstance,boxName:params.boxName]) as JSON
+        }
+    }
+    def showDepositDetailsAjax(){
+        println params
+        if(params.deposit){
+            def depositInstance = Deposit.read(params.deposit.toLong())
+            render (template:'/deposit/details/depositDetails',model:[depositInstance:depositInstance,boxName:params.boxName]) as JSON
+        }
+    }
+    def changeDepositFormAjax(){
+        def cmd = new depositInitialCommand()
+        println params
+        if(params.changeType=="type"){
+            println "pumasok sa changeType"
+            bindData(cmd, params, [include: ['type','customer']])
+        }
+        else if(params.changeType=="product"){
+            bindData(cmd, params, [exclude: ['depositInterestScheme']])
+        }else{
+             bindData(cmd, params)
+        }
+        render(template:"form/deposit/typeAndProduct", model:[depositInstance:cmd,firstCreate:true]) as JSON
+    }
+    def show(Deposit depositInstance) {
+        respond depositInstance
+    }
+
+    def create(depositInitialCommand cmd) {
+        println params
+        if(params.customerFromCIFPage!=null){
+            cmd.customer = Customer.read(params.customerFromCIFPage)
+        }else{
+            if(params.customer?.id){
+                cmd.customer = Customer.read(params.customer.id)
+            }
+        }
+        if(params.firstCreate!=null){
+            if(cmd.hasErrors()){
+                render (view:'create',model:['depositInstance': cmd,'firstCreate':true])
+            }else{
+                render (view:'create',model:['depositInstance': new Deposit(params)])
+            }
+        }else{
+            cmd.clearErrors()
+            render (view:'create',model:['depositInstance': cmd,'firstCreate':true])
+        }
+    }
+
+    @Transactional
+    def save() {
+        def depositInstance = new Deposit()
+        bindData(depositInstance,params)
+        if (depositInstance == null) {
+            notFound()
+            return
+        }
+        if(depositInstance?.signatories){
+            depositInstance.signatories.removeAll([null])
+        }
+        
+        
+        if (!depositInstance.validate()) {
+            respond depositInstance.errors, view:'create'
+            return
+        }
+        def currentRollover = depositInstance.currentRollover
+        depositInstance.currentRollover = null
+        depositInstance.branch  = UserMaster.get(session.user_id)?.branch
+        depositInstance.save flush:true
+        if(depositInstance?.type?.id==3){
+            depositInstance.addToRollovers(currentRollover)
+            depositInstance.currentRollover = currentRollover
+        }
+        //AcctNo
+        //
+        depositService.buildAcctNo(depositInstance);
+        redirect(action: "depositInquiry", id: depositInstance.id)
+    }
+
+    def edit(Deposit depositInstance) {
+        respond depositInstance
+    }
+
+    @Transactional
+    def update(Deposit depositInstance) {
+        if (depositInstance == null) {
+            notFound()
+            return
+        }
+        if(depositInstance.signatories){
+            depositInstance.signatories.removeAll([null])
+            def _signatoryDelete= depositInstance.signatories.findAll{(it.deleted)}
+            println  "Signatory" +depositInstance.signatories
+            println "Signatory to be deleted "+ _signatoryDelete
+            if(_signatoryDelete) {
+                for (Signatory signatory : _signatoryDelete) {
+                    signatory?.status = ConfigItemStatus.get(3)
+                    println signatory?.status?.description
+                }
+            }
+        }
+
+        if (!depositInstance.validate()) {
+            respond depositInstance.errors, view:'edit'
+            return
+        }
+
+        depositInstance.save flush:true
+
+        request.withFormat {
+            form multipartForm {
+                flash.message = message(code: 'default.updated.message', args: [message(code: 'Deposit.label', default: 'Deposit'), depositInstance.id])
+                redirect depositInstance
+            }
+            '*'{ respond depositInstance, [status: OK] }
+        }
+    }
+
+    @Transactional
+    def delete(Deposit depositInstance) {
+
+        if (depositInstance == null) {
+            notFound()
+            return
+        }
+
+        depositInstance.delete flush:true
+
+        request.withFormat {
+            form multipartForm {
+                flash.message = message(code: 'default.deleted.message', args: [message(code: 'Deposit.label', default: 'Deposit'), depositInstance.id])
+                redirect action:"index", method:"GET"
+            }
+            '*'{ render status: NO_CONTENT }
+        }
+    }
+
+    protected void notFound() {
+        request.withFormat {
+            form multipartForm {
+                flash.message = message(code: 'default.not.found.message', args: [message(code: 'deposit.label', default: 'Deposit'), params.id])
+                redirect action: "index", method: "GET"
+            }
+            '*'{ render status: NOT_FOUND }
+        }
+    }
+}
+@grails.validation.Validateable
+class inwardCheckClearingCommand{
+    int count
+    List<checkCommand> checks =[].withLazyDefault {new checkCommand()}
+    static constraints={
+        checks validator:{ val,obj,errors -> 
+            if(val){
+                for(int i = 0; i < val.size(); i++){
+                    if(!val[i]){continue}
+                    if(!val[i].validate()){
+                        val[i].errors.allErrors.each {error->
+                            errors.rejectValue(
+                                "checks[${i}]."+error.field,
+                                error.getCode(),
+                                error.getArguments(),
+                                error.getDefaultMessage()
+                            )
+                        }
+                    }
+                }   
+            }       
+        }
+    }
+}
+@grails.validation.Validateable
+class checkCommand{
+    Long chequeNo
+    Double amt
+    static constraints={
+        chequeNo validator: { val, obj,errors -> 
+            if(!Cheque.findByChequeNo(val)){
+                errors.rejectValue('chequeNo','Cheque no. does not exist!')
+            }         
+        }
+        amt validator: { val, obj,errors -> 
+            def chequeInstance  = Cheque.findByChequeNo(val)
+            if(chequeInstance){
+                def depositInstance = chequeInstance.chequebook.deposit
+                if(depositInstance.availableBalAmt< val){
+                    sweepList = Sweep.createCriteria(sort: "ordinalNum", order: "asc").list{
+                        and{
+                            eq("fundingDeposit",depositInstance)
+                            eq("status",SweepStatus.read(2))   
+                        }
+                    }
+                    def sweepTypeThreeAmt = 0
+                    for(sweep in sweepList){
+                        def fundedDepositInstance  = sweep.fundedDeposit
+                        if(sweep.rule.id==1){
+                            if(fundedDepositInstance.availableBalAmt>=val){
+                                return true
+                            }
+                        }
+                        if(sweep.rule.id==2){
+                            if(fundedDepositInstance.ledgerBalAmt>=val){
+                                return true
+                            }
+                        }
+                        if(sweep.rule.id==3){
+                           if(fundedDepositInstance.availableBalAmt>=val){
+                             
+                               return true
+                           }else{
+                               if(sweepTypeThreeAmt+fundedDepositInstance.availableBalAmt>=val){
+                               
+                                    return true
+                               }else{
+                                   sweepTypeThreeAmt+=fundedDepositInstance.availableBalAmt
+                               }
+                           }
+                        }
+                        if(sweep.rule.id==4){
+                            if(fundedDepositInstance.availableBalAmt*sweep.fundLimitPercentage>=val){
+                                return true
+                            }
+                        }
+                    }
+                    errors.rejectValue('amt','Insufficient Funds on Deposit Accounts and its sweep accounts')
+                }else{
+                    return true
+                }
+            }         
+        }
+    }
+}
+@grails.validation.Validateable
+class fundTransferCommand{
+    Deposit fundingAcct
+    Deposit destinationAcct
+    Double amt
+    String txnRef
+    String txnDescription
+    static constraints={
+        fundingAcct nullable:false,
+            validator: { val, obj,errors -> 
+                if(obj.amt>val.availableBalAmt){
+                    errors.rejectValue('fundingAcct','Insufficient Funds')
+                }
+            }
+        destinationAcct nullable:false
+        amt nullable:false,
+            validator:{ val,obj,errors->
+                if(obj.amt<=0){
+                    errors.rejectValue('amt','Amount should not be less than or equal to 0')
+                }
+            }
+        txnDescription nullable:true
+        txnRef nullable:true
+    }
+}
+
+@grails.validation.Validateable
+class memoDebitCreditAdjustmentCommand{
+    MemoType type
+    TxnTemplate txnTemplate
+    //MemoTxnType txnType
+    Deposit acct
+    Double amt
+    String txnRef
+    String txnDescription
+    static constraints={
+        type nullable:false
+        //txnType nullable:false
+        acct nullable:true
+        amt nullable:false
+        txnDescription nullable:true
+        txnRef nullable:true
+    }
+}
+@grails.validation.Validateable
+class memoDebitCreditRemittanceCommand{
+    Customer customer
+    MemoType type
+    TxnTemplate txnTemplate
+    //MemoTxnType txnType
+    Deposit acct
+    Double amt
+    String txnRef
+    String txnDescription
+    static constraints={
+        customer nullable:false
+        type nullable:false
+        //txnType nullable:false
+        acct nullable:true
+        amt nullable:false
+        txnDescription nullable:true
+        txnRef nullable:true
+    }
+}
+@grails.validation.Validateable
+class memoDebitBillsPaymentCommand{
+    MemoType type
+    TxnTemplate txnTemplate
+    //MemoTxnType txnType
+    Deposit acct
+    //Deposit destinationAcct
+    Double amt
+    String txnRef
+    String txnDescription
+    static constraints={
+        type nullable:false
+        //txnType nullable:false
+        acct nullable:false,
+            validator: { val, obj,errors -> 
+                if(obj?.amt>val.availableBalAmt){
+                    println obj.amt +":"+val.availableBalAmt
+                    errors.rejectValue('acct','Insufficient Funds')
+                }
+            }
+            
+        //destinationAcct nullable:false
+        amt nullable:false
+        txnDescription nullable:true
+        txnRef nullable:true
+    }
+}
+
+@grails.validation.Validateable
+class depositInitialCommand{
+    DepositType type
+    Product product
+    Customer customer
+    DepositInterestScheme  depositInterestScheme
+    FixedDepositTermScheme fixedDepositTermScheme
+    FixedDepositPreTermScheme fixedDepositPreTermScheme
+    static constraints={
+        type nullable:false
+        product nullable:false
+        customer nullable:false
+        depositInterestScheme nullable:false
+        fixedDepositTermScheme nullable:true, validator:{val,obj,errors->
+            if(obj?.type?.id==3){
+                if(!val){
+                    errors.rejectValue('fixedDepositTermScheme',"Cannot Be Null")
+                }
+            }
+        }
+        fixedDepositPreTermScheme nullable:true,validator:{val,obj,errors->
+            if(obj?.type?.id==3){
+                if(!val){
+                    errors.rejectValue('fixedDepositPreTermScheme',"Cannot Be Null")
+                }
+            }
+        }
+    }
+}
+

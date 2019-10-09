@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.2.1.final using JasperReports Library version 6.2.0  -->
+<!-- 2016-04-28T16:15:07 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="LETTERS-LoanNotice1" pageWidth="595" pageHeight="842" whenNoDataType="NoDataSection" columnWidth="451" leftMargin="72" rightMargin="72" topMargin="72" bottomMargin="72" uuid="da5f9e7d-c7ba-4c65-b240-4ef2e20331c5">
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="inch"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="inch"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="inch"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="inch"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="ICBS"/>
+	<property name="ireport.jasperserver.url" value="http://localhost:8080/jasperserver/"/>
+	<property name="ireport.jasperserver.user" value="jasperadmin"/>
+	<property name="ireport.jasperserver.report.resource" value="/ICBS_REPORT/LETTER/LETTERLoanNotice1_files/MainJrxml"/>
+	<property name="ireport.jasperserver.reportUnit" value="/ICBS_REPORT/LETTER/LETTERLoanNotice1"/>
+	<parameter name="Signatory" class="java.lang.String">
+		<defaultValueExpression><![CDATA[""]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Position" class="java.lang.String">
+		<defaultValueExpression><![CDATA[""]]></defaultValueExpression>
+	</parameter>
+	<parameter name="MatDate" class="java.util.Date"/>
+	<queryString language="SQL">
+		<![CDATA[SELECT B.id,
+	A.customer_id, 
+	C.param_value AS "BANK NAME", 
+	A.display_name AS "ACCOUNT NAME",
+	A.name3 AS "SURNAME", 
+	B.granted_amount AS "GRANTED AMOUNT",
+	A.short_address AS "ADDRESS",
+	B.maturity_date AS "MATURITY DATE",
+	B.balance_amount as "BALANCE"
+FROM customer A
+	LEFT JOIN (SELECT * FROM loan)B ON A.id = B.customer_id
+	LEFT JOIN (SELECT * FROM institution WHERE id = '1')C ON C.param_value is not NULL
+WHERE B.status_id = 4
+	AND B.balance_amount > 0
+	AND B.maturity_date = $P{MatDate}
+ORDER BY A.display_name, B.maturity_date]]>
+	</queryString>
+	<field name="id" class="java.lang.Integer"/>
+	<field name="customer_id" class="java.lang.String"/>
+	<field name="BANK NAME" class="java.lang.String"/>
+	<field name="SURNAME" class="java.lang.String"/>
+	<field name="ADDRESS" class="java.lang.String"/>
+	<field name="MATURITY DATE" class="java.sql.Timestamp"/>
+	<field name="ACCOUNT NAME" class="java.lang.String"/>
+	<field name="GRANTED AMOUNT" class="java.lang.Double"/>
+	<field name="BALANCE" class="java.lang.Double"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="4" splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band height="124" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="55" width="450" height="30" uuid="d04edce2-69fa-48ec-a59d-3387b730b6bd"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BANK NAME}]]></textFieldExpression>
+			</textField>
+			<image>
+				<reportElement x="203" y="5" width="50" height="50" uuid="5fe957ee-3cfc-4606-aad5-375bee66fa17"/>
+				<imageExpression><![CDATA["repo:logo.png"]]></imageExpression>
+			</image>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="98" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="180" height="30" uuid="bd10de36-cce9-4b10-9c9f-e412b6b2b840"/>
+				<textElement>
+					<font size="16" isBold="true"/>
+				</textElement>
+				<text><![CDATA[FIRST NOTICE]]></text>
+			</staticText>
+			<textField pattern="MMMMM dd, yyyy">
+				<reportElement x="310" y="0" width="138" height="20" uuid="b9215141-ef6f-4e00-b902-36f1143a0e05"/>
+				<textElement textAlignment="Right">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="30" width="180" height="20" uuid="477d260d-3616-4c7b-bf8a-62a4c4d3528c"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ACCOUNT NAME}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="50" width="180" height="40" uuid="41afbd2b-0cfc-4262-bd23-eb006c0e1eff"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ADDRESS}]]></textFieldExpression>
+			</textField>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="210" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="30" width="450" height="19" uuid="c21b0b9f-decd-49ec-8d53-f94884c4eecd"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[Muli po naming pina-alaala ang inyong pagkakautang sa amin.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="70" y="50" width="50" height="20" uuid="e8524b46-c399-44d7-8cb4-d87043d675a2"/>
+				<textElement>
+					<font size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Halaga:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="175" width="110" height="19" uuid="27692770-4b41-420f-b63f-033955228703"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[Salamat po.]]></text>
+			</staticText>
+			<textField pattern="#,##0.00">
+				<reportElement x="130" y="50" width="197" height="20" uuid="4c12515d-3c4a-4faf-a4e5-1c6bf09aafa8"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{GRANTED AMOUNT}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="0" width="450" height="20" uuid="57809d11-e416-430b-8a78-8f0d732d06e5"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Mahal na G/ Gng/ Bb. " +$F{SURNAME}+ ","]]></textFieldExpression>
+			</textField>
+			<textField pattern="MMMM dd, yyyy">
+				<reportElement x="70" y="72" width="380" height="20" uuid="882e1677-92fd-4d7d-bfe9-9a79605d1ea8"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<textFieldExpression><![CDATA["na natapos na sa takdang araw ng ika - " +(new SimpleDateFormat("MMMM dd, yyyy").format($F{MATURITY DATE}))]]></textFieldExpression>
+			</textField>
+			<frame>
+				<reportElement x="0" y="92" width="450" height="68" uuid="c60cd0bc-097b-4a72-814d-296e48f47ae1"/>
+				<staticText>
+					<reportElement x="0" y="0" width="448" height="68" uuid="6fb09979-c5ca-45e2-a6b2-34b17757e449">
+						<property name="local_mesure_unitwidth" value="pixel"/>
+						<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					</reportElement>
+					<textElement textAlignment="Justified" verticalAlignment="Top" markup="styled">
+						<font size="12" isBold="false"/>
+					</textElement>
+					<text><![CDATA[	Umaasa po kami sa inyong pakikipagtulungan at mangyari po lamang na kayo ay magsadya o magbayad  ng inyong pagkakautang sa aming tanggapan sa loob ng<b> labing limang (15) </b>araw sa simula sa pagkakatanggap ninyo ng liham na ito.]]></text>
+				</staticText>
+			</frame>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="37" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="7" width="100" height="19" uuid="b53ea3fc-11bc-4b5b-ab30-86fa9614a381"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<text><![CDATA[Sumasainyo,]]></text>
+			</staticText>
+		</band>
+	</columnFooter>
+	<pageFooter>
+		<band height="117" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="99" width="449" height="18" uuid="4bdfe266-7a39-4c17-bf07-92648a64ccc4"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Huwag pansinin ang sulat na ito kung kayo ay bayad na.]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="0" y="20" width="370" height="19" uuid="c44a5ab9-f23f-48b8-a35e-aff772eb7153"/>
+				<textElement>
+					<font size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Signatory}.toUpperCase()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="39" width="370" height="20" uuid="bc3608e5-a6a2-4d1c-aad9-d317194d80ff"/>
+				<textElement>
+					<font size="12"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Position}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<summary>
+		<band height="48" splitType="Stretch"/>
+	</summary>
+	<noData>
+		<band height="108">
+			<textField pattern="MMMMM dd, yyyy">
+				<reportElement x="340" y="23" width="112" height="13" uuid="f26efa58-61b4-44f5-8565-0662bec5506d">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="340" y="-3" width="112" height="13" uuid="0ba78aa7-aae0-4767-95a2-b3e03c3f44ff">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA["Page: " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="h:mm a">
+				<reportElement x="340" y="10" width="112" height="13" uuid="434176a2-e3cb-4b59-96d6-977b434adf14">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<image>
+				<reportElement x="0" y="0" width="50" height="50" uuid="35d18d47-b2f9-44d6-8622-7eaa027171dd"/>
+				<imageExpression><![CDATA["repo:logo.png"]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement x="80" y="65" width="300" height="13" uuid="d76b61c9-13bb-46b1-8116-f7518dda9b69">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="10"/>
+				</textElement>
+				<text><![CDATA[NO DATA FOR REPORT]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="80" y="43" width="300" height="21" uuid="57ba43ae-2d55-4d06-8593-93ba31a4eb29">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="16" isBold="true"/>
+				</textElement>
+				<text><![CDATA[LOAN NOTICE 1]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

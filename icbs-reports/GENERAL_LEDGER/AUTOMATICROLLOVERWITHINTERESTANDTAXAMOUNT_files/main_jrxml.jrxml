@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.2.1.final using JasperReports Library version 6.2.0  -->
+<!-- 2016-04-29T10:39:12 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="AUTOMATIC ROLLOVER WITH INTEREST AND TAX AMOUNT " pageWidth="612" pageHeight="792" whenNoDataType="NoDataSection" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="0647c730-04ac-4c63-9b1f-8cbbb1b35310">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="ICBS"/>
+	<property name="ireport.jasperserver.url" value="http://localhost:8080/jasperserver/"/>
+	<property name="ireport.jasperserver.user" value="jasperadmin"/>
+	<property name="ireport.jasperserver.report.resource" value="/ICBS_REPORT/AUTOMATICROLLOVERWITHINTERESTANDTAXAMOUNT_files/main_jrxml"/>
+	<property name="ireport.jasperserver.reportUnit" value="/ICBS_REPORT/GENERAL_LEDGER/AUTOMATICROLLOVERWITHINTERESTANDTAXAMOUNT"/>
+	<parameter name="Branch" class="java.lang.String"/>
+	<parameter name="DateFrom" class="java.util.Date"/>
+	<parameter name="DateTo" class="java.util.Date"/>
+	<queryString language="SQL">
+		<![CDATA[select 
+Z.param_value as "BANK NAME",
+D.name as "BranchName",
+B.acct_no as "ACCT NO.",
+C.display_name as "NAME", 
+A.principal_amt as "PRINCIPAL AMOUNT",
+A.normal_interest_amt as "INTERST AMOUNT",
+A.tax_amt1 as "TAX AMOUNT",
+F.txn_date,
+G.description as "ROLLOVER TYPE",
+B.status_change_date as "StatusDate" 
+from rollover A
+inner join (select param_value from institution where id = '1') Z ON Z.param_value is not null
+inner join Deposit B on A.deposit = B.id
+inner join customer C on B.customer_id = C.id
+inner join branch D on B.branch_id = D.id
+inner join txn_file F on A.id= F.id
+inner join rollover_type G on A.type_id = G.id
+inner join rollover_status L on A.status_id = L.id
+where D.name = $P{Branch}
+and B.status_change_date between $P{DateFrom} and $P{DateTo}
+and L.id = 2
+order by B.acct_no]]>
+	</queryString>
+	<field name="BANK NAME" class="java.lang.String"/>
+	<field name="BranchName" class="java.lang.String"/>
+	<field name="ACCT NO." class="java.lang.String"/>
+	<field name="NAME" class="java.lang.String"/>
+	<field name="PRINCIPAL AMOUNT" class="java.lang.Double"/>
+	<field name="INTERST AMOUNT" class="java.lang.Double"/>
+	<field name="TAX AMOUNT" class="java.lang.Double"/>
+	<field name="txn_date" class="java.sql.Timestamp"/>
+	<field name="ROLLOVER TYPE" class="java.lang.String"/>
+	<field name="StatusDate" class="java.sql.Timestamp"/>
+	<variable name="ACCT NO.1" class="java.lang.Integer" resetType="Group" resetGroup="Branch" calculation="Count">
+		<variableExpression><![CDATA[$F{ACCT NO.}]]></variableExpression>
+	</variable>
+	<variable name="PRINCIPAL AMOUNT1" class="java.lang.Double" resetType="Group" resetGroup="Branch" calculation="Sum">
+		<variableExpression><![CDATA[$F{PRINCIPAL AMOUNT}]]></variableExpression>
+	</variable>
+	<variable name="INTERST AMOUNT1" class="java.lang.Double" resetType="Group" resetGroup="Branch" calculation="Sum">
+		<variableExpression><![CDATA[$F{INTERST AMOUNT}]]></variableExpression>
+	</variable>
+	<variable name="TAX AMOUNT1" class="java.lang.Double" resetType="Group" resetGroup="Branch" calculation="Sum">
+		<variableExpression><![CDATA[$F{TAX AMOUNT}]]></variableExpression>
+	</variable>
+	<group name="Branch" isStartNewPage="true" isReprintHeaderOnEachPage="true">
+		<groupExpression><![CDATA[$F{BranchName}]]></groupExpression>
+		<groupHeader>
+			<band height="48">
+				<staticText>
+					<reportElement x="-3" y="22" width="83" height="26" uuid="d8d75f9c-46d1-4d16-8b40-18024811afce">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+					<text><![CDATA[ACCT NO.]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="95" y="22" width="100" height="26" uuid="2fd51917-844f-49c4-bd85-3c34064dc8db">
+						<property name="local_mesure_unitheight" value="pixel"/>
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+					<text><![CDATA[NAME]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="252" y="22" width="66" height="26" uuid="30646868-0b45-4ed0-bd89-6c86ace8dac7">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement textAlignment="Center">
+						<font isBold="true"/>
+					</textElement>
+					<text><![CDATA[PRINCIPAL AMOUNT]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="326" y="21" width="55" height="26" uuid="96acf72e-50da-411c-aa59-5e2f582df5c1">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement textAlignment="Center">
+						<font isBold="true"/>
+					</textElement>
+					<text><![CDATA[INTEREST AMOUNT]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="404" y="22" width="53" height="26" uuid="0dfe59c9-d338-47b1-a7c3-c79a695cf286">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement textAlignment="Center">
+						<font isBold="true"/>
+					</textElement>
+					<text><![CDATA[TAX AMOUNT]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="469" y="22" width="64" height="26" uuid="8affa8e9-38f4-48dc-a408-aa348c9a11bb">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+					<text><![CDATA[ROLLOVER TYPE]]></text>
+				</staticText>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="81">
+				<staticText>
+					<reportElement x="-5" y="34" width="100" height="13" uuid="77a44e4f-bf3b-4891-85de-22851ff14814">
+						<property name="local_mesure_unitheight" value="pixel"/>
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+					<text><![CDATA[Total per Branch : ]]></text>
+				</staticText>
+				<textField isBlankWhenNull="true">
+					<reportElement x="111" y="68" width="70" height="13" uuid="cbaf0c37-ea51-48ed-92bb-d01173fa2bbe">
+						<property name="local_mesure_unitheight" value="pixel"/>
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{ACCT NO.1}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="210" y="68" width="102" height="13" uuid="a5caae20-d746-45b4-8151-1a738fdb1ef7">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement textAlignment="Right">
+						<font isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{PRINCIPAL AMOUNT1}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="317" y="68" width="62" height="13" uuid="bd05fcc3-9eaa-4d78-9f50-81973b9000e1">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement textAlignment="Right">
+						<font isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{INTERST AMOUNT1}]]></textFieldExpression>
+				</textField>
+				<textField pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="384" y="68" width="68" height="13" uuid="155cb017-a0b9-48d0-bf78-66a97b29b65b">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement textAlignment="Right">
+						<font isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{TAX AMOUNT1}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="243" y="55" width="79" height="13" uuid="e7e4aa75-455c-48aa-aa96-7f57c8ecb282">
+						<property name="local_mesure_unitheight" value="pixel"/>
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+					<text><![CDATA[Principal Amt]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="318" y="55" width="82" height="13" uuid="98348f10-5681-4838-9c75-41276d38f1fa">
+						<property name="local_mesure_unitheight" value="pixel"/>
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+					<text><![CDATA[Interest Amt]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="410" y="55" width="67" height="13" uuid="d428977d-ab63-49e0-90ed-a9cf4ab2d8ff">
+						<property name="local_mesure_unitheight" value="pixel"/>
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+					<text><![CDATA[Tax Amt]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="111" y="55" width="85" height="13" uuid="9fb62dfb-2897-4697-8484-79295d010a69">
+						<property name="local_mesure_unitheight" value="pixel"/>
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+					<text><![CDATA[Acct. No.]]></text>
+				</staticText>
+			</band>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band height="119" splitType="Stretch">
+			<textField pattern="HH:mm">
+				<reportElement x="455" y="13" width="115" height="13" uuid="1f686df2-54cc-4b5d-a625-a08ddf7957d9">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="455" y="0" width="115" height="13" uuid="9f21ca40-1b47-4766-b320-32c9c2716578">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA["Page: " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="MMMMM dd, yyyy">
+				<reportElement x="455" y="26" width="115" height="13" uuid="f12775bc-3558-4fe3-85ac-e64e3005e268">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="80" y="47" width="400" height="24" uuid="4f206600-6f51-4ce2-981d-26af5f6f765f">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="18" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BANK NAME}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="71" width="572" height="21" uuid="ed2323fb-c2f8-41a2-a5e8-390386f53239">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="16" isBold="true"/>
+				</textElement>
+				<text><![CDATA[AUTOMATIC ROLLOVER WITH INTEREST AND TAX AMOUNT]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="80" y="93" width="400" height="18" uuid="b3f436d9-67c2-48c5-be79-5934ac27e3b5">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="14" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BranchName}]]></textFieldExpression>
+			</textField>
+			<image>
+				<reportElement x="0" y="0" width="50" height="50" uuid="7752e10d-b94c-427f-b2d8-4f93c1b9fa56"/>
+				<imageExpression><![CDATA["repo:logo.png"]]></imageExpression>
+			</image>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="2" splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band height="13" splitType="Stretch">
+			<textField isBlankWhenNull="true">
+				<reportElement x="-3" y="0" width="98" height="13" uuid="b260827a-74d5-4810-aa70-218b0949b9c0">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{ACCT NO.}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement stretchType="RelativeToBandHeight" x="95" y="0" width="130" height="13" uuid="7c118490-0dfb-43d6-98fa-a0353e8aa7cc">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{NAME}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="225" y="0" width="87" height="13" uuid="0bf7d5c6-a906-4f22-b3ac-48add522c171">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{PRINCIPAL AMOUNT}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="312" y="0" width="66" height="13" uuid="ae50bce9-4e80-49fc-ab52-1bee6d9a23a3">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{INTERST AMOUNT}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="384" y="0" width="68" height="13" uuid="c7c0b6c6-e8ea-4be6-b9ca-e404713c8bc9">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{TAX AMOUNT}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="469" y="0" width="100" height="13" uuid="e363fa0c-a61d-45db-8121-4614d4b8ea66">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{ROLLOVER TYPE}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="45" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="54" splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band height="42" splitType="Stretch"/>
+	</summary>
+	<noData>
+		<band height="86">
+			<textField pattern="HH:mm">
+				<reportElement x="455" y="13" width="115" height="13" uuid="f5c4ffd0-2099-4ce8-8bee-8770da23e798">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField pattern="MMMMM dd, yyyy">
+				<reportElement x="455" y="26" width="115" height="13" uuid="df83ca33-36cd-49ba-87a0-5df3d093aefc">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="455" y="0" width="115" height="13" uuid="fd668cab-5716-455e-a30a-1720bb90fe5f">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA["Page: " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="52" width="572" height="21" uuid="ad59b888-e1c0-4770-a01b-1d568d4a8095">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="16" isBold="true"/>
+				</textElement>
+				<text><![CDATA[AUTOMATIC ROLLOVER WITH INTEREST AND TAX AMOUNT]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="80" y="73" width="400" height="13" uuid="0044a8f6-20fe-4310-82db-73f549a7acd5">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font isBold="false"/>
+				</textElement>
+				<text><![CDATA[NO DATA FOR REPORT]]></text>
+			</staticText>
+			<image>
+				<reportElement x="0" y="0" width="50" height="50" uuid="a22aeff6-3917-4d6c-a6b8-423102df1813"/>
+				<imageExpression><![CDATA["repo:logo.png"]]></imageExpression>
+			</image>
+		</band>
+	</noData>
+</jasperReport>

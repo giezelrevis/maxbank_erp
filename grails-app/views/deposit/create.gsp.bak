@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+	<head>
+                <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta name="layout" content="main">
+		<g:set var="entityName" value="${message(code: 'deposit.label', default: 'Deposit')}" />
+                <asset:javascript src="depositHelper.js"/>
+                <title><g:message code="default.create.label" args="[entityName]" /></title>
+                <g:javascript>
+                    function changeRolloverForm(type){
+                        var endDate = document.getElementById('currentRollover.endDate').value
+                        icbs.Deposit.Form.getForm('rollback',"${createLink(controller : 'deposit', action:'changeRolloverFormAjax')}",{type:type,endDate:endDate});      
+                    }
+                    function showSignatories(e){
+                        if(e){
+                            if(e.options[e.selectedIndex].value==1){
+                                document.getElementById('signatory-main-div').style.display = 'none';
+                            }else{
+                                document.getElementById('signatory-main-div').style.display = 'block';
+                            }
+                        }
+                    }
+                    var modal;
+                    
+                    function changeTypeProductSchemeForm(changed){
+                        if(changed!=null){
+                            if(changed==="type"){
+                                icbs.Deposit.Form.getForm('type',"${createLink(controller : 'deposit', action:'changeDepositFormAjax')}",$('#saveDepositForm').serialize());
+                            }
+                            if(changed==="product"){
+                                 icbs.Deposit.Form.getForm('product',"${createLink(controller : 'deposit', action:'changeDepositFormAjax')}",$('#saveDepositForm').serialize());
+                            }
+                        }
+                    }
+                    function updateCustomerDetailsForm(params){
+                        icbs.Deposit.Form.getForm('customerDetails',"${createLink(controller : 'deposit', action:'showCustomerDetailsAjax')}",params);
+                    }
+                    function initializeCustomerDetailsSearchModal(){
+                        modal = new icbs.UI.Modal({id:"customerDetailsModal",url:"${createLink(controller : 'search', action:'search')}",title:"Search Customer",onCloseCallback:updateCustomerDetailsForm});
+                    }
+                    function addSignatoryAjax(params){
+                        icbs.Deposit.Form.getForm('signatory',"${createLink(controller : 'deposit', action:'addSignatoryFormAjax')}",params);
+                    }
+                    function initializeSignatorySearchModal(){
+                        modal = new icbs.UI.Modal({id:"signatorySearchModal",url:"${createLink(controller : 'search', action:'search')}",title:"Search Customer",onCloseCallback:addSignatoryAjax});
+                    }
+                </g:javascript>     
+        </head>
+	<body>
+            <content tag="main-content">
+		<div id="create-deposit" class="content scaffold-create" role="main">
+			<g:if test="${flash.message}">
+			<div class="message" role="status">${flash.message}</div>
+			</g:if>
+			<g:hasErrors bean="${depositInstance}">
+			<ul class="errors" role="alert">
+				<g:eachError bean="${depositInstance}" var="error">
+				<li <g:if test="${error in org.springframework.validation.FieldError}">data-field-id="${error.field}"</g:if>><g:message error="${error}"/></li>
+				</g:eachError>
+			</ul>
+			</g:hasErrors>
+                        <g:if test="${firstCreate==true}">         
+                                <g:form id="saveDepositForm"url="[controller:'deposit',action:'create']" >
+                                    <g:hiddenField name="firstCreate" value="${firstCreate}"/>
+                                    
+                                    <fieldset class="form">
+                                        <div id="typeAndProductSchemeDiv">
+                                            <g:render template="form/deposit/typeAndProduct"/>
+                                        </div>
+                                    </fieldset>
+                                </g:form>
+                        </g:if>
+                        <g:else>
+                                <g:form id="saveDepositForm" url="[resource:depositInstance,controller:'deposit', action:'save']" >
+                                        <g:hiddenField name="firstCreate" value="${firstCreate}"/>
+                                        <fieldset class="form">
+                                                <g:render template="form"/>
+                                        </fieldset>
+                                </g:form>
+                        </g:else>
+		</div>
+            </content>
+            <content tag="main-actions">
+                <ul>
+                    <g:if test="${!firstCreate}">
+                    <li><a class="save" onclick="var con = confirm('Are you sure you want to create this Deposit Account?');
+                                                                if(con){jQuery('#saveDepositForm').submit()
+                                                                }else{
+                                                                    return con
+                                                                }">${message(code: 'default.button.create.label', default: 'Create')}</a></li>
+                    </g:if>
+                    <g:else>
+                            <li><a class="save" onclick="var con = confirm('Are you sure you want to Proceed?');
+                                                                      if(con){jQuery('#saveDepositForm').submit()
+                                                                      }else{
+                                                                          return con
+                                                                      }">Continue to Deposit Form</a></li>
+
+                    </g:else>
+                     <li><g:link action="depositSearch" 
+                                                    onclick="return confirm('Are you sure you want to return to Deposits Search page? Your progress will not be saved.');">Cancel</g:link></li>
+                </ul>
+            </content>
+	</body>
+</html>

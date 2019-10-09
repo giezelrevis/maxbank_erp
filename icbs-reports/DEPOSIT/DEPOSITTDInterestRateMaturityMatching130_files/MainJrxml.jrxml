@@ -1,0 +1,1547 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.2.1.final using JasperReports Library version 6.2.0  -->
+<!-- 2016-04-28T17:35:02 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="TD-InterestRateandMaturityMatching" pageWidth="900" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="860" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="38ba599c-1f76-441d-b414-3f0be5491303">
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="ireport.jasperserver.url" value="http://localhost:8080/jasperserver/"/>
+	<property name="ireport.jasperserver.user" value="jasperadmin"/>
+	<property name="ireport.jasperserver.report.resource" value="/ICBS_REPORT/DEPOSIT/DEPOSITTDInterestRateMaturityMatching130_files/MainJrxml"/>
+	<property name="ireport.jasperserver.reportUnit" value="/ICBS_REPORT/DEPOSIT/DEPOSITTDInterestRateMaturityMatching130"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="NRBSL"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<style name="Table_TH" mode="Opaque" backcolor="#F0F8FF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Table_CH" mode="Opaque" backcolor="#BFE1FF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Table_TD" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<subDataset name="Empty Dataset1" uuid="b840ccd9-5824-453c-96a6-b60781386af3"/>
+	<parameter name="branch" class="java.lang.String"/>
+	<parameter name="asofdate" class="java.util.Date"/>
+	<queryString language="SQL">
+		<![CDATA[select (SELECT param_value FROM institution WHERE id = '1') as "BANK NAME", 
+*
+from (
+
+select '0.00% -  0.00%' as "Interest",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0 
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and extract(DAY from (C.end_date-B.run_date)) <=0)as "OnDemandBalCount",
+
+
+(select sum(CASE when extract(DAY from (C.end_date-B.run_date)) <=0 
+then Z.available_bal_amt else 0 end) from deposit Z 
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0
+and C.end_date <= $P{asofdate} and B.name =$P{branch})as "OnDemandBalSum",
+
+
+(select count(Z.acct_no)  from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >=1 AND
+extract(DAY from (C.end_date-B.run_date)) <=7))as "1to7BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >=1 AND
+extract(DAY from (C.end_date-B.run_date)) <=7) then Z.available_bal_amt else 0 end)
+from deposit Z LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >=1 AND
+extract(DAY from (C.end_date-B.run_date)) <=7))as "1to7BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >7 AND
+extract(DAY from (C.end_date-B.run_date)) <=30))as "8to30BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >7 AND
+extract(DAY from (C.end_date-B.run_date)) <=30) then Z.available_bal_amt else 0 end)
+from deposit Z LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0 
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >7 AND
+extract(DAY from (C.end_date-B.run_date)) <=30))as "8to30BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >30 AND
+extract(DAY from (C.end_date-B.run_date)) <=90))as "31to90BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >30 AND
+extract(DAY from (C.end_date-B.run_date)) <=90)
+then Z.available_bal_amt else 0 end)from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >30 AND
+extract(DAY from (C.end_date-B.run_date)) <=90))as "31to90BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >90 AND
+extract(DAY from (C.end_date-B.run_date)) <=365))as "91to365BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >90 AND
+extract(DAY from (C.end_date-B.run_date)) <=365) then Z.available_bal_amt else 0 end)
+from deposit Z LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >90 AND
+extract(DAY from (C.end_date-B.run_date)) <=365))as "91to365BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >365 AND
+extract(DAY from (C.end_date-B.run_date)) <=730))as "365to730BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >365 AND
+extract(DAY from (C.end_date-B.run_date)) <=730) then Z.available_bal_amt else 0 end)
+from deposit Z LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >365 AND
+extract(DAY from (C.end_date-B.run_date)) <=730))as "365to730BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate= 0
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and extract(DAY from (C.end_date-B.run_date)) >730)as "over730BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >730)
+then Z.available_bal_amt else 0 end)from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0
+and C.end_date <= $P{asofdate} and B.name =$P{branch} 
+and extract(DAY from (C.end_date-B.run_date)) >730)as "over730BalSum"
+
+
+--0.01%
+
+UNION ALL
+
+select '0.01% -  0.01%' as "Interest",
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.01 
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and extract(DAY from (C.end_date-B.run_date)) <=0)as "OnDemandBalCount",
+
+
+(select sum(CASE when extract(DAY from (C.end_date-B.run_date)) <=0 
+then Z.available_bal_amt else 0 end) from deposit Z 
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.01
+and C.end_date <= $P{asofdate} and B.name =$P{branch})as "OnDemandBalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.01
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >=1 AND
+extract(DAY from (C.end_date-B.run_date)) <=7))as "1to7BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >=1 AND
+extract(DAY from (C.end_date-B.run_date)) <=7) then Z.available_bal_amt else 0 end)
+from deposit Z LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.01
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >=1 AND
+extract(DAY from (C.end_date-B.run_date)) <=7))as "1to7BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.01
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >7 AND
+extract(DAY from (C.end_date-B.run_date)) <=30))as "8to30BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >7 AND
+extract(DAY from (C.end_date-B.run_date)) <=30) then Z.available_bal_amt else 0 end)
+from deposit Z LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.01 
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >7 AND
+extract(DAY from (C.end_date-B.run_date)) <=30))as "8to30BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.01
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >30 AND
+extract(DAY from (C.end_date-B.run_date)) <=90))as "31to90BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >30 AND
+extract(DAY from (C.end_date-B.run_date)) <=90)
+then Z.available_bal_amt else 0 end)from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.01
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >30 AND
+extract(DAY from (C.end_date-B.run_date)) <=90))as "31to90BalSum",
+
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.01
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >90 AND
+extract(DAY from (C.end_date-B.run_date)) <=365))as "91to365BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >90 AND
+extract(DAY from (C.end_date-B.run_date)) <=365) then Z.available_bal_amt else 0 end)
+from deposit Z LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.01
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >90 AND
+extract(DAY from (C.end_date-B.run_date)) <=365))as "91to365BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate= 0.01
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >365 AND
+extract(DAY from (C.end_date-B.run_date)) <=730))as "365to730BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >365 AND
+extract(DAY from (C.end_date-B.run_date)) <=730) then Z.available_bal_amt else 0 end)
+from deposit Z LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.01
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >365 AND
+extract(DAY from (C.end_date-B.run_date)) <=730))as "365to730BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.01
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and extract(DAY from (C.end_date-B.run_date)) >730)as "over730BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >730)
+then Z.available_bal_amt else 0 end)from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.01 
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and extract(DAY from (C.end_date-B.run_date)) >730)as "over730BalSum"
+
+
+--0.02
+
+UNION ALL
+
+select '0.02% -  0.02%' as "Interest",
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.02 
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and extract(DAY from (C.end_date-B.run_date)) <=0)as "OnDemandBalCount",
+
+
+(select sum(CASE when extract(DAY from (C.end_date-B.run_date)) <=0 
+then Z.available_bal_amt else 0 end) from deposit Z 
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.02
+and C.end_date <= $P{asofdate} and B.name =$P{branch})as "OnDemandBalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.02
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >=1 AND
+extract(DAY from (C.end_date-B.run_date)) <=7))as "1to7BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >=1 AND
+extract(DAY from (C.end_date-B.run_date)) <=7) then Z.available_bal_amt else 0 end)
+from deposit Z LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.02
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >=1 AND
+extract(DAY from (C.end_date-B.run_date)) <=7))as "1to7BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.02
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >7 AND
+extract(DAY from (C.end_date-B.run_date)) <=30))as "8to30BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >7 AND
+extract(DAY from (C.end_date-B.run_date)) <=30) then Z.available_bal_amt else 0 end)
+from deposit Z LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.02 
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >7 AND
+extract(DAY from (C.end_date-B.run_date)) <=30))as "8to30BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.02
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >30 AND
+extract(DAY from (C.end_date-B.run_date)) <=90))as "31to90BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >30 AND
+extract(DAY from (C.end_date-B.run_date)) <=90)
+then Z.available_bal_amt else 0 end)from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.02
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >30 AND
+extract(DAY from (C.end_date-B.run_date)) <=90))as "31to90BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.02
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >90 AND
+extract(DAY from (C.end_date-B.run_date)) <=365))as "91to365BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >90 AND
+extract(DAY from (C.end_date-B.run_date)) <=365) then Z.available_bal_amt else 0 end)
+from deposit Z LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.02
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >90 AND
+extract(DAY from (C.end_date-B.run_date)) <=365))as "91to365BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate= 0.02
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >365 AND
+extract(DAY from (C.end_date-B.run_date)) <=730))as "365to730BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >365 AND
+extract(DAY from (C.end_date-B.run_date)) <=730) then Z.available_bal_amt else 0 end)
+from deposit Z LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.02
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >365 AND
+extract(DAY from (C.end_date-B.run_date)) <=730))as "365to730BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.02
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and extract(DAY from (C.end_date-B.run_date)) >730)as "over730BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >730)
+then Z.available_bal_amt else 0 end)from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.02
+and C.end_date <= $P{asofdate} and B.name =$P{branch} 
+and extract(DAY from (C.end_date-B.run_date)) >730)as "over730BalSum"
+
+
+--0.03
+UNION ALL
+
+select '0.03% -  0.03%' as "Interest",
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.03
+and C.end_date <= $P{asofdate} and B.name =$P{branch} 
+and extract(DAY from (C.end_date-B.run_date)) <=0)as "OnDemandBalCount",
+
+
+(select sum(CASE when extract(DAY from (C.end_date-B.run_date)) <=0 
+then Z.available_bal_amt else 0 end) from deposit Z 
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.03
+and C.end_date <= $P{asofdate} and B.name =$P{branch})as "OnDemandBalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.03
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >=1 AND
+extract(DAY from (C.end_date-B.run_date)) <=7))as "1to7BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >=1 AND
+extract(DAY from (C.end_date-B.run_date)) <=7) then Z.available_bal_amt else 0 end)
+from deposit Z LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.03
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >=1 AND
+extract(DAY from (C.end_date-B.run_date)) <=7))as "1to7BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.03
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >7 AND
+extract(DAY from (C.end_date-B.run_date)) <=30))as "8to30BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >7 AND
+extract(DAY from (C.end_date-B.run_date)) <=30) then Z.available_bal_amt else 0 end)
+from deposit Z LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.03
+and C.end_date <= $P{asofdate} and B.name =$P{branch} 
+and (extract(DAY from (C.end_date-B.run_date)) >7 AND
+extract(DAY from (C.end_date-B.run_date)) <=30))as "8to30BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.03
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >30 AND
+extract(DAY from (C.end_date-B.run_date)) <=90))as "31to90BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >30 AND
+extract(DAY from (C.end_date-B.run_date)) <=90)
+then Z.available_bal_amt else 0 end)from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.03
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >30 AND
+extract(DAY from (C.end_date-B.run_date)) <=90))as "31to90BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.03
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >90 AND
+extract(DAY from (C.end_date-B.run_date)) <=365))as "91to365BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >90 AND
+extract(DAY from (C.end_date-B.run_date)) <=365) then Z.available_bal_amt else 0 end)
+from deposit Z LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.03
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >90 AND
+extract(DAY from (C.end_date-B.run_date)) <=365))as "91to365BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate= 0.03
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >365 AND
+extract(DAY from (C.end_date-B.run_date)) <=730))as "365to730BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >365 AND
+extract(DAY from (C.end_date-B.run_date)) <=730) then Z.available_bal_amt else 0 end)
+from deposit Z LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.03
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >365 AND
+extract(DAY from (C.end_date-B.run_date)) <=730))as "365to730BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.03
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and extract(DAY from (C.end_date-B.run_date)) >730)as "over730BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >730)
+then Z.available_bal_amt else 0 end)from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.03
+and C.end_date <= $P{asofdate} and B.name =$P{branch} 
+and extract(DAY from (C.end_date-B.run_date)) >730)as "over730BalSum"
+
+
+--0.04
+
+UNION ALL
+
+select '0.04% -  0.04%' as "Interest",
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.04
+and C.end_date <= $P{asofdate} and B.name =$P{branch} 
+and extract(DAY from (C.end_date-B.run_date)) <=0)as "OnDemandBalCount",
+
+
+(select sum(CASE when extract(DAY from (C.end_date-B.run_date)) <=0 
+then Z.available_bal_amt else 0 end) from deposit Z 
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.04
+and C.end_date <= $P{asofdate} and B.name =$P{branch})as "OnDemandBalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.04
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >=1 AND
+extract(DAY from (C.end_date-B.run_date)) <=7))as "1to7BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >=1 AND
+extract(DAY from (C.end_date-B.run_date)) <=7) then Z.available_bal_amt else 0 end)
+from deposit Z LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.04
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >=1 AND
+extract(DAY from (C.end_date-B.run_date)) <=7))as "1to7BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.04
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >7 AND
+extract(DAY from (C.end_date-B.run_date)) <=30))as "8to30BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >7 AND
+extract(DAY from (C.end_date-B.run_date)) <=30) then Z.available_bal_amt else 0 end)
+from deposit Z LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.04
+and C.end_date <= $P{asofdate} and B.name =$P{branch} 
+and (extract(DAY from (C.end_date-B.run_date)) >7 AND
+extract(DAY from (C.end_date-B.run_date)) <=30))as "8to30BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.04
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >30 AND
+extract(DAY from (C.end_date-B.run_date)) <=90))as "31to90BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >30 AND
+extract(DAY from (C.end_date-B.run_date)) <=90)
+then Z.available_bal_amt else 0 end)from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.04
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >30 AND
+extract(DAY from (C.end_date-B.run_date)) <=90))as "31to90BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.04
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >90 AND
+extract(DAY from (C.end_date-B.run_date)) <=365))as "91to365BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >90 AND
+extract(DAY from (C.end_date-B.run_date)) <=365) then Z.available_bal_amt else 0 end)
+from deposit Z LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.04
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >90 AND
+extract(DAY from (C.end_date-B.run_date)) <=365))as "91to365BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate= 0.04
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >365 AND
+extract(DAY from (C.end_date-B.run_date)) <=730))as "365to730BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >365 AND
+extract(DAY from (C.end_date-B.run_date)) <=730) then Z.available_bal_amt else 0 end)
+from deposit Z LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.04
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >365 AND
+extract(DAY from (C.end_date-B.run_date)) <=730))as "365to730BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.04
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and extract(DAY from (C.end_date-B.run_date)) >730)as "over730BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >730)
+then Z.available_bal_amt else 0 end)from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.04
+and C.end_date <= $P{asofdate} and B.name =$P{branch} 
+and extract(DAY from (C.end_date-B.run_date)) >730)as "over730BalSum"
+
+
+--0.05
+
+UNION ALL
+
+select '0.05% -  0.05%' as "Interest",
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.05
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and extract(DAY from (C.end_date-B.run_date)) <=0)as "OnDemandBalCount",
+
+
+(select sum(CASE when extract(DAY from (C.end_date-B.run_date)) <=0 
+then Z.available_bal_amt else 0 end) from deposit Z 
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.05
+and C.end_date <= $P{asofdate} and B.name =$P{branch})as "OnDemandBalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.05
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >=1 AND
+extract(DAY from (C.end_date-B.run_date)) <=7))as "1to7BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >=1 AND
+extract(DAY from (C.end_date-B.run_date)) <=7) then Z.available_bal_amt else 0 end)
+from deposit Z LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.05
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >=1 AND
+extract(DAY from (C.end_date-B.run_date)) <=7))as "1to7BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.05
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >7 AND
+extract(DAY from (C.end_date-B.run_date)) <=30))as "8to30BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >7 AND
+extract(DAY from (C.end_date-B.run_date)) <=30) then Z.available_bal_amt else 0 end)
+from deposit Z LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.05
+and C.end_date <= $P{asofdate} and B.name =$P{branch} 
+and (extract(DAY from (C.end_date-B.run_date)) >7 AND
+extract(DAY from (C.end_date-B.run_date)) <=30))as "8to30BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.05
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >30 AND
+extract(DAY from (C.end_date-B.run_date)) <=90))as "31to90BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >30 AND
+extract(DAY from (C.end_date-B.run_date)) <=90)
+then Z.available_bal_amt else 0 end)from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.05
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >30 AND
+extract(DAY from (C.end_date-B.run_date)) <=90))as "31to90BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.05
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >90 AND
+extract(DAY from (C.end_date-B.run_date)) <=365))as "91to365BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >90 AND
+extract(DAY from (C.end_date-B.run_date)) <=365) then Z.available_bal_amt else 0 end)
+from deposit Z LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.05
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >90 AND
+extract(DAY from (C.end_date-B.run_date)) <=365))as "91to365BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate= 0.05
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >365 AND
+extract(DAY from (C.end_date-B.run_date)) <=730))as "365to730BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >365 AND
+extract(DAY from (C.end_date-B.run_date)) <=730) then Z.available_bal_amt else 0 end)
+from deposit Z LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.05
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >365 AND
+extract(DAY from (C.end_date-B.run_date)) <=730))as "365to730BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.05
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and extract(DAY from (C.end_date-B.run_date)) >730)as "over730BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >730)
+then Z.available_bal_amt else 0 end)from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.05
+and C.end_date <= $P{asofdate} and B.name =$P{branch} 
+and extract(DAY from (C.end_date-B.run_date)) >730)as "over730BalSum"
+
+
+--0.06
+
+UNION ALL
+       
+select '0.06% +       ' as "Interest",
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.06
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and extract(DAY from (C.end_date-B.run_date)) <=0)as "OnDemandBalCount",
+
+
+(select sum(CASE when extract(DAY from (C.end_date-B.run_date)) <=0 
+then Z.available_bal_amt else 0 end) from deposit Z 
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.06
+and C.end_date <= $P{asofdate} and B.name =$P{branch})as "OnDemandBalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.06
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >=1 AND
+extract(DAY from (C.end_date-B.run_date)) <=7))as "1to7BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >=1 AND
+extract(DAY from (C.end_date-B.run_date)) <=7) then Z.available_bal_amt else 0 end)
+from deposit Z LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.06
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >=1 AND
+extract(DAY from (C.end_date-B.run_date)) <=7))as "1to7BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.06
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >7 AND
+extract(DAY from (C.end_date-B.run_date)) <=30))as "8to30BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >7 AND
+extract(DAY from (C.end_date-B.run_date)) <=30) then Z.available_bal_amt else 0 end)
+from deposit Z LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.06 
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >7 AND
+extract(DAY from (C.end_date-B.run_date)) <=30))as "8to30BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.06
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >30 AND
+extract(DAY from (C.end_date-B.run_date)) <=90))as "31to90BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >30 AND
+extract(DAY from (C.end_date-B.run_date)) <=90)
+then Z.available_bal_amt else 0 end)from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.06
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >30 AND
+extract(DAY from (C.end_date-B.run_date)) <=90))as "31to90BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.06
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >90 AND
+extract(DAY from (C.end_date-B.run_date)) <=365))as "91to365BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >90 AND
+extract(DAY from (C.end_date-B.run_date)) <=365) then Z.available_bal_amt else 0 end)
+from deposit Z LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.06
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >90 AND
+extract(DAY from (C.end_date-B.run_date)) <=365))as "91to365BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate= 0.06
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >365 AND
+extract(DAY from (C.end_date-B.run_date)) <=730))as "365to730BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >365 AND
+extract(DAY from (C.end_date-B.run_date)) <=730) then Z.available_bal_amt else 0 end)
+from deposit Z LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.06
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and (extract(DAY from (C.end_date-B.run_date)) >365 AND
+extract(DAY from (C.end_date-B.run_date)) <=730))as "365to730BalSum",
+
+
+(select count(Z.acct_no) from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.06
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and extract(DAY from (C.end_date-B.run_date)) >730)as "over730BalCount",
+
+
+(select sum(CASE when (extract(DAY from (C.end_date-B.run_date)) >730)
+then Z.available_bal_amt else 0 end)from deposit Z
+LEFT JOIN (select "id",run_date,name from branch)B on Z.branch_id = B.id
+LEFT JOIN (select * from rollover)C on Z.id = C.deposit
+where Z.type_id = 3 and Z.available_bal_amt > 0 and Z.interest_rate = 0.06 
+and C.end_date <= $P{asofdate} and B.name =$P{branch}
+and extract(DAY from (C.end_date-B.run_date)) >730)as "over730BalSum"
+
+) as a]]>
+	</queryString>
+	<field name="BANK NAME" class="java.lang.String"/>
+	<field name="Interest" class="java.lang.String"/>
+	<field name="OnDemandBalCount" class="java.lang.Long"/>
+	<field name="OnDemandBalSum" class="java.lang.Double"/>
+	<field name="1to7BalCount" class="java.lang.Long"/>
+	<field name="1to7BalSum" class="java.lang.Double"/>
+	<field name="8to30BalCount" class="java.lang.Long"/>
+	<field name="8to30BalSum" class="java.lang.Double"/>
+	<field name="31to90BalCount" class="java.lang.Long"/>
+	<field name="31to90BalSum" class="java.lang.Double"/>
+	<field name="91to365BalCount" class="java.lang.Long"/>
+	<field name="91to365BalSum" class="java.lang.Double"/>
+	<field name="365to730BalCount" class="java.lang.Long"/>
+	<field name="365to730BalSum" class="java.lang.Double"/>
+	<field name="over730BalCount" class="java.lang.Long"/>
+	<field name="over730BalSum" class="java.lang.Double"/>
+	<variable name="CountOnDemandBal" class="java.lang.Integer" calculation="Sum">
+		<variableExpression><![CDATA[$F{OnDemandBalCount}]]></variableExpression>
+	</variable>
+	<variable name="SumOnDemandBal" class="java.lang.Double" calculation="Sum">
+		<variableExpression><![CDATA[$F{OnDemandBalSum}]]></variableExpression>
+	</variable>
+	<variable name="Count1to7Bal" class="java.lang.Integer" calculation="Sum">
+		<variableExpression><![CDATA[$F{1to7BalCount}]]></variableExpression>
+	</variable>
+	<variable name="Sum1to7Bal" class="java.lang.Double" calculation="Sum">
+		<variableExpression><![CDATA[$F{1to7BalSum}]]></variableExpression>
+	</variable>
+	<variable name="Count8to30Bal" class="java.lang.Integer" calculation="Sum">
+		<variableExpression><![CDATA[$F{8to30BalCount}]]></variableExpression>
+	</variable>
+	<variable name="Sum8to30Bal" class="java.lang.Double" calculation="Sum">
+		<variableExpression><![CDATA[$F{8to30BalSum}]]></variableExpression>
+	</variable>
+	<variable name="Count31to90Bal" class="java.lang.Integer" calculation="Sum">
+		<variableExpression><![CDATA[$F{31to90BalCount}]]></variableExpression>
+	</variable>
+	<variable name="Sum31to90Bal" class="java.lang.Double" calculation="Sum">
+		<variableExpression><![CDATA[$F{31to90BalSum}]]></variableExpression>
+	</variable>
+	<variable name="Count91to365Bal" class="java.lang.Integer" calculation="Sum">
+		<variableExpression><![CDATA[$F{91to365BalCount}]]></variableExpression>
+	</variable>
+	<variable name="Sum91to365Bal" class="java.lang.Double" calculation="Sum">
+		<variableExpression><![CDATA[$F{91to365BalSum}]]></variableExpression>
+	</variable>
+	<variable name="Count365to730Bal" class="java.lang.Integer" calculation="Sum">
+		<variableExpression><![CDATA[$F{365to730BalCount}]]></variableExpression>
+	</variable>
+	<variable name="Sum365to730Bal" class="java.lang.Double" calculation="Sum">
+		<variableExpression><![CDATA[$F{365to730BalSum}]]></variableExpression>
+	</variable>
+	<variable name="Countover730Bal" class="java.lang.Integer" calculation="Sum">
+		<variableExpression><![CDATA[$F{over730BalCount}]]></variableExpression>
+	</variable>
+	<variable name="Sumover730Bal" class="java.lang.Double" calculation="Sum">
+		<variableExpression><![CDATA[$F{over730BalSum}]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band height="128" splitType="Stretch">
+			<property name="local_mesure_unitheight" value="pixel"/>
+			<property name="com.jaspersoft.studio.unit.height" value="px"/>
+			<staticText>
+				<reportElement x="80" y="88" width="700" height="20" uuid="9b75e78e-546f-4164-84d8-07ad43bfa20b"/>
+				<textElement textAlignment="Center">
+					<font size="14" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CTD INTEREST RATE AND MATURITY MATCHING]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="80" y="68" width="700" height="20" uuid="1959ffdf-c316-4e0d-85de-8c76b828ba57"/>
+				<textElement textAlignment="Center">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{branch}+ " Branch"]]></textFieldExpression>
+			</textField>
+			<textField pattern="MMMM dd, yyyy">
+				<reportElement x="80" y="108" width="700" height="20" uuid="016e43c1-e037-41c7-b814-86d0ea9667d2"/>
+				<textElement textAlignment="Center">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["As of " + (new SimpleDateFormat("MMMM dd, yyyy").format($P{asofdate}))]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="80" y="44" width="700" height="24" uuid="482f9d66-566a-46a9-9fae-f5616fb01b74">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="18" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BANK NAME}]]></textFieldExpression>
+			</textField>
+			<image>
+				<reportElement x="0" y="0" width="50" height="50" uuid="2b2b8b5b-9fee-4a3e-b578-8beccc77c430"/>
+				<imageExpression><![CDATA["repo:logo.png"]]></imageExpression>
+			</image>
+			<textField>
+				<reportElement x="748" y="0" width="112" height="13" uuid="9f87a21e-7d20-40e5-84e5-17382400b72b">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA["Page: " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="h:mm a">
+				<reportElement x="748" y="13" width="112" height="13" uuid="77231399-f6ee-494e-a5a2-dcf61a8822aa">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField pattern="MMMMM dd, yyyy">
+				<reportElement x="748" y="26" width="112" height="13" uuid="ac65f1c0-a600-41b7-83f4-a2981216d908">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="36" splitType="Stretch">
+			<staticText>
+				<reportElement x="70" y="0" width="59" height="30" uuid="d937e382-741e-4a5b-8843-353719eb6789">
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement verticalAlignment="Bottom">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[ON DEMAND]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="129" y="0" width="41" height="30" uuid="b550f2d3-060e-4d58-b492-d5ebdb57795d"/>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NO. OF ACCTS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="170" y="0" width="63" height="30" uuid="168f3a05-3234-4543-b4ba-3c72835075aa">
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[1 - 7 DAYS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="233" y="0" width="42" height="30" uuid="8390b849-3fd1-473b-8406-1bf4c8e0656e">
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NO. OF ACCTS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="275" y="0" width="63" height="30" uuid="5330c008-1425-4a07-acfc-dfd1d48aaf10">
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[8 - 30 DAYS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="338" y="0" width="46" height="30" uuid="57c68a92-93a6-4227-bd77-4685f6738ebe">
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NO. OF ACCTS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="384" y="0" width="69" height="30" uuid="22e6e47d-f771-4f96-abba-b63b3553417e">
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[31 - 90 DAYS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="453" y="0" width="46" height="30" uuid="7023ef07-b55c-424c-a767-aed2cd23d82c">
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NO. OF ACCTS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="499" y="0" width="69" height="30" uuid="8c126b5c-4662-48c2-bb2a-00c134bb9478">
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[91 DAYS - 1 YR]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="568" y="0" width="47" height="30" uuid="1ef0b50f-5110-4d31-8ea4-15bd45104691"/>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NO. OF ACCTS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="615" y="0" width="69" height="30" uuid="d268dd81-4e76-4212-aa0e-58d0b4f7ccbc"/>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[1 YR - 2 YRS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="684" y="0" width="46" height="30" uuid="69eaf88f-08c4-4a6a-8064-9eb903f34f38"/>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NO. OF ACCTS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="730" y="0" width="69" height="30" uuid="1196a415-c8d4-4531-b65a-9f50ea5c3331">
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[OVER 2 YRS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="799" y="0" width="57" height="30" uuid="094f2c65-332c-40c3-a074-099f047745f4"/>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NO. OF ACCTS]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="36" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="6" width="70" height="30" uuid="80fbab8a-846a-4b57-a8b7-a07f378e8fcc"/>
+				<textElement>
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{Interest}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="70" y="6" width="58" height="30" uuid="c70c8968-3e85-4286-97c7-067b46a6f368"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{OnDemandBalSum}]]></textFieldExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="true">
+				<reportElement x="128" y="6" width="42" height="30" uuid="f423b2fe-64f5-431e-9755-767f8d69acd9"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{OnDemandBalCount}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="170" y="6" width="62" height="30" uuid="88d70e80-8df0-4f3c-937f-e85dabaac0c2"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{1to7BalSum}]]></textFieldExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="true">
+				<reportElement x="232" y="6" width="44" height="30" uuid="253a4256-6ed8-4e15-962f-1b56f5ec1a12"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{1to7BalCount}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="276" y="6" width="62" height="30" uuid="90cf65a9-1c80-40e2-a67d-9ac99a0ed0f9"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{8to30BalSum}]]></textFieldExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="true">
+				<reportElement x="338" y="6" width="46" height="30" uuid="984ac968-64ad-4332-8c41-94a37345e10b"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{8to30BalCount}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="384" y="6" width="68" height="30" uuid="267d23d3-be72-4dac-9460-38966cc8a8bb"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{31to90BalSum}]]></textFieldExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="true">
+				<reportElement x="452" y="6" width="46" height="30" uuid="5c614da2-31ca-40fd-bd8f-471a95ea2fa7"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{31to90BalCount}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="498" y="6" width="70" height="30" uuid="187c82f2-1379-47cc-91ae-8e5cd54a6709"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{91to365BalSum}]]></textFieldExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="true">
+				<reportElement x="568" y="6" width="46" height="30" uuid="abb95a20-ed0e-4d75-88c0-c24f62c942a6"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{91to365BalCount}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="614" y="6" width="70" height="30" uuid="4e0d7060-8601-4269-b02c-1a8d24df1e76"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{365to730BalSum}]]></textFieldExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="true">
+				<reportElement x="684" y="6" width="46" height="30" uuid="487a5536-3394-40f4-8104-1ed3bddd67fd"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{365to730BalCount}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="730" y="6" width="68" height="30" uuid="9e8d98a7-4701-4f66-aad7-0428b1565ba9"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{over730BalSum}]]></textFieldExpression>
+			</textField>
+			<textField pattern="" isBlankWhenNull="true">
+				<reportElement x="798" y="6" width="58" height="30" uuid="a109d411-1aba-483e-8e5e-c484e85194ac"/>
+				<textElement textAlignment="Center" verticalAlignment="Top">
+					<font size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{over730BalCount}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<pageFooter>
+		<band height="30" splitType="Stretch">
+			<textField evaluationTime="Report" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="70" y="3" width="59" height="20" uuid="12293074-3a40-4b68-b26b-16c1aed749e6">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font fontName="SansSerif" size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{SumOnDemandBal}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="3" width="60" height="20" uuid="c18219ec-3b51-4c24-88c9-b02e93f11cb3"/>
+				<textElement verticalAlignment="Bottom">
+					<font size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Grand Total :]]></text>
+			</staticText>
+			<textField evaluationTime="Report" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="276" y="3" width="62" height="20" uuid="88c8b426-108e-4c06-8577-dc9073fc1e1f">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font fontName="SansSerif" size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{Sum8to30Bal}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report" isBlankWhenNull="true">
+				<reportElement x="568" y="3" width="47" height="20" uuid="322ddf9e-c034-4ab5-b523-a2ba626686ef">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font fontName="SansSerif" size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{Count91to365Bal}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="615" y="3" width="69" height="20" uuid="413c371c-0878-485f-97c2-16d22ba1bc06">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font fontName="SansSerif" size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{Sum365to730Bal}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report" isBlankWhenNull="true">
+				<reportElement x="684" y="3" width="46" height="20" uuid="0f187cac-0269-427b-a1bb-a08941422b7c">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font fontName="SansSerif" size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{Count365to730Bal}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report" isBlankWhenNull="true">
+				<reportElement x="129" y="3" width="41" height="20" uuid="47a41e1b-f975-494c-a550-ca9b1e97760e">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font fontName="SansSerif" size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{CountOnDemandBal}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report" isBlankWhenNull="true">
+				<reportElement x="233" y="3" width="43" height="20" uuid="bbab0411-ea88-41a5-bc10-53783fb2a70e">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font fontName="SansSerif" size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{Count1to7Bal}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="499" y="3" width="69" height="20" uuid="258703eb-49ec-4b70-a9d4-39f347e3561a">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font fontName="SansSerif" size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{Sum91to365Bal}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="799" y="3" width="56" height="20" uuid="a8d8f87f-1cfd-408e-9228-b7613fffdc3c">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font fontName="SansSerif" size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{Countover730Bal}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report" isBlankWhenNull="true">
+				<reportElement x="338" y="3" width="46" height="20" uuid="2b6f4872-9fbf-487e-8272-3d4464782387">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font fontName="SansSerif" size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{Count8to30Bal}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report" isBlankWhenNull="true">
+				<reportElement x="454" y="3" width="45" height="20" uuid="fa38e906-70af-4a89-b07d-166276e7b7e3">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font fontName="SansSerif" size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{Count31to90Bal}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="384" y="3" width="70" height="20" uuid="009060cb-8a26-4f1c-8442-8ff8eda7153d">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font fontName="SansSerif" size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{Sum31to90Bal}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="170" y="3" width="63" height="20" uuid="27266eff-0f9c-4b8c-9e91-9a94ee9a8ed5">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font fontName="SansSerif" size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{Sum1to7Bal}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report" pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="730" y="3" width="69" height="20" uuid="f21f2f31-90a4-48bd-aa2b-9f5863f9469f">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Bottom">
+					<font fontName="SansSerif" size="7"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{Sumover730Bal}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<summary>
+		<band height="16" splitType="Stretch"/>
+	</summary>
+	<noData>
+		<band height="108">
+			<textField pattern="h:mm a">
+				<reportElement x="748" y="13" width="112" height="13" uuid="664bbe78-8fa4-468e-9bc9-010cf0764798">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField pattern="MMMMM dd, yyyy">
+				<reportElement x="748" y="26" width="112" height="13" uuid="6f4b3a8e-b04b-4aae-ac1b-b82b26ae3a37">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="748" y="0" width="112" height="13" uuid="4fc0d531-d490-4581-b8a8-a2d7d081a121">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA["Page: " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="80" y="43" width="700" height="30" uuid="aa2f5379-569d-416d-80db-bd25497b4bdb"/>
+				<textElement textAlignment="Center">
+					<font size="16" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CHARGED ACTIVE CURRENT ACCOUNTS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="80" y="73" width="700" height="13" uuid="c03384eb-f3c1-4aae-909e-438060a3597c">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="10"/>
+				</textElement>
+				<text><![CDATA[NO DATA FOR REPORT]]></text>
+			</staticText>
+			<image>
+				<reportElement x="0" y="0" width="50" height="50" uuid="343611b8-2605-4b72-8740-500d74dfe682"/>
+				<imageExpression><![CDATA["repo:logo.png"]]></imageExpression>
+			</image>
+		</band>
+	</noData>
+</jasperReport>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.2.1.final using JasperReports Library version 6.2.1  -->
+<!-- 2016-05-11T14:20:57 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="MOASubreport" pageWidth="612" pageHeight="792" columnWidth="612" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="6e2b9a41-6eba-441b-aee2-cd71a0f9698e">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="Local PostgreSQL"/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<parameter name="sort_code" class="java.lang.String"/>
+	<parameter name="ccy" class="java.lang.String"/>
+	<parameter name="finyr" class="java.lang.Integer"/>
+	<queryString>
+		<![CDATA[select 
+	glsc.sort_code,
+	'(' || right('000'|| ltrim(to_char((select code from branch where glac.branch_id=id),'999')),3) || ') ' || glac.code as code,
+	glac.short_name,
+	ccy.code as ccy
+from gl_account as glac 
+inner join gl_sort_code as glsc on glac.parent_id = glsc.id
+inner join currency as ccy on glac.currency_id=ccy.id
+
+where 
+	glsc.sort_code = $P{sort_code}
+	and ccy.code = $P{ccy}
+	and glac.financial_year = $P{finyr} 
+
+order by code]]>
+	</queryString>
+	<field name="code" class="java.lang.String"/>
+	<field name="short_name" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<detail>
+		<band height="13" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="0" width="170" height="13" uuid="03e63052-2069-48e6-b5c6-199addc2dc7d">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.x" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{code}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="171" y="0" width="425" height="13" uuid="9cc1f59e-a203-45bc-a955-93c160cd0151">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.x" value="pixel"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{short_name}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>

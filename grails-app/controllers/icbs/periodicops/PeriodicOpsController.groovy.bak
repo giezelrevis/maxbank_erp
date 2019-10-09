@@ -1,0 +1,355 @@
+package icbs.periodicops
+
+import grails.converters.JSON
+import org.codehaus.groovy.grails.web.json.JSONObject
+import icbs.admin.UserMaster
+import java.nio.file.*
+import icbs.admin.Branch
+import icbs.admin.Holiday
+import icbs.admin.UserMaster
+import icbs.lov.BranchRunStatus
+import icbs.tellering.TxnBreakdown
+import icbs.gl.GlBatchHdr
+import icbs.gl.GlBatch
+import grails.transaction.Transactional
+import org.apache.commons.io.FileUtils
+import org.apache.tools.zip.ZipEntry
+import java.text.SimpleDateFormat
+import java.util.zip.ZipOutputStream
+
+class PeriodicOpsController {
+    def periodicOpsService
+    def loanPeriodicOpsService
+    def IsTelleringActiveService
+    def depositPeriodicOpsService
+    def jasperService
+    def AuditLogService
+    def GlTransactionService
+    
+    def index() { 
+        def runDate = Branch.read(1).runDate
+        
+        //render(view:"index",model:[startOfDayDate:new Date()])
+        render(view:"index",model:[startOfDayDate:runDate])
+    }
+    
+    private def zipFiles(String fileName,String inputDir) {
+        fileName = fileName+".zip"
+        ByteArrayOutputStream baos = new ByteArrayOutputStream()
+        ZipOutputStream zipFile = new ZipOutputStream(baos)
+        new File(inputDir).eachFile() { file ->
+            zipFile.putNextEntry(new ZipEntry(file.name))
+            file.withInputStream { i ->
+                zipFile << i
+            }
+            zipFile.closeEntry()
+        }
+        zipFile.finish()
+        new File(inputDir).eachFile() { file ->
+            file.delete()
+        }
+        
+        OutputStream outputStream = new FileOutputStream (inputDir+"/"+fileName)
+        baos.writeTo(outputStream)
+    }
+    def getStartOfDayReport(){
+        def rootDir = request.getSession().getServletContext().getRealPath("/")+"reports_repository/startOfDay/"+new SimpleDateFormat("yyyy-MM-dd").format(new Date())
+        Path path = Paths.get(rootDir+"/reports.zip");
+        byte[] data = Files.readAllBytes(path);
+        response.setHeader("Content-disposition", "filename=\"reports.zip\"")
+        response.contentType = "application/zip"
+        response.outputStream << data
+        response.outputStream.flush()   
+  
+    }
+    private def createStartOfDayReport(){
+        def rootDir = request.getSession().getServletContext().getRealPath("/")+"reports_repository/startOfDay/"+new SimpleDateFormat("yyyy-MM-dd").format(new Date())
+        //params with underscore are required/
+        //This is one report
+        params._name = "ListOfBranches"
+        params._format ="PDF"//required caps
+        params._file ="Sample-1.jasper" //eto ung pangalang ng jasper file
+        //parameters that will be passed to the jasper report, add as needed
+        params.type =  1
+        params.status = 2
+        
+        def reportDef = jasperService.buildReportDefinition(params, request.getLocale(), [])
+        def file = jasperService.generateReport(reportDef).toByteArray()
+        FileUtils.writeByteArrayToFile(new File(rootDir+"/"+params._name+"."+params._format.toLowerCase()),file)
+        //end of one report (add as needed copy paste lang to just change ung params with underscore_)
+          
+        
+        //do not edit beyond this line
+        //Zip all files in root directory
+        zipFiles("reports",rootDir);
+    }
+    def getEndOfDayReport(){
+        def rootDir = request.getSession().getServletContext().getRealPath("/")+"reports_repository/endOfDay/"+new SimpleDateFormat("yyyy-MM-dd").format(new Date())
+        Path path = Paths.get(rootDir+"/reports.zip");
+        byte[] data = Files.readAllBytes(path);
+        response.setHeader("Content-disposition", "filename=\"reports.zip\"")
+        response.contentType = "application/zip"
+        response.outputStream << data
+        response.outputStream.flush()   
+    }
+    private def createEndOfDayReport(){
+        def rootDir = request.getSession().getServletContext().getRealPath("/")+"reports_repository/endOfDay/"+new SimpleDateFormat("yyyy-MM-dd").format(new Date())
+        //params with underscore are required/
+        //This is one report just cop
+        params._name = "ListOfBranches"
+        params._format ="PDF"//required caps
+        params._file ="Sample-1.jasper"  //eto ung pangalang ng jasper file
+        //parameters that will be passed to the jasper report, add as needed
+        params.type =  1
+        params.status = 2
+        
+        def reportDef = jasperService.buildReportDefinition(params, request.getLocale(), [])
+        def file = jasperService.generateReport(reportDef).toByteArray()
+        FileUtils.writeByteArrayToFile(new File(rootDir+"/"+params._name+"."+params._format.toLowerCase()),file)
+        //end of one report (add as needed copy paste lang to just change ung params with underscore_)
+        
+        //do not edit beyond this line
+        //Zip all files in root directory
+        zipFiles("reports",rootDir);
+    }
+    private JSONObject setProgressSession(progress,message,flag){
+        session.progress= progress
+        session.message = message
+        session.flag = flag
+        def jsonObject =new JSONObject();
+        jsonObject = jsonObject.put('progress',session.progress)
+        jsonObject = jsonObject.put('message',session.message)
+        jsonObject = jsonObject.put('flag',session.flag)
+        return jsonObject
+    }
+    def startOfDayProgressAjax(){
+        def jsonObject =new JSONObject();
+        jsonObject = jsonObject.put('progress',session.progress)
+        jsonObject = jsonObject.put('message',session.message)
+        jsonObject = jsonObject.put('flag',session.flag)
+        render jsonObject
+    }
+    @Transactional
+    def startOfDay(){
+        //Date startOfDayDate = (new Date()).clearTime()
+        def bList = Branch.list()
+        Boolean openBr = true
+        for (b in bList){
+            if (b.branchRunStatusId == 1){
+                openBr = false
+            }
+        }
+        
+        if (!openBr){
+            println 'already open'
+            setProgressSession("100","Complete","end")    
+            return
+        }
+        
+        Date startOfDayDate = Branch.read(1).runDate
+        def holidays = Holiday.findAllByHolidayDate(startOfDayDate)
+        Boolean bHoliday 
+        
+        if (holidays){
+           if (holidays.institutionWideHoliday){
+               // do something for holiday
+               println 'Holiday!!!!!'
+               def bl = Branch.list()
+               for (branch in bl){
+                  branch.branchRunStatus = BranchRunStatus.get(1)
+                  branch.save(flush:true,failOnError:true) 
+               }
+           }
+           else{
+               // first do clearing of checks
+               depositPeriodicOpsService.clearingChecks(startOfDayDate)
+               
+               def bhList = Branch.list()
+               for (bh in bhList){
+                   //bHoliday = (BranchHoliday.findAllWhere(branch:bh, Holiday.holidayDate:startOfDayDate))
+                   bHoliday = false
+                   if (!bHoliday){
+                       render(setProgressSession("0","Processing Deposit Start Of Day","start")) 
+                        depositPeriodicOpsService.startOfDay(startOfDayDate,branch,UserMaster.get(session.user_id))
+                        setProgressSession("50","Processing Loans Start Of Day","processing")
+                        //currentDate = new Date().parse("MM/dd/yyyy", "08/10/2015")  // for debugging
+                        loanPeriodicOpsService.startOfDay(startOfDayDate,branch)
+                        //println 'branch>>'+branch.isTelleringActive
+                        IsTelleringActiveService.enableTellering()
+                   }
+               }
+               
+           }
+        }
+        else{
+            // first do clearing of checks
+            depositPeriodicOpsService.clearingChecks(startOfDayDate)
+            Boolean notWeekend = false
+            String  today
+            Date weekDate
+
+            def bl = Branch.list()
+            for (branch in bl){
+                today = branch.runDate.toString()
+                Calendar calendar = new GregorianCalendar(Integer.parseInt(today.substring(0,4)), Integer.parseInt(today.substring(5,7)),Integer.parseInt(today.substring(8,10)) );
+                //weekDate = Date.parse("yyyy-MM-dd",today.substring(0,10))
+                //println calendar.get(Calendar.DAY_OF_WEEK)
+                //Date.parse("yyyy-MM-dd", "2015-12-13")[Calendar.DAY_OF_WEEK]
+                //Date.parse("yyyy-MM-dd", today2)[Calendar.DAY_OF_WEEK]
+                //println branch.name + ' date string ' + today + ' day of week' + Date.parse("yyyy-MM-dd", today.substring(0,10))[Calendar.DAY_OF_WEEK]
+                //check for weekend
+                if (branch.openOnSun && (Date.parse("yyyy-MM-dd", today.substring(0,10))[Calendar.DAY_OF_WEEK]==1)){
+                    println 'sunday'
+                    notWeekend = true
+                }
+                if (branch.openOnMon && (Date.parse("yyyy-MM-dd", today.substring(0,10))[Calendar.DAY_OF_WEEK]==2)){
+                    println 'monday'
+                    notWeekend = true
+                }                
+                if (branch.openOnTue && (Date.parse("yyyy-MM-dd", today.substring(0,10))[Calendar.DAY_OF_WEEK]==3)){
+                    println 'tuesday'
+                    notWeekend = true
+                }                
+                if (branch.openOnWed && (Date.parse("yyyy-MM-dd", today.substring(0,10))[Calendar.DAY_OF_WEEK]==4)){
+                    println 'wed'
+                    notWeekend = true
+                }               
+                if (branch.openOnThu && (Date.parse("yyyy-MM-dd", today.substring(0,10))[Calendar.DAY_OF_WEEK]==5)){
+                    println 'thu'
+                    notWeekend = true
+                }               
+                if (branch.openOnFri && (Date.parse("yyyy-MM-dd", today.substring(0,10))[Calendar.DAY_OF_WEEK]==6)){
+                    println 'friday'
+                    notWeekend = true
+                }                
+                if (branch.openOnSat && (Date.parse("yyyy-MM-dd", today.substring(0,10))[Calendar.DAY_OF_WEEK]==7)){
+                    println 'sat'
+                    notWeekend = true
+                }               
+                if (notWeekend){
+                    //println branch.name
+                    render(setProgressSession("0","Processing Deposit Start Of Day","start")) 
+                    depositPeriodicOpsService.startOfDay(startOfDayDate,branch,UserMaster.get(session.user_id))
+                    setProgressSession("50","Processing Loans Start Of Day","processing")
+                    //currentDate = new Date().parse("MM/dd/yyyy", "08/10/2015")  // for debugging
+                    loanPeriodicOpsService.startOfDay(startOfDayDate,branch)
+                    //println 'branch>>'+branch.isTelleringActive
+                    //IsTelleringActiveService.enableTellering()
+                    branch.isTelleringActive = true
+                }
+                
+                branch.branchRunStatus = BranchRunStatus.get(1)
+                branch.save(flush:true,failOnError:true)
+            }
+            //def branch = UserMaster.get(session.user_id).branch
+            //branch.runDate = startOfDayDate
+            //branch.save(flush:true,validate:false)
+            //IsTelleringActiveService.disableTellering()
+            //render(setProgressSession("0","Processing Deposit Start Of Day","start")) 
+        }
+        
+        setProgressSession("100","Complete","end")
+        auditLogService.insert('150', 'ADM00700', 'periodicops - Start of Day ' + startOfDayDate.toString())
+        this.createStartOfDayReport()
+        
+    }
+    def endOfDayProgressAjax(){
+        def jsonObject =new JSONObject();
+        jsonObject = jsonObject.put('progress',session.progress)
+        jsonObject = jsonObject.put('message',session.message)
+        jsonObject = jsonObject.put('flag',session.flag)
+        render jsonObject
+    }
+    @Transactional
+    def endOfDay(){
+        def currentDate = Branch.get(1).runDate
+        
+        def openBr = Branch.list()
+        Boolean closedBr = true
+        for (oBr in openBr){
+            if (oBr.branchRunStatusId == 2){
+                closedBr = false
+            }
+        }
+        if (!closedBr){
+            println 'already closed'
+            //setProgressSession("100","Complete","end")
+            //return    
+        }
+        // check tellers for unbalanced
+        def uList = UserMaster.list()
+        Boolean allBalanced = true
+        for (ul in uList){
+            if (!ul.isTellerBalanced){
+                allBalanced = false
+            }
+        }
+        if (!allBalanced) {
+           println 'teller not balanced'
+           //setProgressSession("100","Complete","end")
+           //return
+        }
+        
+        //def branch = UserMaster.get(session.user_id).branch
+        //Date currentDate = (new Date()).clearTime()
+
+        // execute last txn update
+        depositPeriodicOpsService.updateLastTxnDate(currentDate)
+        
+        //IsTelleringActiveService.enableTellering()
+        if (allBalanced && closedBr){
+            def brList = Branch.list()
+            for (branch in brList){
+                IsTelleringActiveService.disableTellering()
+                render(setProgressSession("0","End of Day Deposits Processing ","start"))
+                depositPeriodicOpsService.endOfDay(currentDate,branch,UserMaster.get(session.user_id))
+                setProgressSession("50","End of Day Loans Processing","processing")
+                loanPeriodicOpsService.endOfDay(currentDate,branch)
+                
+                // transfer to dormant
+                depositPeriodicOpsService.TransferToDormant(branch)                
+                
+                branch.runDate = currentDate.plus(1)
+                branch.branchRunStatus = BranchRunStatus.get(2)
+                branch.isTelleringActive = false
+                branch.save(flush:true, failOnError:true)
+            }
+            
+        }
+        
+
+        
+        // update GL
+        GlTransactionService.PeriodicGlEntries(currentDate)
+        
+        setProgressSession("100","Complete","end")
+        this.createEndOfDayReport()
+        auditLogService.insert('700', 'ADM00700', 'periodicops - End of Day ' + currentDate.toString())
+    }
+    def endOfMonthProgressAjax(){
+        def jsonObject =new JSONObject();
+        jsonObject = jsonObject.put('progress',session.progress)
+        jsonObject = jsonObject.put('message',session.message)
+        jsonObject = jsonObject.put('flag',session.flag)
+        render jsonObject
+    }
+    def endOfMonth(){
+        Date currentDate = (new Date()).clearTime()
+        render(setProgressSession("0","Processing End of Month","start"))
+        setProgressSession("100","Complete","end")
+        loanPeriodicOpsService.endOfMonth(currentDate)
+    }
+    def endOfYearProgressAjax(){
+        def jsonObject =new JSONObject();
+        jsonObject = jsonObject.put('progress',session.progress)
+        jsonObject = jsonObject.put('message',session.message)
+        jsonObject = jsonObject.put('flag',session.flag)
+        render jsonObject
+    }
+    def endOfYear(){
+        render(setProgressSession("0","Processing End of Year","start"))
+        
+        setProgressSession("100","Complete","end")
+        
+    }
+}

@@ -1,0 +1,163 @@
+package icbs.deposit
+
+import icbs.cif.Customer
+import icbs.admin.Branch
+import icbs.lov.AcctNoFormat
+import icbs.lov.DepositStatus
+import icbs.lov.DepositType
+import icbs.lov.OwnershipType
+import icbs.admin.Product
+import icbs.gl.CfgAcctGlTemplate
+class Deposit { 
+    static belongsTo=[customer:Customer]
+    static hasMany=[signatories:Signatory,passbooks:IssuePassbook,chequebooks:Chequebook,
+        ctds:IssueCTD,holds:Hold,standingOrders:StandingOrder,sweeps:Sweep,rollovers:Rollover
+    ]
+    
+    Rollover currentRollover//bago to
+    
+    static mappedBy=[currentRollover:"deposit",rollovers:"deposit",standingOrders:'fundingDeposit',sweeps:'fundingDeposit']
+    List signatories = [].withLazyDefault {new Signatory()}
+    List passbooks = [].withLazyDefault {new Passbook()}
+    List holds = [].withLazyDefault {new Hold()}
+    List sweeps = [].withLazyDefault {new Sweep()}
+    List rollovers = [].withLazyDefault {new Rollover()}
+    Branch branch
+    DepositType type
+    CfgAcctGlTemplate glLink
+    Product product
+    String acctNo
+    String acctName//new
+    AcctNoFormat acctNoFormat
+    OwnershipType ownershipType
+    String sigRules
+    String sigRemarks//new
+    DepositInterestScheme depositInterestScheme
+    DepositTaxFeeAndChargeScheme depositTaxChargeScheme
+    FixedDepositPreTermScheme fixedDepositPreTermScheme
+    FixedDepositTermScheme fixedDepositTermScheme
+    int lastTermInterval//new addition
+   //GL Acct ID
+   //GL Acct Orig
+    Date dateOpened
+    Date dateClosed
+    DepositStatus status
+    Date statusChangeDate
+    //Date startDate //bago
+    //Date maturityDate
+    //Transaction id
+    //Last Customer Transaction Date
+    Double ledgerBalAmt
+    Double holdBalAmt
+    Double availableBalAmt
+    Double outstandingBalAmt
+    Double passbookBalAmt
+    Double grossRolloverInterestAmt// cumulative
+    Double netRolloverInterestAmt// cummulative
+    Double interestBalAmt//periodic daily balance table dont add, for the day
+    Double lmAveBalAmt
+    Double interestRate
+    Double acrintAmt
+    Date acrintDate
+    Double debitAcrintAmt
+    Date debitAcrintDate
+    int txnWithdrawalsCounterMonthly
+    int txnWithdrawalsCounterCummulative
+    Integer createdBy
+    int txnDepCounterMonthly
+    int txnDepCounterCummulative
+    
+    Date lastCapitalizationDate
+    Currency currency
+    boolean isSweep
+    //rollover type
+    int rolloverSequence//rollover count
+    //rollover seq
+    
+    Date dateCreated
+    Double taxWithheld
+    
+    Date lastTxnDate
+    static constraints = {
+        customer nullable:false
+        signatories nullable:true
+        passbooks nullable:true
+        chequebooks nullable:true
+        ctds nullable:true
+        holds nullable:true
+        standingOrders nullable:true
+        rollovers nullable:true
+        currentRollover nullable:true
+        grossRolloverInterestAmt nullable:true//acrual 
+        netRolloverInterestAmt nullable:true//accrul
+        branch nullable:true
+        type nullable:false
+        glLink nullable:false
+        product nullable:false
+        acctNo maxSize:30,nullable:true
+        acctName maxSize:50, nullable:false
+        acctNoFormat nullable:true
+        ownershipType nullable:true
+        sigRules maxSize:50, nullable:true
+        sigRemarks maxSize:255, nullable:true
+        depositInterestScheme nullable:true
+        depositTaxChargeScheme nullable:true
+        fixedDepositPreTermScheme nullable:true
+        fixedDepositTermScheme nullable:true
+        lastTermInterval nullable:true//new addition
+        dateOpened nullable:true
+        dateClosed nullable:true
+        status nullable:true
+        statusChangeDate nullable:true
+        ledgerBalAmt nullable:true
+        holdBalAmt nullable:true
+        availableBalAmt nullable:true
+        outstandingBalAmt nullable:true
+        passbookBalAmt nullable:true
+        interestBalAmt nullable:true
+        lmAveBalAmt nullable:true//savings and current
+        interestRate nullable:true
+        acrintAmt nullable:true//earned from interest net
+        acrintDate nullable:true
+        debitAcrintDate nullable:true//wala to
+        debitAcrintAmt nullable:true//wala to    
+        txnWithdrawalsCounterMonthly nullable:true
+        txnWithdrawalsCounterCummulative nullable:true
+        lastCapitalizationDate nullable:true
+        currency nullable:true
+        isSweep nullable:true
+        rolloverSequence nullable:true
+        createdBy nullable:true
+    
+        dateCreated nullable:true
+        
+        lastTxnDate nullable:true
+    }
+    static mapping={
+        id sqlType: "int", generator: "increment"
+        signatories cascade: "all-delete-orphan"
+        
+   
+    }
+    def beforeInsert(){
+        this.ledgerBalAmt = 0
+        this.holdBalAmt = 0
+        this.passbookBalAmt =0
+        this.availableBalAmt =0
+        this.outstandingBalAmt = 0
+        this.interestBalAmt = 0
+        this.lmAveBalAmt = 0
+        this.acrintAmt = 0
+        this.debitAcrintAmt = 0
+        this.status = DepositStatus.get(2)
+        this.rolloverSequence = 0
+        this.dateCreated = new Date()
+        //this.dateOpened = new Date()
+        //if(this.type.id==3){
+          //  this.currentRollover = this.rollovers[0]
+        //}
+    }
+    def beforeUpdate(){
+        
+    }
+}

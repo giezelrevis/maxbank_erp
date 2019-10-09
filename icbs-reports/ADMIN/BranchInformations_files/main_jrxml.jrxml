@@ -1,0 +1,571 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.2.1.final using JasperReports Library version 6.2.0  -->
+<!-- 2016-04-28T16:05:38 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Branch Informations" pageWidth="612" pageHeight="792" whenNoDataType="NoDataSection" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="81d01637-521c-466b-8958-15390125f575">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="ICBS"/>
+	<property name="ireport.jasperserver.url" value="http://localhost:8080/jasperserver/"/>
+	<property name="ireport.jasperserver.user" value="jasperadmin"/>
+	<property name="ireport.jasperserver.report.resource" value="/ICBS_REPORT/ADMIN/BranchInformations_files/main_jrxml"/>
+	<property name="ireport.jasperserver.reportUnit" value="/ICBS_REPORT/ADMIN/BranchInformations"/>
+	<parameter name="Branch" class="java.lang.String"/>
+	<queryString language="SQL">
+		<![CDATA[select 
+C.param_value as "BANK NAME",	
+branch.code as "Code",
+	branch.name as "Branch",
+	branch.swift_code as "Swift Code",
+	branch.address as "Address",
+	lov.item_value as "Region",
+	case when country.description is null then '---' else country.description end  as "Country",
+	branch.contact_number as "Contact Number",
+	branch.open_date as "Open Date",
+	branch.data_center as "Data Center",
+	branch.open_on_mon as "Monday",
+	branch.open_on_tue as "Tuesday",
+	branch.open_on_wed as "Wednesday",
+	branch.open_on_thu as "Thursday",
+	branch.open_on_fri as "Friday",
+	branch.open_on_sat as "Saturday",
+	branch.open_on_sun as "Sunday",
+	branch.run_date as "Run Date",
+	branch_run_status.description as "Branch Run Status",
+	branch_status.description as status
+from branch
+inner join (select param_value from institution where id = '1') C ON C.param_value is not null
+left join lov on lov.id = region_id
+left join country on country.id = country_id
+left join branch_run_status on branch_run_status.id = branch_run_status_id
+left join branch_status on branch_status.id = status_id
+where branch.name = $P{Branch}]]>
+	</queryString>
+	<field name="BANK NAME" class="java.lang.String"/>
+	<field name="Code" class="java.lang.Integer"/>
+	<field name="Branch" class="java.lang.String"/>
+	<field name="Swift Code" class="java.lang.String"/>
+	<field name="Address" class="java.lang.String"/>
+	<field name="Region" class="java.lang.String"/>
+	<field name="Country" class="java.lang.String"/>
+	<field name="Contact Number" class="java.lang.String"/>
+	<field name="Open Date" class="java.sql.Date"/>
+	<field name="Data Center" class="java.lang.Boolean"/>
+	<field name="Monday" class="java.lang.Boolean"/>
+	<field name="Tuesday" class="java.lang.Boolean"/>
+	<field name="Wednesday" class="java.lang.Boolean"/>
+	<field name="Thursday" class="java.lang.Boolean"/>
+	<field name="Friday" class="java.lang.Boolean"/>
+	<field name="Saturday" class="java.lang.Boolean"/>
+	<field name="Sunday" class="java.lang.Boolean"/>
+	<field name="Run Date" class="java.sql.Timestamp"/>
+	<field name="Branch Run Status" class="java.lang.String"/>
+	<field name="status" class="java.lang.String"/>
+	<group name="BANK NAME">
+		<groupExpression><![CDATA[$F{BANK NAME}]]></groupExpression>
+	</group>
+	<group name="Code">
+		<groupExpression><![CDATA[$F{Code}]]></groupExpression>
+	</group>
+	<group name="Branch">
+		<groupExpression><![CDATA[$F{Branch}]]></groupExpression>
+	</group>
+	<group name="Swift Code">
+		<groupExpression><![CDATA[$F{Swift Code}]]></groupExpression>
+	</group>
+	<group name="Address">
+		<groupExpression><![CDATA[$F{Address}]]></groupExpression>
+	</group>
+	<group name="Region">
+		<groupExpression><![CDATA[$F{Region}]]></groupExpression>
+	</group>
+	<group name="Country">
+		<groupExpression><![CDATA[$F{Country}]]></groupExpression>
+	</group>
+	<group name="Contact Number">
+		<groupExpression><![CDATA[$F{Contact Number}]]></groupExpression>
+	</group>
+	<group name="Open Date">
+		<groupExpression><![CDATA[$F{Open Date}]]></groupExpression>
+	</group>
+	<group name="Data Center">
+		<groupExpression><![CDATA[$F{Data Center}]]></groupExpression>
+	</group>
+	<group name="Monday">
+		<groupExpression><![CDATA[$F{Monday}]]></groupExpression>
+	</group>
+	<group name="Tuesday">
+		<groupExpression><![CDATA[$F{Tuesday}]]></groupExpression>
+	</group>
+	<group name="Wednesday">
+		<groupExpression><![CDATA[$F{Wednesday}]]></groupExpression>
+	</group>
+	<group name="Thursday">
+		<groupExpression><![CDATA[$F{Thursday}]]></groupExpression>
+	</group>
+	<group name="Friday">
+		<groupExpression><![CDATA[$F{Friday}]]></groupExpression>
+	</group>
+	<group name="Saturday">
+		<groupExpression><![CDATA[$F{Saturday}]]></groupExpression>
+	</group>
+	<group name="Sunday">
+		<groupExpression><![CDATA[$F{Sunday}]]></groupExpression>
+	</group>
+	<group name="Run Date">
+		<groupExpression><![CDATA[$F{Run Date}]]></groupExpression>
+	</group>
+	<group name="Branch Run Status">
+		<groupExpression><![CDATA[$F{Branch Run Status}]]></groupExpression>
+	</group>
+	<group name="status">
+		<groupExpression><![CDATA[$F{status}]]></groupExpression>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band height="88" splitType="Stretch">
+			<textField pattern="MMMMM dd, yyyy">
+				<reportElement x="472" y="26" width="100" height="13" uuid="0cce969c-11b7-457e-a404-8739930cbcdb">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="472" y="0" width="100" height="13" uuid="29b40d01-cf5c-4581-b886-be855fc1373b">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA["Page: " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="HH:mm">
+				<reportElement x="472" y="13" width="100" height="13" uuid="c89bc1ed-a3e4-4137-8e19-7517e19071b3">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="80" y="63" width="400" height="22" uuid="bb935224-8f7a-4e18-8e0b-01bb7ba5ee31">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="16" isBold="true"/>
+				</textElement>
+				<text><![CDATA[BRANCH INFORMATION]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="80" y="39" width="400" height="24" uuid="de2166bc-8e4d-4d3a-b277-47b19eef44b7">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="18" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BANK NAME}]]></textFieldExpression>
+			</textField>
+			<image>
+				<reportElement x="0" y="0" width="50" height="50" uuid="79294a3b-c667-4d6f-9512-7986bd3b3180"/>
+				<imageExpression><![CDATA["repo:logo.png"]]></imageExpression>
+			</image>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="16" splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band height="353" splitType="Stretch">
+			<staticText>
+				<reportElement x="180" y="0" width="100" height="13" uuid="ee94754c-fdd4-49ad-b1c7-c06c207a8bea">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Code]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="300" y="80" width="272" height="13" uuid="18e65380-098a-4e38-91a7-885fa4c5d3d3">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Country}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="300" y="0" width="272" height="13" uuid="580cb040-d938-4571-839e-8eb0cc39bf1e">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Code}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="300" y="60" width="272" height="13" uuid="b897f353-1dbc-4737-9363-892739ecc988">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Address}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="180" y="20" width="100" height="13" uuid="944a3707-e86f-4d5f-a0a8-0c2773c6fc3d">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Branch]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="180" y="60" width="100" height="13" uuid="be5d0519-8689-4945-99b9-8d4f1a7d9672">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+					<property name="local_mesure_unitx" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Address]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="300" y="100" width="272" height="13" uuid="9576c9d7-7dd8-480b-a6cd-bbe6b4972853">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Region}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="180" y="80" width="100" height="13" uuid="cdda2297-e74d-497a-9cd7-ab0629b97a75">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Country]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="180" y="100" width="100" height="13" uuid="25510f64-1dc9-4ff0-8114-9c80ea4dbcd9">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Region]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="300" y="40" width="272" height="13" uuid="068f3b4d-3b23-40a0-846e-5fa40e162fc1">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Swift Code}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="300" y="20" width="272" height="13" uuid="4fb056b8-ca24-4913-87f4-6e1056937708">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="local_mesure_unitx" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Branch}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="180" y="40" width="100" height="13" uuid="1265ed76-dd9a-4550-829e-f9e1bc0494bb">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Swift Code]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="300" y="220" width="60" height="13" uuid="43657bc5-821e-45f7-9761-36aeb28ae747">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+				</reportElement>
+				<text><![CDATA[Tuesday]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="360" y="200" width="41" height="13" uuid="43dedaeb-68da-4d98-9f91-dd86fd80f600">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+					<property name="local_mesure_unitx" value="pixel"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Monday}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="300" y="320" width="272" height="13" uuid="6e1cce4e-8362-45e3-b041-3ffa0f29c2f3">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+					<property name="local_mesure_unitx" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Branch Run Status}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="300" y="280" width="60" height="13" uuid="87baabdd-6b36-4a26-9efc-0a18f7699605">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+				</reportElement>
+				<text><![CDATA[Friday]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="180" y="180" width="100" height="13" uuid="d72c375a-fd6a-48ec-a2fe-de68e84ab1a7">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="local_mesure_unitx" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Working Days]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="300" y="257" width="60" height="13" uuid="63e3dd5a-148e-45cf-8e82-7fde332ea668">
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+					<property name="local_mesure_unitx" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+				</reportElement>
+				<text><![CDATA[Thursday]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="360" y="258" width="42" height="13" uuid="8cba3b4b-bdc0-4f1c-94ab-028d88def206">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Thursday}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="360" y="240" width="42" height="13" uuid="95ff655f-0282-42bb-96d0-e74805f296c1">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Wednesday}]]></textFieldExpression>
+			</textField>
+			<textField pattern="MMM d, yyyy">
+				<reportElement x="300" y="140" width="272" height="13" uuid="382a0f9d-9796-4963-a72e-37d8215d1b4f">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Open Date}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="300" y="240" width="60" height="13" uuid="c39d7452-76aa-4ecf-9d20-555470529a96">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+				</reportElement>
+				<text><![CDATA[Wednesday]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="180" y="300" width="100" height="13" uuid="b2b30f3e-9179-4341-828e-cd504e71f171">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+					<property name="local_mesure_unitx" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Run Date]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="180" y="140" width="100" height="13" uuid="ea5c6f92-bbaa-4857-b0d4-6f3758a7b141">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="local_mesure_unitx" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Open Date]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="300" y="160" width="272" height="13" uuid="50a9ae9f-a8eb-4efa-86ca-0932a5cba842">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Data Center}]]></textFieldExpression>
+			</textField>
+			<textField pattern="MMM d, yyyy">
+				<reportElement stretchType="RelativeToBandHeight" x="300" y="300" width="272" height="13" uuid="a6276de5-67a5-4989-a8e6-2623a6d208a2">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Run Date}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="360" y="280" width="42" height="13" uuid="d326d55b-c42d-4d99-8ddf-6d80eda27e4c">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Friday}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="300" y="200" width="60" height="13" uuid="3878cb81-5009-4764-9864-2376a227dc5e">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+				</reportElement>
+				<text><![CDATA[Monday]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="360" y="220" width="42" height="13" uuid="3bf9bb4c-5b49-4f7a-a070-71493d3cf68e">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Tuesday}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="180" y="160" width="100" height="13" uuid="2a0386e6-912d-4e58-b2a1-4ae6f0d4fddf">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Data Center]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="180" y="320" width="100" height="13" uuid="c6a86636-89e5-40e0-996b-3145cc008659">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Branch Run Status]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="180" y="340" width="100" height="13" uuid="37554a02-9ee7-470b-97ca-9bd7f031352f">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="local_mesure_unity" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[status]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="300" y="340" width="273" height="13" uuid="f12a7902-97ba-423e-ae5b-e939ffe22ff7">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{status}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="45" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="54" splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band height="42" splitType="Stretch"/>
+	</summary>
+	<noData>
+		<band height="87">
+			<textField pattern="HH:mm">
+				<reportElement x="472" y="13" width="100" height="13" uuid="97635d51-5a8e-45cb-88f5-401e68ff4b81">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="472" y="0" width="100" height="13" uuid="d094b1db-85f8-4bbe-9a5e-887e741b4f15">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA["Page: " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="MMMMM dd, yyyy">
+				<reportElement x="472" y="26" width="100" height="13" uuid="a255d7d0-12d4-4234-8ee5-90a7416d01bc">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="81" y="65" width="400" height="22" uuid="bb364664-9229-4dd0-a86f-bd87c6ec99da">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[NO DATA FOR REPORT]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="80" y="39" width="400" height="26" uuid="548fc7f2-f6ab-45be-b410-5540d7579638">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="20" isBold="true"/>
+				</textElement>
+				<text><![CDATA[BRANCH INFORMATION]]></text>
+			</staticText>
+			<image>
+				<reportElement x="0" y="0" width="50" height="50" uuid="eab76a8d-0e4b-4f6e-b762-9689f78cd8d3"/>
+				<imageExpression><![CDATA["repo:logo.png"]]></imageExpression>
+			</image>
+		</band>
+	</noData>
+</jasperReport>

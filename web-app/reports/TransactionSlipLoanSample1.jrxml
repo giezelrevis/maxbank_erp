@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.0.3.final using JasperReports Library version 6.0.3  -->
+<!-- 2016-04-20T13:42:54 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="TransactionSlipLoanSample1" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="a4c444b4-a31e-4c14-b6b8-8d1a3668426c">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="net.sf.jasperreports.awt.ignore.missing.font" value="true"/>
+	<property name="net.sf.jasperreports.default.font.name" value="Courier New"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="icbs_base_121815"/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<parameter name="id" class="java.lang.Integer" isForPrompting="false"/>
+	<queryString language="SQL">
+		<![CDATA[Select 
+A.id as "Loan ID",
+C.NAME as "Branch",
+A.account_no as "Account Number",
+A.opening_date as "Date Opened",
+A.granted_amount as "Amount Granted",
+A.maturity_date as "Maturity Date",
+A.interest_rate as "Interest Rate",
+D.description as "Freq",
+E.name1 || ' ' || E.name2 || ' ' || E.name3 as "Approved by",
+F.id as "Loan Application ID",
+I.code as"Collateral",
+J.description as "Loan Project",
+K.display_name as "Customer Name",
+L.address1 || ' ' || L.address2 || ' ' || ' , ' || L.address3 as "Address",
+M.description 
+
+
+from loan as A
+left join txn_file as B on A.id = b.loan_acct_id
+left join branch as C on A.branch_id = C.ID
+left join loan_installment_freq as D on A.frequency_id = D.id
+left join user_master as E on A.approved_by_id = E.id
+left join loan_application as F on A.loan_application_id = F.id 
+left join loan_application_collaterals as G on F.id = G.loan_application_id
+left join collateral as H on G.collateral_id = H.id 
+left join loan_collateral_type as I on H.collateral_type_id = I.id 
+left join loan_project as J on A.loan_project_id = J.id
+left join customer as K on A.customer_id = K.id
+left join address as L on K.id = L.customer_id
+left join loan_acct_status as M on A.status_id = M.id 
+
+WHERE a.id = $P{id}]]>
+	</queryString>
+	<field name="Loan ID" class="java.lang.Integer"/>
+	<field name="Branch" class="java.lang.String"/>
+	<field name="Account Number" class="java.lang.String"/>
+	<field name="Date Opened" class="java.sql.Timestamp"/>
+	<field name="Amount Granted" class="java.lang.Double"/>
+	<field name="Maturity Date" class="java.sql.Timestamp"/>
+	<field name="Interest Rate" class="java.lang.Double"/>
+	<field name="Freq" class="java.lang.String"/>
+	<field name="Approved by" class="java.lang.String"/>
+	<field name="Loan Application ID" class="java.lang.Integer"/>
+	<field name="Collateral" class="java.lang.String"/>
+	<field name="Loan Project" class="java.lang.String"/>
+	<field name="Customer Name" class="java.lang.String"/>
+	<field name="Address" class="java.lang.String"/>
+	<field name="description" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band splitType="Stretch">
+			<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+		</band>
+	</title>
+	<detail>
+		<band height="279" splitType="Stretch">
+			<textField isBlankWhenNull="true">
+				<reportElement x="360" y="0" width="120" height="20" uuid="6652ebe2-383e-4831-963d-a1c95f1e5a4d"/>
+				<textElement textAlignment="Right">
+					<font isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{Account Number}]]></textFieldExpression>
+			</textField>
+			<textField pattern="MM/dd/yyyy" isBlankWhenNull="true">
+				<reportElement x="80" y="110" width="110" height="20" uuid="55597ffc-3e91-4ccd-8fad-7fa7ba9137b3"/>
+				<textFieldExpression><![CDATA[$F{Date Opened}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00#;(#,##0.00#)" isBlankWhenNull="true">
+				<reportElement x="120" y="60" width="120" height="20" uuid="c6c58b91-a48c-4782-8f12-f6e75463ad75"/>
+				<textElement textAlignment="Left"/>
+				<textFieldExpression><![CDATA[$F{Amount Granted}]]></textFieldExpression>
+			</textField>
+			<textField pattern="MM/dd/yyyy" isBlankWhenNull="true">
+				<reportElement x="80" y="130" width="110" height="20" uuid="300fe482-cafe-4bdd-ae5a-230e668cfe03"/>
+				<textFieldExpression><![CDATA[$F{Maturity Date}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="80" y="150" width="110" height="20" uuid="98b88435-d051-4dbe-a2a1-89157822199a"/>
+				<textFieldExpression><![CDATA[$F{Interest Rate} + " %"]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="327" y="130" width="153" height="20" uuid="84e54210-c12e-460e-b59b-338e3f605152"/>
+				<textFieldExpression><![CDATA[$F{Freq}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="80" y="240" width="160" height="20" uuid="cbab5fe0-615a-41ae-9295-64b7c1a3ebee"/>
+				<textFieldExpression><![CDATA[$F{Approved by}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="327" y="110" width="153" height="20" uuid="b8042700-5b2a-454e-9507-5606bc0d0406"/>
+				<textFieldExpression><![CDATA[$F{Collateral}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="327" y="150" width="153" height="20" uuid="838daae4-d82f-47fe-b8ca-e52e8ab6fdc0"/>
+				<textFieldExpression><![CDATA[$F{Loan Project}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="0" y="0" width="240" height="20" uuid="f3ca69bf-d4cf-41ed-b117-d20b1dc055bd"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{Customer Name}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="0" y="20" width="240" height="20" uuid="37687b4d-8d58-479a-9493-b247ef578dc2"/>
+				<textFieldExpression><![CDATA[$F{Address}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="327" y="190" width="153" height="20" uuid="c3a6c44a-8843-41cb-a41e-7ce5db9680e4"/>
+				<textFieldExpression><![CDATA[$F{description}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="110" width="80" height="20" uuid="36fead1a-65e5-4625-a212-1cd1b00dd74f"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Date Opened :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="130" width="80" height="20" uuid="55df2bd0-a144-4766-acdb-95941f1450b0"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Maturity Date :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="150" width="80" height="20" uuid="0eee7fd0-0901-4b01-88f3-684bd0a39752"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Interest Rate :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="240" y="110" width="87" height="20" uuid="3999d1c8-47bb-43e4-844d-60391e1fad07"/>
+				<textElement textAlignment="Left">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Collateral : ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="240" y="130" width="87" height="20" uuid="0313fbe5-09b0-49bd-8922-a68dfc487262"/>
+				<textElement textAlignment="Left">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Freq :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="240" y="150" width="87" height="20" uuid="3a00602e-0cf2-444c-ab94-65a9d152830a"/>
+				<textElement textAlignment="Left">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Project :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="240" y="190" width="87" height="20" uuid="a4a9e560-e4a3-47e0-b050-7397c7d266e9"/>
+				<textElement textAlignment="Left">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Loan Status :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="240" width="80" height="20" uuid="51aab625-9cf0-46b7-b99c-63e3ae9ca616"/>
+				<textElement textAlignment="Left">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Approved by :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="240" y="0" width="120" height="20" uuid="fbd60d28-1cf4-4738-bcd7-64107503bac5"/>
+				<textElement textAlignment="Right">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Account No :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="60" width="120" height="20" uuid="a5adc81a-795f-47f7-89f6-776ae50444a0"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Amount Granted :]]></text>
+			</staticText>
+		</band>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+</jasperReport>

@@ -1,0 +1,72 @@
+<%@ page import="icbs.tellering.TxnLoanPaymentDetails" %>
+
+<div class="form-group">
+    <label class="control-label">Transaction Type</label>
+    <div class="col-sm-6">
+        <select id="txnType" name="txnType" class="many-to-one form-control">
+            <option selected="selected" disabled="true">-- Select a transaction type --</option>
+            <g:each in="${icbs.admin.TxnTemplate.findAllByTxnType(icbs.lov.TxnType.read(11))}" var="txnTemplateInstance">
+                <option value="${txnTemplateInstance.id}">${txnTemplateInstance.codeDescription}</option>
+            </g:each>
+        </select>
+    </div>
+</div>
+
+<fieldset class="form-group">
+    <div class="col-sm-10">
+        <fieldset class="form-group">
+            <g:if test="${!txnLoanProceedsDisbursementInstance?.acct}">
+                <input type="button" href="#" class="btn btn-primary" onclick="initializeLoanAcctSearchModal();modal.show()" value="Search Account"/>
+            </g:if>
+        </fieldset>
+        <%--<g:render template='/tellering/details/loanDetails' model="[loanInstance:txnLoanProceedsDisbursementInstance?.acct]"/>--%>
+        
+        <div class="section-container">
+        <fieldset>
+        <legend class="section-header">Account Information</legend>
+        <div class="infowrap">
+        <div class="col-xs-8 col-sm-6 col-md-6">
+             <dl class="dl-horizontal">
+                <dt>Account Number</dt>
+                <dd id="accountNo"></dd>
+            </dl>            
+            <dl class="dl-horizontal">
+                <dt>Account Name</dt>
+                <dd id="customer"></dd>
+            </dl>
+            <dl class="dl-horizontal">
+                <dt>Date Opened</dt>
+                <dd id="openingDate"></dd>
+            </dl>
+            <dl class="dl-horizontal">
+                <dt>Status</dt>
+                <dd id="status"></dd>
+            </dl>
+        </div>
+        </div>
+        <div class="infowrap">
+            <dl class="dl-horizontal">
+                <dd id="photo"><g:if test="${(loanInstance?.customer?.attachments?.find{it.isPrimaryPhoto==true})?.id}"> <img width="120px" style="float:right" height="120px"src="${createLink(controller:'Attachment', action:'show', id: (loanInstance?.customer?.attachments?.find{it.isPrimaryPhoto==true})?.id )}"/></g:if></dd>
+            </dl>
+        </div>
+        </fieldset>
+        </div>
+    </div>
+</fieldset>
+
+<div class="fieldcontain form-group ${hasErrors(bean: txnLoanProceedsDisbursementInstance, field: 'totalNetProceeds', 'has-error')} required">
+    <label class="control-label">Net Proceeds</label>
+    <div class="col-sm-6">
+        <g:textField id="totalNetProceeds" type="number" name="totalNetProceeds" required="" disabled="" class="form-control"/>
+   </div>             
+</div>
+
+
+<div class="fieldcontain form-group ${hasErrors(bean: txnLoanProceedsDisbursementInstance, field: 'txnRef', 'has-error')} required">
+    <label class="control-label col-sm-4" for="txnRef">
+        <g:message code="txnLoanProceedsDisbursement.txnRef.label" default="Transaction Reference" />
+    </label>
+    <div class="col-sm-6">
+        <g:textArea name="txnRef" required="" value="${txnLoanProceedsDisbursementInstance?.txnRef}"class="form-control"/>
+    </div>             
+</div>

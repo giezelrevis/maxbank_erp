@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.3.0.final using JasperReports Library version 6.3.0  -->
+<!-- 2017-02-02T13:06:11 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="DAV_DepositorInformation" pageWidth="792" pageHeight="612" orientation="Landscape" columnWidth="752" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="2efc86ae-3f4a-46ac-ab1c-99e51ab8f3b7">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="LocalHost"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<queryString>
+		<![CDATA[select 
+(select param_value from institution where param_code ='GEN.10000'),
+(select name from branch where id=1) as br_name,
+(select run_date from branch where id=1) as run_date,
+ids, customer_id, depo_name, depo_mn, depo_bd, 
+trim(replace(array_to_string(customer_ids,' '), customer_id, '')) as customer_ids
+
+from mergedcifview]]>
+	</queryString>
+	<field name="param_value" class="java.lang.String"/>
+	<field name="br_name" class="java.lang.String"/>
+	<field name="run_date" class="java.sql.Timestamp"/>
+	<field name="ids" class="java.sql.Array"/>
+	<field name="customer_id" class="java.lang.String"/>
+	<field name="depo_name" class="java.lang.String"/>
+	<field name="depo_mn" class="java.lang.String"/>
+	<field name="depo_bd" class="java.lang.String"/>
+	<field name="customer_ids" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<pageHeader>
+		<band height="135" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="10" width="752" height="30" uuid="348fbe1e-9ef7-4216-9898-d42c41f583e1"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="16" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{param_value}]]></textFieldExpression>
+			</textField>
+			<textField pattern="MMMM d, yyyy">
+				<reportElement x="0" y="40" width="752" height="20" uuid="dc9f1138-572e-4e33-90cb-a1f395290aad"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="13" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{run_date}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="82" width="752" height="30" uuid="03870c2e-5678-42b1-bc9d-c8ea9bf0658e"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="16" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Depositor Information Report]]></text>
+			</staticText>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="20" splitType="Stretch">
+			<staticText>
+				<reportElement x="112" y="-10" width="288" height="30" uuid="7461d05f-7652-4fb4-922b-60b5b25375b2"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<text><![CDATA[Depositor's Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="650" y="-10" width="102" height="30" uuid="9bfd2547-e8e2-462b-afdc-1257aff4e5cd"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<text><![CDATA[Duplicate Customer ID's]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="-10" width="110" height="30" uuid="ba832abf-d3c4-42b0-ae49-38ae57b7fc1c"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<text><![CDATA[Customer ID]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="400" y="-10" width="150" height="30" uuid="4fed9d06-d187-4544-b618-6c0b1c9165ee"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<text><![CDATA[Depositor's MIddle Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="550" y="-10" width="100" height="30" uuid="7660cb2e-3236-4ad1-9452-eea311b2db6d"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<text><![CDATA[Date of Birth]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="20" splitType="Stretch">
+			<textField>
+				<reportElement x="112" y="2" width="288" height="18" uuid="76cea6f3-7586-4987-b4dd-e3905d9b4cad"/>
+				<textFieldExpression><![CDATA[$F{depo_name}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="650" y="2" width="102" height="18" uuid="01cc717c-9b21-4a5e-8c9d-7459a7253471"/>
+				<textFieldExpression><![CDATA[$F{customer_ids}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="2" width="110" height="18" uuid="0409e190-b577-4790-9a9a-c9e7fcd9e866"/>
+				<textFieldExpression><![CDATA[$F{customer_id}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="400" y="2" width="150" height="18" uuid="3ec6925a-e2e1-490b-9c57-bcef3614495c"/>
+				<textFieldExpression><![CDATA[$F{depo_mn}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="550" y="2" width="100" height="18" uuid="4932925f-4d80-4b78-9ebe-535c71ed4dae"/>
+				<textFieldExpression><![CDATA[$F{depo_bd}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<pageFooter>
+		<band height="20" splitType="Stretch">
+			<textField>
+				<reportElement x="630" y="0" width="121" height="20" uuid="af2a24c4-d07c-40bf-94bb-fa30a42ca944"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+</jasperReport>

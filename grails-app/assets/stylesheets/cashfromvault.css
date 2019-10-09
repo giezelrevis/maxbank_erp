@@ -1,0 +1,54 @@
+input[type='text'].txn-amt {
+    width: 86%;
+}
+
+.select2-choice {
+    height: 32px !important;
+}
+
+.input-group {
+    display: block;
+}
+
+fieldset.breakdown {
+    margin-top: 10px;
+}
+
+fieldset.breakdown > legend {
+    border-bottom: none;
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+fieldset.breakdown label.breakdown-label {
+    padding-left: 20px;
+}
+
+fieldset.breakdown label.total {
+    margin-top: 40px;
+}
+
+fieldset.breakdown input[type="text"] {
+    width: 20%;
+}
+
+fieldset.breakdown input[type='text'].long {
+    width: 30%;
+}
+
+fieldset.breakdown span.total-ok {
+    color: green;
+    font-size: 20px;
+    padding-left: 5px;
+    padding-top: 4px;
+}
+
+span.currency {
+    margin-left: 5px;
+    margin-top: -2px;
+}
+
+.dont-show {
+    visibility: hidden;
+}

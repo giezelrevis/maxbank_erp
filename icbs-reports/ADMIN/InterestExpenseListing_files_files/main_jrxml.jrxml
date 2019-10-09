@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.2.1.final using JasperReports Library version 6.2.0  -->
+<!-- 2016-04-28T16:06:26 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="InterestExpenseListing_files" pageWidth="792" pageHeight="612" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="752" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="1eb2aa54-a71e-419b-837f-b72f7aeb196c">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="icbs_nrbsl"/>
+	<property name="ireport.jasperserver.url" value="http://localhost:8080/jasperserver/"/>
+	<property name="ireport.jasperserver.user" value="jasperadmin"/>
+	<property name="ireport.jasperserver.report.resource" value="/ICBS_REPORT/ADMIN/InterestExpenseListing_files_files/main_jrxml"/>
+	<property name="ireport.jasperserver.reportUnit" value="/ICBS_REPORT/ADMIN/InterestExpenseListing_files"/>
+	<queryString language="SQL">
+		<![CDATA[select 
+G.param_value as "BANK NAME",
+deposit_interest_scheme.code as "Code",
+deposit_interest_scheme.name as "Name",
+A.description as "Deposit Interest Start",
+deposit_interest_scheme.divisor as "Divisor",
+deposit_interest_scheme.min_balance_to_earn_interest as "Min Balance To Earn Interest",
+B.description as "Deposit Capitalization Freq",
+F.name as "Branch",
+C.description as "Deposit Interest Calculation",
+D.description as "Status"
+from deposit_interest_scheme
+inner join (select param_value from institution where id = '1') G ON G.param_value is not null
+left join deposit_interest_start A on A.id = deposit_interest_scheme.deposit_interest_start_id
+left join deposit_capitalization_freq B on B.id = deposit_interest_scheme.deposit_capitalization_freq_id
+left join deposit_interest_calculation C on C.id = deposit_interest_scheme.deposit_interest_calculation_id
+left join config_item_status D on D.id = deposit_interest_scheme.status_id
+left join branch F on F.status_id = D.id
+order by f.name, deposit_interest_scheme.name]]>
+	</queryString>
+	<field name="BANK NAME" class="java.lang.String"/>
+	<field name="Code" class="java.lang.String"/>
+	<field name="Name" class="java.lang.String"/>
+	<field name="Deposit Interest Start" class="java.lang.String"/>
+	<field name="Divisor" class="java.lang.Integer"/>
+	<field name="Min Balance To Earn Interest" class="java.lang.Double"/>
+	<field name="Deposit Capitalization Freq" class="java.lang.String"/>
+	<field name="Branch" class="java.lang.String"/>
+	<field name="Deposit Interest Calculation" class="java.lang.String"/>
+	<field name="Status" class="java.lang.String"/>
+	<group name="BANK NAME">
+		<groupExpression><![CDATA[$F{BANK NAME}]]></groupExpression>
+	</group>
+	<group name="Code">
+		<groupExpression><![CDATA[$F{Code}]]></groupExpression>
+	</group>
+	<group name="Name">
+		<groupExpression><![CDATA[$F{Name}]]></groupExpression>
+	</group>
+	<group name="Deposit Interest Start">
+		<groupExpression><![CDATA[$F{Deposit Interest Start}]]></groupExpression>
+	</group>
+	<group name="Divisor">
+		<groupExpression><![CDATA[$F{Divisor}]]></groupExpression>
+	</group>
+	<group name="Min Balance To Earn Interest">
+		<groupExpression><![CDATA[$F{Min Balance To Earn Interest}]]></groupExpression>
+	</group>
+	<group name="Deposit Capitalization Freq">
+		<groupExpression><![CDATA[$F{Deposit Capitalization Freq}]]></groupExpression>
+	</group>
+	<group name="Branch">
+		<groupExpression><![CDATA[$F{Branch}]]></groupExpression>
+	</group>
+	<group name="Deposit Interest Calculation">
+		<groupExpression><![CDATA[$F{Deposit Interest Calculation}]]></groupExpression>
+	</group>
+	<group name="Status">
+		<groupExpression><![CDATA[$F{Status}]]></groupExpression>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="2" splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band height="109" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="74" width="752" height="22" uuid="1c389577-881c-4f28-b5a5-050bf5102115">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="16" isBold="true"/>
+				</textElement>
+				<text><![CDATA[INTEREST EXPENSES LISTING]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="0" y="50" width="752" height="24" uuid="d87dc2a6-5359-427a-8389-8ece9955c16d">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="18" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BANK NAME}]]></textFieldExpression>
+			</textField>
+			<textField pattern="MMMMM dd, yyyy">
+				<reportElement x="652" y="26" width="100" height="13" uuid="f5322634-b99d-4e67-a58b-89cdce37d4be">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField pattern="HH:mm">
+				<reportElement x="652" y="13" width="100" height="13" uuid="ef030326-23ff-4704-8fba-5101925f5783">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="652" y="0" width="100" height="13" uuid="e0f306a2-1871-4cf2-9013-cb8e806e1ff4">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA["Page: " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<image>
+				<reportElement x="0" y="0" width="50" height="50" uuid="f85c6e93-79cc-401a-9df1-3552c2688027"/>
+				<imageExpression><![CDATA["repo:logo.png"]]></imageExpression>
+			</image>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="26" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="94" height="26" uuid="d1c84208-dfdc-4356-8fc9-ca939897e924">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="220" y="0" width="94" height="26" uuid="ee8c0224-bcc3-4232-832e-bd7d616e9694">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Deposit Interest Start]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="314" y="0" width="46" height="26" uuid="a17295d3-733f-4eb1-ac14-9d40a340af56">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Divisor]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="360" y="0" width="68" height="26" uuid="15f3663c-4fdd-4d6d-b3ec-56dd8e1f9071">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Min Bal To Earn Interest]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="429" y="0" width="65" height="26" uuid="25aeae87-5af6-43a8-aa06-9c6a3fa4f8cb">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Deposit Capital Freq]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="504" y="0" width="93" height="26" uuid="9af6b70b-d808-450f-ad11-3ceff06be58e">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Branch]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="597" y="0" width="94" height="26" uuid="3b901d8c-453b-47fa-8697-716364f4222c">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Deposit Interest Calculation]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="700" y="0" width="44" height="26" uuid="ff8cfdf9-e644-46f3-8b08-7551872a3984">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Status]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="13" splitType="Stretch">
+			<textField isBlankWhenNull="true">
+				<reportElement x="0" y="0" width="220" height="13" uuid="8db740d6-89ef-4adf-ab2f-b30510023643">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Name}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="220" y="0" width="94" height="13" uuid="60265286-5148-42e3-be53-0d2b33a693ac">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Deposit Interest Start}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="314" y="0" width="46" height="13" uuid="e960f1de-f70c-49a2-ad25-c7c174f61c24">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Divisor}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="360" y="0" width="68" height="13" uuid="2f18e007-66d0-4c2b-ad83-99c0e674e90a">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Min Balance To Earn Interest}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="429" y="0" width="75" height="13" uuid="4009d442-881f-4183-acdc-bb67a0d7d35a">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Deposit Capitalization Freq}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="504" y="0" width="93" height="13" uuid="68fdc367-fa72-4f46-a990-3c1163e5f08c">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Branch}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="597" y="0" width="94" height="13" uuid="faf78f2f-58c1-4f26-ad67-f81ceb04454c">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Deposit Interest Calculation}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="700" y="0" width="44" height="13" uuid="60d24edb-8bbc-47d1-96e0-9f2ac723b538">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{Status}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="45" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="54" splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band height="42" splitType="Stretch"/>
+	</summary>
+	<noData>
+		<band height="106">
+			<textField pattern="HH:mm">
+				<reportElement x="652" y="13" width="100" height="13" uuid="8d66bf55-a08e-49cc-84bc-0e5351d37a82">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="652" y="0" width="100" height="13" uuid="d9b3ec75-bb89-434b-b496-75608bfc1430">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA["Page: " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="MMMMM dd, yyyy">
+				<reportElement x="652" y="26" width="100" height="13" uuid="2e1df393-e4ce-46f1-be79-6ec6f6d0002c">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="50" width="752" height="26" uuid="6b1fd4e2-ae04-47f5-8253-87e1a348d9a1">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="20" isBold="true"/>
+				</textElement>
+				<text><![CDATA[INTEREST EXPENSES]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="76" width="752" height="22" uuid="cae772c0-5181-4f19-a06a-6d2333817e7e">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[NO DATA FOR REPORT]]></text>
+			</staticText>
+			<image>
+				<reportElement x="0" y="0" width="50" height="50" uuid="693a4cfc-b85c-4fc0-97c2-d2a6ec93c11d"/>
+				<imageExpression><![CDATA["repo:logo.png"]]></imageExpression>
+			</image>
+		</band>
+	</noData>
+</jasperReport>

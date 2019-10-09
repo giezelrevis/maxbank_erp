@@ -1,0 +1,849 @@
+package icbs.deposit
+import icbs.lov.CheckStatus
+import icbs.lov.PassbookStatus
+import icbs.lov.CertificateTimeDepositStatus
+import icbs.lov.TxnType
+import grails.transaction.Transactional
+import grails.validation.ValidationException
+import icbs.tellering.TxnFile
+import icbs.tellering.TxnDepositAcctLedger
+import icbs.admin.TxnTemplate
+import icbs.tellering.TxnRemittance
+import icbs.lov.ConfigItemStatus
+import groovy.time.TimeCategory
+class DepositService {
+    boolean transactional = false    
+    @Transactional
+    def inwardCheckClearing(inwardCheckClearingCommand cmd){
+        for(a in cmd.checks){
+            if(!a.hasErrors()){
+                def chequeInstance  = Cheque.findByChequeNo(a.chequeNo)
+                if(chequeInstance){
+                    def depositInstance = chequeInstance.chequebook.deposit
+                    if(depositInstance.availableBalAmt< a.amt){
+                        sweepList = Sweep.createCriteria(sort: "ordinalNum", order: "asc").list{
+                            and{
+                                eq("fundingDeposit",depositInstance)
+                                eq("status",SweepStatus.read(2))   
+                            }
+                        }
+                        def sweepRemAmt = a.amt
+                        List<Deposit> depositTypeThreeSweep=[].withLazyDefault {new Deposit()}
+                        for(sweep in sweepList){
+                            def fundedDepositInstance  = sweep.fundedDeposit
+                            if(sweep.rule.id==1){
+                                if(fundedDepositInstance.availableBalAmt>=a.amt){
+                                    fundedDepositInstance.availableBalAmt-=a.amt
+                                    fundedDepositInstance.ledgerBalAmt-=a.amt
+                                    chequeInstance.status = checkStatus.read(3)
+                                    fundedDepositInstance.save()
+                                    chequeInstance.save()
+                                    return
+                                }
+                                
+                            }
+                            if(sweep.rule.id==2){
+                                if(fundedDepositInstance.ledgerBalAmt>=a.amt){
+                                    fundedDepositInstance.availableBalAmt-=a.amt
+                                    fundedDepositInstance.ledgerBalAmt-=a.amt
+                                    chequeInstance.status = checkStatus.read(3)
+                                    fundedDepositInstance.save()
+                                    chequeInstance.save()
+                                    return
+                                }
+                            }
+                            if(sweep.rule.id==3){
+                               if(fundedDepositInstance.availableBalAmt>=a.amt){
+                                    fundedDepositInstance.availableBalAmt-=a.amt
+                                    fundedDepositInstance.ledgerBalAmt-=a.amt
+                                    chequeInstance.status = checkStatus.read(3)
+                                    fundedDepositInstance.save()
+                                    chequeInstance.save()
+                               }else{
+                                    if(sweepTypeThreeAmt+fundedDepositInstance.availableBalAmt>=val){
+                                       depositTypeThreeSweep.push(fundedDepositInstance)
+                                        for(d in depositTypeThreeSweep){
+                                            if(d.availableBalAmt<=sweepRemAmt){
+                                               sweepRemAmt-=d.availableBalAmt
+                                               d.availableBalAmt-= d.availableBalAmt
+                                               d.ledgerBalAmt-=d.ledgerBalAmt
+                                               d.save()
+                                            }else{
+                                               d.availableBalAmt-= sweepRemAmt
+                                               d.availableBalAmt-=sweepRemAmt
+                                               d.save()
+                                            }
+                                        }
+                                        chequeInstance.status = checkStatus.read(3)
+                                        fundedDepositInstance.save()
+                                       return true
+                                   }else{
+                                       depositTypeThreeSweep.push(fundedDepositInstance)
+                                   }
+                               }
+                            }
+                            if(sweep.rule.id==4){
+                                if(fundedDepositInstance.availableBalAmt*sweep.fundLimitPercentage>=a.amt){
+                                    
+                                    fundedDepositInstance.availableBalAmt-=a.amt
+                                    fundedDepositInstance.ledgerBalAmt-=a.amt
+                                    chequeInstance.status = checkStatus.read(3)
+                                    fundedDepositInstance.save()
+                                    chequeInstance.save()
+                                    return true
+                                }
+                            }
+                        }
+                    }else{
+                        depositInstance.availableBalAmt-=a.amt
+                        depositInstance.ledgerBalAmt-=a.amt
+                        depositInstance.status = checkStatus.read(3)
+                        depositInstance.save()
+                        chequeInstance.save()
+                    }
+                }         
+            }
+        }
+    }
+    @Transactional
+     def memoRemittance(params){
+        println params
+        def result = [:]
+        result.acct = Deposit.get(params.acct.id)
+        //result.destinationAccount = Deposit.get(params.destinationAcct.id)
+        def fail = { Map m ->
+                if(m.error){
+                    result.error = m.error
+                }
+                return result
+        }   
+        double amount = params.amt.toDouble()
+        def txnFile1
+        def acctLedger1
+        def txnRemittance
+        if(params.type.id.toInteger()==1){
+            println "debit"
+            result.acct.ledgerBalAmt-=amount
+            result.acct.availableBalAmt-=amount
+            result.acct.interestBalAmt-=amount
+            txnFile1 = new TxnFile(txnParticulars:params.txnDescription,currency:result.acct.currency,txnType:TxnType.read(7),acctStatus:result.acct.status.id,status:ConfigItemStatus.read(2),txnTimestamp:new Date().toTimestamp(),user:params.user,branch:params.branch,txnCode:TxnTemplate.read(params.txnTemplate.id).code,acctNo:result.acct.acctNo,txnAmt:amount,txnRef:params.txnRef,sender:result.acct.customer,beneficiary:params.customer,depAcct:result.acct)
+            acctLedger1 = new TxnDepositAcctLedger(txnType:TxnType.read(7),user:params.user,branch:params.branch,currency:result.acct.currency,status:ConfigItemStatus.read(2),txnDate:new Date(),txnFile:txnFile1,acct:result.acct,acctNo:result.acct.acctNo,debitAmt:amount,bal:result.acct.availableBalAmt,txnRef:params.txnRef)
+        }else if(params.type.id.toInteger()==2){
+            println "credit"
+            result.acct.ledgerBalAmt+=amount
+            result.acct.availableBalAmt+=amount
+            result.acct.interestBalAmt+=amount
+            txnFile1 = new TxnFile(txnParticulars:params.txnDescription,currency:result.acct.currency,txnType:TxnType.read(9),acctStatus:result.acct.status.id,status:ConfigItemStatus.read(2),txnTimestamp:new Date().toTimestamp(),user:params.user,branch:params.branch,txnCode:TxnTemplate.read(params.txnTemplate.id).code,acctNo:result.acct.acctNo,txnAmt:amount,txnRef:params.txnRef,sender:params.customer,beneficiary:result.acct.customer,depAcct:result.acct)
+            acctLedger1 = new TxnDepositAcctLedger(txnType:TxnType.read(9),user:params.user,branch:params.branch,currency:result.acct.currency,status:ConfigItemStatus.read(2),txnDate:new Date(),txnFile:txnFile1,acct:result.acct,acctNo:result.acct.acctNo,creditAmt:amount,bal:result.acct.availableBalAmt,txnRef:params.txnRef)
+            //txn remittance
+        }else{
+            return fail(error:"Something went wrong")
+        }
+        if(!result.acct.save()||!txnFile1.save(flush:true,validate:false)||!acctLedger1.save(validate:false)){
+            return fail(error:"Something went wrong")
+        }
+        return result
+    }
+    @Transactional
+    def memoBillsPayment(params){
+        println "pumasok dito sa test"
+        def result = [:]
+        result.acct = Deposit.get(params.acct.id)
+        //result.destinationAccount = Deposit.get(params.destinationAcct.id)
+        def fail = { Map m ->
+                if(m.error){
+                    result.error = m.error
+                }
+                return result
+        }  
+        double amount = params.amt.toDouble()
+        println "debited :" +amount
+        //debit
+        result.acct.ledgerBalAmt-=amount
+        result.acct.availableBalAmt-=amount
+        result.acct.interestBalAmt-=amount
+
+        def txnFile1 = new TxnFile(txnParticulars:params.txnDescription,currency:result.acct.currency,txnType:TxnType.read(18),acctStatus:result.acct.status.id,status:ConfigItemStatus.read(2),txnTimestamp:new Date().toTimestamp(),user:params.user,branch:params.branch,txnCode:TxnTemplate.read(params.txnTemplate.id).code,acctNo:result.acct.acctNo,txnAmt:amount,txnRef:params.txnRef,depAcct:result.acct)
+        def acctLedger1 = new TxnDepositAcctLedger(txnType:TxnType.read(18),user:params.user,branch:params.branch,currency:result.acct.currency,status:ConfigItemStatus.read(2),txnDate:new Date(),txnFile:txnFile1,acct:result.acct,acctNo:result.acct.acctNo,debitAmt:amount,bal:result.acct.availableBalAmt,txnRef:params.txnRef)
+        //bills payment wlang acct(deposit)
+        //description missing in txnDepositAcctLedger
+        if(!result.acct.save()||!txnFile1.save(flush:true,validate:false)||!acctLedger1.save(validate:false)){
+            return fail(error:"Something went wrong")
+        }
+        return result
+    }
+    @Transactional
+    def memoAdjustment(params){
+        println params
+        def result = [:]
+        result.acct = Deposit.get(params.acct.id)
+        //result.destinationAccount = Deposit.get(params.destinationAcct.id)
+        def fail = { Map m ->
+                if(m.error){
+                    result.error = m.error
+                }
+                return result
+        }   
+        double amount = params.amt.toDouble()
+        def txnFile1
+        def acctLedger1
+        if(params.type.id.toInteger()==1){
+            result.acct.ledgerBalAmt-=amount
+            result.acct.availableBalAmt-=amount
+            result.acct.interestBalAmt-=amount
+            txnFile1 = new TxnFile(txnParticulars:params.txnDescription,currency:result.acct.currency,txnType:TxnType.read(7),acctStatus:result.acct.status.id,status:ConfigItemStatus.read(2),txnTimestamp:new Date().toTimestamp(),user:params.user,branch:params.branch,txnCode:TxnTemplate.read(params.txnTemplate.id).code,acctNo:result.acct.acctNo,txnAmt:amount,txnRef:params.txnRef,depAcct:result.acct)
+            acctLedger1 = new TxnDepositAcctLedger(txnType:TxnType.read(7),user:params.user,branch:params.branch,currency:result.acct.currency,status:ConfigItemStatus.read(2),txnDate:new Date(),txnFile:txnFile1,acct:result.acct,acctNo:result.acct.acctNo,debitAmt:amount,bal:result.acct.availableBalAmt,txnRef:params.txnRef)
+            
+        }else if(params.type.id.toInteger()==2){
+            result.acct.ledgerBalAmt+=amount
+            result.acct.availableBalAmt+=amount
+            result.acct.interestBalAmt+=amount
+            txnFile1 = new TxnFile(txnParticulars:params.txnDescription,currency:result.acct.currency,txnType:TxnType.read(9),acctStatus:result.acct.status.id,status:ConfigItemStatus.read(2),txnTimestamp:new Date().toTimestamp(),user:params.user,branch:params.branch,txnCode:TxnTemplate.read(params.txnTemplate.id).code,acctNo:result.acct.acctNo,txnAmt:amount,txnRef:params.txnRef,depAcct:result.acct)
+            acctLedger1 = new TxnDepositAcctLedger(txnType:TxnType.read(9),user:params.user,branch:params.branch,currency:result.acct.currency,status:ConfigItemStatus.read(2),txnDate:new Date(),txnFile:txnFile1,acct:result.acct,acctNo:result.acct.acctNo,creditAmt:amount,bal:result.acct.availableBalAmt,txnRef:params.txnRef)
+            //description missing in txnDepositAcctLedger
+        }else{
+            return fail(error:"Something went wrong")
+        }
+        if(!result.acct.save()||!txnFile1.save(flush:true,validate:false)||!acctLedger1.save(validate:false)){
+            return fail(error:"Something went wrong")
+        }
+        return result
+    }
+    @Transactional
+    def fundTransfer(params){
+        println params
+        def result = [:]
+        result.fundingAcct = Deposit.get(params.fundingAcct.id)
+        result.destinationAcct = Deposit.get(params.destinationAcct.id)
+        def fail = { Map m ->
+                status.setRollbackOnly()
+                if(result.fundTransferInstance && m.field)
+                    result.fundTransferInstance.errors.rejectValue(m.field, m.code)
+                result.error = [ code: m.code, args: ["fundTransfer", params.id] ]
+                return result
+        }  
+        double amount = params.amt.toDouble()
+        //debit
+        result.fundingAcct.ledgerBalAmt-=amount
+        result.fundingAcct.availableBalAmt-=amount
+        result.fundingAcct.interestBalAmt-=amount
+        //credit
+        result.destinationAcct.ledgerBalAmt+=amount
+        result.destinationAcct.availableBalAmt+=amount
+        result.destinationAcct.interestBalAmt+=amount
+        
+        def txnTemplate = TxnTemplate.findByCode("008001")
+       def acctLedger1
+        def acctLedger2
+        def txnFile1 = new TxnFile(txnParticulars:params.txnDescription,currency:result.fundingAcct.currency,txnType:TxnType.read(8),acctStatus:result.fundingAcct.status.id,status:ConfigItemStatus.read(2),txnTimestamp:new Date().toTimestamp(),user:params.user,branch:params.branch,txnCode:txnTemplate.code,acctNo:result.fundingAcct.acctNo,txnAmt:amount,txnRef:params.txnRef,depAcct:result.fundingAcct)
+        def txnFile2 = new TxnFile(txnParticulars:params.txnDescription,currency:result.destinationAcct.currency,txnType:TxnType.read(8),acctStatus:result.destinationAcct.status.id,status:ConfigItemStatus.read(2),txnTimestamp:new Date().toTimestamp(),user:params.user,branch:params.branch,txnCode:txnTemplate.code,acctNo:result.destinationAcct.acctNo,txnAmt:amount,txnRef:params.txnRef,depAcct:result.destinationAcct)
+        acctLedger1 = new TxnDepositAcctLedger(txnType:TxnType.read(8),user:params.user,branch:params.branch,currency:result.fundingAcct.currency,status:ConfigItemStatus.read(2),txnDate:new Date(),txnFile:txnFile1,acct:result.fundingAcct,acctNo:result.fundingAcct.acctNo,debitAmt:amount,bal:result.fundingAcct.availableBalAmt,txnRef:params.txnRef)
+        acctLedger2 = new TxnDepositAcctLedger(txnType:TxnType.read(8),user:params.user,branch:params.branch,currency:result.destinationAcct.currency,status:ConfigItemStatus.read(2),txnDate:new Date(),txnFile:txnFile2,acct:result.destinationAcct,acctNo:result.destinationAcct.acctNo,creditAmt:amount,bal:result.destinationAcct.availableBalAmt,txnRef:params.txnRef)
+        //                  TxnDepositAcctLedger(txnType:TxnType.read(8),user:params.user,branch:params.branch,currency:result.acct.currency,status:ConfigItemStatus.read(2),txnDate:new Date(),txnFile:txnFile1,acct:result.acct,acctNo:result.acct.acctNo,debitAmt:amount,bal:result.acct.availableBalAmt,txnRef:params.txnRef)
+//txn description missing in acctLedger
+        //txn fund transfer missing
+        if(!result.fundingAcct.save()||!result.destinationAcct.save()||!txnFile1.save(flush:true,validate:false)||!txnFile2.save(flush:true,validate:false)){
+            //||!acctLedger1.save()||!acctLedger2.save()
+            return fail(code:"default.save.failure")
+        }
+        return result
+    }
+    def saveSweep(params){
+        Sweep.withTransaction { status ->
+            def result = [:]
+            def fail = { Map m ->
+                status.setRollbackOnly()
+                if(result.sweepInstance && m.field)
+                    result.sweepInstance.errors.rejectValue(m.field, m.code)
+                result.error = [ code: m.code, args: ["Sweep", params.id] ]
+                return result
+            }
+            result.sweepInstance = new Sweep()
+            result.sweepInstance.properties = params
+            if(!result.sweepInstance.validate()){
+                return fail(code:"default.save.failure")
+            }
+            result.sweepInstance.save()
+            return result
+        }
+    }
+    def updateSweep(params,includeList=null){
+        Sweep.withTransaction { status ->
+            def result = [:]
+            def fail = { Map m ->
+                status.setRollbackOnly()
+                if(result.sweepInstance && m.field)
+                    result.sweepInstance.errors.rejectValue(m.field, m.code)
+                result.error = [ code: m.code, args: ["Sweep", params.id] ]
+                return result
+            }
+            result.sweepInstance = Sweep.get(params.id)
+            if(!result.sweepInstance){
+                return fail(code:"default.not.found")
+            }
+            // Optimistic locking check.
+            if(params.version) {
+                if(result.sweepInstance.version > params.version.toLong())
+                    return fail(field:"version", code:"default.optimistic.locking.failure")
+            }
+            if(!includeList){
+                result.sweepInstance.properties=params
+            }
+            else{
+                result.sweepInstance.properties[includeList]=params
+            }
+            if(!includeList){
+                if(!result.sweepInstance.validate()){    
+                    return fail(code:"default.update.failure")
+                }
+            }else{
+                if(!result.sweepInstance.validate([includeList])){    
+                    return fail(code:"default.update.failure")
+                }
+            }
+            result.sweepInstance.save()  
+            
+            // Success.
+            return result
+        } //end withTransaction
+    }
+    
+    /***Stop Payment Order***/
+    def saveStopPaymentOrder(params){
+        StopPaymentOrder.withTransaction { status ->
+            def result = [:]
+            def fail = { Map m ->
+                status.setRollbackOnly()
+                if(result.stopPaymentOrderInstance && m.field)
+                    result.stopPaymentOrderInstance.errors.rejectValue(m.field, m.code)
+                result.error = [ code: m.code, args: ["StopPaymentOrder", params.id] ]
+                return result
+            }
+            result.stopPaymentOrderInstance = new StopPaymentOrder()
+            result.stopPaymentOrderInstance.properties = params
+            if(!result.stopPaymentOrderInstance.validate()){
+                return fail(code:"default.save.failure")
+            }
+            result.stopPaymentOrderInstance.cheque = Cheque.find{chequeNo==result.stopPaymentOrderInstance.chequeNo}
+            result.stopPaymentOrderInstance.save()
+            return result
+        }
+    }
+    def updateStopPaymentOrder(params,includeList=null){
+        StopPaymentOrder.withTransaction { status ->
+            def result = [:]
+            def fail = { Map m ->
+                status.setRollbackOnly()
+                if(result.stopPaymentOrderInstance && m.field)
+                    result.stopPaymentOrderInstance.errors.rejectValue(m.field, m.code)
+                result.error = [ code: m.code, args: ["StopPaymentOrder", params.id] ]
+                return result
+            }
+            result.stopPaymentOrderInstance = StopPaymentOrder.get(params.id)
+            if(!result.stopPaymentOrderInstance){
+                return fail(code:"default.not.found")
+            }
+            // Optimistic locking check.
+            if(params.version) {
+                if(result.stopPaymentOrderInstance.version > params.version.toLong())
+                    return fail(field:"version", code:"default.optimistic.locking.failure")
+            }
+            if(!includeList){
+                result.stopPaymentOrderInstance.properties=params
+            }
+            else{
+                result.stopPaymentOrderInstance.properties[includeList]=params
+            }
+            if(!includeList){
+                if(!result.stopPaymentOrderInstance.validate()){    
+                    return fail(code:"default.update.failure")
+                }
+            }else{
+                if(!result.stopPaymentOrderInstance.validate([includeList])){    
+                    return fail(code:"default.update.failure")
+                }
+            }
+            result.stopPaymentOrderInstance.save()  
+            
+            // Success.
+            return result
+        } //end withTransaction
+    }
+    /***Standing Order****/
+    def saveStandingOrder(params){
+        println params
+        StandingOrder.withTransaction { status ->
+            def result = [:]
+            def fail = { Map m ->
+                status.setRollbackOnly()
+                if(result.standingOrderInstance && m.field)
+                    result.standingOrderInstance.errors.rejectValue(m.field, m.code)
+                result.error = [ code: m.code, args: ["StandingOrder", params.id] ]
+                return result
+            }
+            result.standingOrderInstance = new StandingOrder()
+            result.standingOrderInstance.properties = params
+            if(!result.standingOrderInstance.validate()){
+                return fail(code:"default.save.failure")
+            }
+            result.standingOrderInstance.save(failOnError:true)
+            return result
+        }
+    }
+    def updateStandingOrder(params,includeList=null){
+        StandingOrder.withTransaction { status ->
+            def result = [:]
+            def fail = { Map m ->
+                status.setRollbackOnly()
+                if(result.standingOrderInstance && m.field)
+                    result.standingOrderInstance.errors.rejectValue(m.field, m.code)
+                result.error = [ code: m.code, args: ["StandingOrder", params.id] ]
+                return result
+            }
+            result.standingOrderInstance = StandingOrder.get(params.id)
+            if(!result.standingOrderInstance){
+                return fail(code:"default.not.found")
+            }
+            // Optimistic locking check.
+            if(params.version) {
+                if(result.standingOrderInstance.version > params.version.toLong())
+                    return fail(field:"version", code:"default.optimistic.locking.failure")
+            }
+            if(!includeList){
+                result.standingOrderInstance.properties=params
+            }
+            else{
+                result.standingOrderInstance.properties[includeList]=params
+            }
+            if(!includeList){
+                if(!result.standingOrderInstance.validate()){    
+                    return fail(code:"default.update.failure")
+                }
+            }else{
+                if(!result.standingOrderInstance.validate([includeList])){    
+                    return fail(code:"default.update.failure")
+                }
+            }
+            result.standingOrderInstance.save()  
+            
+            // Success.
+            return result
+        } //end withTransaction
+    }
+    /*********Hold*****/
+    def saveHold(params){
+        Hold.withTransaction { status ->
+            def result = [:]
+            def fail = { Map m ->
+                status.setRollbackOnly()
+                if(result.holdInstance && m.field)
+                    result.holdInstance.errors.rejectValue(m.field, m.code)
+                result.error = [ code: m.code, args: ["Hold", params.id] ]
+                return result
+            }
+            result.holdInstance = new Hold()
+            result.holdInstance.properties = params
+            if(!result.holdInstance.validate()){
+                return fail(code:"default.save.failure")
+            }
+            def value
+            if(result.holdInstance.type?.id==1){
+                value = result.holdInstance.amt
+            }
+            else if(result.holdInstance.type?.id==2){
+                value = result.holdInstance.deposit.availableBalAmt*(result.holdInstance.percent/100)
+                result.holdInstance.amt = value
+            }
+            println value
+            
+            if(result.holdInstance.status?.id<3){
+                if(result.holdInstance.type?.id==1){
+                    result.holdInstance.deposit.availableBalAmt -= value
+                    result.holdInstance.deposit.holdBalAmt+= value
+                    result.holdInstance.deposit.save(validate:false,failOnError:true)
+                 }
+                if(result.holdInstance.type?.id==2){
+                    result.holdInstance.deposit.availableBalAmt -=value
+                    result.holdInstance.deposit.holdBalAmt+=value
+                    result.holdInstance.deposit.save(validate:false,failOnError:true)
+                }
+               
+            }else{
+                result.holdInstance.amt = value
+            }
+            result.holdInstance.save(failOnError:true)
+            return result
+        }
+    }
+    def updateHold(params,includeList=null){
+        Hold.withTransaction { status ->
+            def result = [:]
+            def fail = { Map m ->
+                status.setRollbackOnly()
+                if(result.holdInstance && m.field)
+                    result.holdInstance.errors.rejectValue(m.field, m.code)
+                result.error = [ code: m.code, args: ["Hold", params.id] ]
+                return result
+            }
+            result.holdInstance = Hold.get(params.id)
+            if(!result.holdInstance){
+                return fail(code:"default.not.found")
+            }
+            // Optimistic locking check.
+            if(params.version) {
+                if(result.holdInstance.version > params.version.toLong())
+                    return fail(field:"version", code:"default.optimistic.locking.failure")
+            }
+            if(!includeList){
+                result.holdInstance.properties=params
+            }
+            else{
+                result.holdInstance.properties[includeList]=params
+            }
+            if(!includeList){
+                if(!result.holdInstance.validate()){    
+                    return fail(code:"default.update.failure")
+                }
+            }else{
+                if(!result.holdInstance.validate([includeList])){    
+                    return fail(code:"default.update.failure")
+                }
+            }
+            if(result.holdInstance.getPersistentValue('status')?.id==1 && result.holdInstance.status?.id==2){
+                
+                if(result.holdInstance.type?.id==1){
+                    result.holdInstance.deposit.availableBalAmt -=result.holdInstance.amt
+                    result.holdInstance.deposit.holdBalAmt+= result.holdInstance.amt
+                    result.holdInstance.deposit.save(validate:false,failOnError:true)
+                 }
+                if(result.holdInstance.type?.id==2){
+                    result.holdInstance.deposit.availableBalAmt -=result.holdInstance.amt
+                    result.holdInstance.deposit.holdBalAmt+=result.holdInstance.amt
+                    result.holdInstance.deposit.save(validate:false,failOnError:true)
+                }
+               
+            }
+            //cancel hold value
+            if(result.holdInstance.getPersistentValue('status')?.id==2 && result.holdInstance.status?.id>=3){
+                result.holdInstance.deposit.availableBalAmt = result.holdInstance.deposit.availableBalAmt+result.holdInstance.amt
+                result.holdInstance.deposit.holdBalAmt = result.holdInstance.deposit.holdBalAmt-result.holdInstance.amt
+                result.holdInstance.deposit.save(validate:false,failOnError:true)
+            }
+            result.holdInstance.save(failOnError:true)
+            
+            // Success.
+            return result
+        } //end withTransaction
+    }
+    /****CTD****/
+     def saveCTD(params){
+        IssueCTD.withTransaction { status ->
+            println "pumasok sa save CTD transaction"
+            def result = [:]
+            def fail = { Map m ->
+                status.setRollbackOnly()
+                if(result.issueCTDInstance && m.field)
+                    result.issueCTDInstance.errors.rejectValue(m.field, m.code)
+                result.error = [ code: m.code, args: ["IssueCTD", params.id] ]
+                return result
+            }
+            result.issueCTDInstance = new IssueCTD()
+            result.issueCTDInstance.properties = params
+            
+            if(!result.issueCTDInstance.validate()){
+                return fail(code:"default.save.failure")
+            }
+            result.issueCTDInstance.ctd = CTD.find{ctdNo==result.issueCTDInstance.ctdNo}
+            result.issueCTDInstance.ctd.interestRate = result.issueCTDInstance.deposit.depositInterestScheme?.interestRate
+            result.issueCTDInstance.ctd.term = result.issueCTDInstance.deposit.fixedDepositTermScheme.value
+            result.issueCTDInstance.ctd.principalAmt = result.issueCTDInstance.deposit.availableBalAmt
+            result.issueCTDInstance.ctd.dateOpened = result.issueCTDInstance.deposit.dateOpened
+            result.issueCTDInstance.ctd.maturityDate = result.issueCTDInstance.deposit.currentRollover.endDate
+            result.issueCTDInstance.save(flush:true,failOnError:true)
+            
+            result.issueCTDInstance.ctd.status = CertificateTimeDepositStatus.read(2)
+            result.issueCTDInstance.ctd.issueCTD = result.issueCTDInstance
+            result.issueCTDInstance.ctd.docInventory.usageCount+=1
+            
+            if(result.issueCTDInstance.ctd.save(failOnError:true)&&result.issueCTDInstance.ctd.docInventory.save(failOnError:true)){
+                println "lumabas sa save CTD transaction"
+                return result
+            }else{
+                return fail(code:"Save Error")
+            }
+        }
+    }
+    def updateCTD(params,includeList=null){
+        IssueCTD.withTransaction { status ->
+            def result = [:]
+            def fail = { Map m ->
+                status.setRollbackOnly()
+                if(result.issueCTDInstance && m.field)
+                    result.issueCTDInstance.errors.rejectValue(m.field, m.code)
+                result.error = [ code: m.code, args: ["IssueCTD", params.id] ]
+                return result
+            }
+            result.issueCTDInstance = IssueCTD.get(params.id)
+            if(!result.issueCTDInstance){
+                return fail(code:"default.not.found")
+            }
+            // Optimistic locking check.
+            if(params.version) {
+                if(result.issueCTDInstance.version > params.version.toLong())
+                    return fail(field:"version", code:"default.optimistic.locking.failure")
+            }
+            if(!includeList){
+                result.issueCTDInstance.properties=params
+            }
+            else{
+                result.issueCTDInstance.properties[includeList]=params
+            }
+            if(!includeList){
+                if(!result.issueCTDInstance.validate()){    
+                    return fail(code:"default.update.failure")
+                }
+            }else{
+                if(!result.issueCTDInstance.validate([includeList])){    
+                    return fail(code:"default.update.failure")
+                }
+            }
+            result.issueCTDInstance.save(failOnError:true)  
+            
+            // Success.
+            return result
+        } //end withTransaction
+    }
+    def saveManualRollover(params){
+        Rollover.withTransaction { status ->
+            println "pumasok sa save Manual Rollover transaction"
+            def result = [:]
+            def fail = { Map m ->
+                status.setRollbackOnly()
+                if(result.rolloverInstance && m.field)
+                    result.rolloverInstance.errors.rejectValue(m.field, m.code)
+                result.error = [ code: m.code, args: ["Rollover", params.id] ]
+                return result
+            }
+            result.rolloverInstance = new Rollover()
+            result.rolloverInstance.properties = params
+            result.rolloverInstance.type = result.rolloverInstance.deposit.currentRollover.type
+            if(!result.rolloverInstance.validate()){
+                return fail(code:"default.save.failure")
+            }
+            result.rolloverInstance.save(flush:true,failOnError:true)
+            result.rolloverInstance.deposit.addToRollovers(result.rolloverInstance)
+            result.rolloverInstance.deposit.currentRollover =result.rolloverInstance
+            return result
+        }
+    }
+    /*****Passbook****/
+    def savePassbook(params){
+        IssuePassbook.withTransaction { status ->
+            println "pumasok sa save passbook transaction"
+            def result = [:]
+            def fail = { Map m ->
+                status.setRollbackOnly()
+                if(result.issuePassbookInstance && m.field)
+                    result.issuePassbookInstance.errors.rejectValue(m.field, m.code)
+                result.error = [ code: m.code, args: ["IssuePassbook", params.id] ]
+                return result
+            }
+            result.issuePassbookInstance = new IssuePassbook()
+            result.issuePassbookInstance.properties = params
+            if(!result.issuePassbookInstance.validate()){
+                return fail(code:"default.save.failure")
+            }
+            result.issuePassbookInstance.passbook = Passbook.get(result.issuePassbookInstance.passbookNo) // .find{result.issuePassbookInstance.passbookNo}
+            result.issuePassbookInstance.save(flush:true,failOnError:true)
+            result.issuePassbookInstance.passbook.status = PassbookStatus.read(2)
+            result.issuePassbookInstance.passbook.issuePassbook = result.issuePassbookInstance
+            result.issuePassbookInstance.passbook.save(failOnError:true)
+//            if(result.issuePassbookInstance.passbook.docInventory.usageCount == null){
+//                result.issuePassbookInstance.passbook.docInventory.usageCount = 0
+//            }
+            result.issuePassbookInstance.passbook.docInventory.usageCount+=1
+            result.issuePassbookInstance.passbook.docInventory.save(failOnError:true)
+            
+            if( result.issuePassbookInstance.passbook.save(failOnError:true)&&  result.issuePassbookInstance.passbook.docInventory.save(failOnError:true)){
+                println "lumabas sa save passbook transaction"
+                return result
+            
+            }else{
+                return fail(code:"Save Error")
+            }
+        }
+    }
+    def updatePassbook(params){
+        IssuePassbook.withTransaction { status ->
+            def result = [:]
+            def fail = { Map m ->
+                status.setRollbackOnly()
+                if(result.issuePassbookInstance && m.field)
+                    result.issuePassbookInstance.errors.rejectValue(m.field, m.code)
+                result.error = [ code: m.code, args: ["IssuePassbook", params.id] ]
+                return result
+            }
+            result.issuePassbookInstance = IssuePassbook.get(params.id)
+            if(!result.issuePassbookInstance){
+                return fail(code:"default.not.found")
+            }
+            // Optimistic locking check.
+            if(params.version) {
+                if(result.issuePassbookInstance.version > params.version.toLong())
+                    return fail(field:"version", code:"default.optimistic.locking.failure")
+            }
+//            if(!includeList){
+                result.issuePassbookInstance.properties=params
+                println "OUTPUT :" + result.issuePassbookInstance
+//            }
+//            else{
+//                result.issuePassbookInstance.properties[includeList]=params
+//                println "OUTPUT TWO :" + result.issuePassbookInstance
+//                println "OUTPUT params :" + params
+//            }
+//            if(!includeList){
+                if(!result.issuePassbookInstance.validate()){    
+                    return fail(code:"default.update.failure")
+                }
+//            }else{
+//                if(!result.issuePassbookInstance.validate([includeList])){    
+//                    return fail(code:"default.update.failure")
+//                }
+//            }
+
+            // ito ung magremove nung status na issued sa old id
+            result.issuePassbookInstance.passbook = Passbook.get(result.issuePassbookInstance.passbook.passbookNo)
+            result.issuePassbookInstance.passbook.status = PassbookStatus.read(1)
+            result.issuePassbookInstance.passbook.issuePassbook = null
+            result.issuePassbookInstance.passbook.save(failOnError:true)
+            
+            result.issuePassbookInstance.passbook = Passbook.get(result.issuePassbookInstance.passbookNo) // .find{result.issuePassbookInstance.passbookNo}
+            //result.issuePassbookInstance.save()  
+            result.issuePassbookInstance.save(flush:true,failOnError:true)
+            result.issuePassbookInstance.passbook.status = PassbookStatus.read(2)
+            result.issuePassbookInstance.passbook.issuePassbook = result.issuePassbookInstance
+            result.issuePassbookInstance.passbook.save(failOnError:true)
+            
+            //result.issuePassbookInstance.save()  
+            
+            // Success.
+            return result
+        } //end withTransaction
+    }
+    /*****Chequebook****/
+    
+    def saveChequebook(params){
+        Chequebook.withTransaction { status ->
+            def result = [:]
+            def fail = { Map m ->
+                status.setRollbackOnly()
+                if(result.chequebookInstance && m.field)
+                    result.chequebookInstance.errors.rejectValue(m.field, m.code)
+                result.error = [ code: m.code, args: ["Chequebook", params.id] ]
+                return result
+            }
+            result.chequebookInstance = new Chequebook()
+            result.chequebookInstance.properties = params
+            if(!result.chequebookInstance.validate()){
+                return fail(code:"default.save.failure")
+            }
+            result.chequebookInstance.save(flush:true,failOnError:true)
+            for(int i =result.chequebookInstance.seriesStart;i<=result.chequebookInstance.seriesEnd;i++){
+                def chequeInstance = Cheque.find{chequeNo==i.toString()}
+                chequeInstance.chequebook =  result.chequebookInstance
+                chequeInstance.status = CheckStatus.read(2)
+                chequeInstance.save()
+            }
+            return result
+        }
+    }
+    def updateChequebook(params){
+        Chequebook.withTransaction { status ->
+            def result = [:]
+            def fail = { Map m ->
+                status.setRollbackOnly()
+                if(result.chequebookInstance && m.field && jList.cheques_used == 0)
+                    result.chequebookInstance.errors.rejectValue(m.field, m.code)
+                result.error = [ code: m.code, args: ["Chequebook", params.id] ]
+                return result
+            }
+            
+            result.chequebookInstance = Chequebook.get(params.id)
+            
+            //change status of old check to unused
+            for(int i =result.chequebookInstance.seriesStart;i<=result.chequebookInstance.seriesEnd;i++){
+                def chequeInstance = Cheque.find{chequeNo==i.toString()}
+                chequeInstance.chequebook =  null
+                chequeInstance.status = CheckStatus.read(1)
+                chequeInstance.save()
+            }
+            
+            if(!result.chequebookInstance){
+                return fail(code:"default.not.found")
+            }
+            
+            // Optimistic locking check.
+            if(params.version) {
+                if(result.chequebookInstance.version > params.version.toLong())
+                    return fail(field:"version", code:"default.optimistic.locking.failure")
+            }
+//            if(!includeList && !includeList1 && !includeList2){
+                result.chequebookInstance.properties=params
+//            }
+//            else{
+//                println "2" + includeList
+//                result.chequebookInstance.properties[includeList]=params
+//                result.chequebookInstance.properties[includeList1]=params
+//                result.chequebookInstance.properties[includeList2]=params
+//                println "TEST : " + result.chequebookInstance.properties[includeList]
+//                println "TEST 1: " + result.chequebookInstance.properties[includeList1]
+//                println "TEST 2: " + result.chequebookInstance.properties[includeList2]
+//            }
+//            if(!includeList){
+                if(!result.chequebookInstance.validate()){    
+                    return fail(code:"default.update.failure")
+                }
+//            }else{
+//                if(!result.chequebookInstance.validate([includeList])){    
+//                    return fail(code:"default.update.failure")
+//                }
+//            }
+
+            
+            result.chequebookInstance.save()  
+            //save new status of used checks
+            for(int i =result.chequebookInstance.seriesStart;i<=result.chequebookInstance.seriesEnd;i++){
+                def chequeInstance = Cheque.find{chequeNo==i.toString()}
+                chequeInstance.chequebook =  result.chequebookInstance
+                chequeInstance.status = CheckStatus.read(2)
+                chequeInstance.save()
+            }
+            
+            // Success.
+            return result
+        } //end withTransaction
+    }
+    private buildAcctNo(Deposit depositInstance){
+        int[] piArray = [1,4,1,5,9,2,6,5,3,5,8]
+        int serialCount = Deposit.countByBranchAndProduct(depositInstance.branch,depositInstance.product)
+        String acctNo
+        String branchCode = depositInstance.branch.code
+        String productCode = depositInstance.product.code
+
+        branchCode= String.format("%03d", depositInstance.branch.code)
+        productCode = String.format("%03d", depositInstance.product.code)
+        String serialCode = String.format("%05d", serialCount);
+        
+        acctNo = branchCode+productCode+serialCode
+        
+        def piTotal = 0
+        for (int i = acctNo.length()-1; i >= 0; i--){
+            int c =  Character.getNumericValue(acctNo.charAt(i))
+            println c
+            piTotal += c*piArray[i]    
+        }
+        String checkBit = (piTotal%10).toString()
+        depositInstance.acctNo = branchCode+"-"+productCode +"-"+serialCode+"-"+checkBit
+        depositInstance.save(failOnError:true)
+    }
+}

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.0.3.final using JasperReports Library version 6.0.3  -->
+<!-- 2015-08-20T10:06:25 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="txn_fd_interest_withdrawal" pageWidth="612" pageHeight="432" whenNoDataType="BlankPage" columnWidth="572" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="b6384467-0672-4a04-b528-c22668b1bcbf">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="Postgre - ICBS - Demo"/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="inch"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="inch"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<queryString>
+		<![CDATA[select A.txn_date, B.username, D.acct_no, D.acct_name, E.credit_amt, E.debit_amt, F.short_description
+from txn_file A
+inner join user_master B on A.user_id = B.id
+inner join deposit D on D.id = A.dep_acct_id
+inner join txn_deposit_acct_ledger E on A.id = E.txn_file_id
+inner join txn_template F on E.txn_type_id = F.ID]]>
+	</queryString>
+	<field name="txn_date" class="java.sql.Timestamp"/>
+	<field name="username" class="java.lang.String"/>
+	<field name="acct_no" class="java.lang.String"/>
+	<field name="acct_name" class="java.lang.String"/>
+	<field name="credit_amt" class="java.lang.Double"/>
+	<field name="debit_amt" class="java.lang.Double"/>
+	<field name="short_description" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="111" splitType="Stretch">
+			<staticText>
+				<reportElement x="-20" y="10" width="234" height="17" uuid="3ae1207a-4e03-47d0-971e-5521863395b5"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Time Deposit Interest Withdrawal]]></text>
+			</staticText>
+			<textField pattern="yyyy/MM/dd">
+				<reportElement x="0" y="30" width="100" height="30" uuid="204f6716-41b0-4c0c-a07b-c54bfe1aa32a"/>
+				<textFieldExpression><![CDATA[$F{txn_date}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="70" width="100" height="30" uuid="d938a83c-fa99-4b1a-86af-00280fb310ce"/>
+				<textFieldExpression><![CDATA[$F{acct_no}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="114" y="70" width="366" height="30" uuid="1c375b62-e93e-4a4d-a529-5ca9c6981b10"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{acct_name}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="380" y="27" width="100" height="30" uuid="9a12112a-f7c4-4690-8088-3b2076bdb25f"/>
+				<textFieldExpression><![CDATA[$F{username}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="14" splitType="Stretch"/>
+	</pageHeader>
+	<columnHeader>
+		<band height="36" splitType="Stretch">
+			<staticText>
+				<reportElement x="80" y="10" width="100" height="20" uuid="d799f4c2-4ff6-4712-89a5-24e3f5e924f7"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[TXN Code]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="190" y="10" width="100" height="20" uuid="ba4b4811-33de-42e4-8ff5-d943d8bba898"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[Debit]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="300" y="10" width="100" height="20" uuid="11a5d261-1cd5-46a5-b426-50915df5a42a"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[Credit]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="33" splitType="Stretch">
+			<textField>
+				<reportElement x="80" y="10" width="100" height="20" uuid="63b05d5e-cbd3-4062-a52e-9057413a0cb0"/>
+				<textFieldExpression><![CDATA[$F{short_description}]]></textFieldExpression>
+			</textField>
+			<textField pattern="###,###,###,##0.00">
+				<reportElement x="190" y="10" width="100" height="20" uuid="68af11f8-4495-4585-8663-414cb5a320e4"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{debit_amt}]]></textFieldExpression>
+			</textField>
+			<textField pattern="###,###,###,##0.00">
+				<reportElement x="300" y="10" width="100" height="20" uuid="f615520d-8256-45b5-b730-b633934ad0d6"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{credit_amt}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="10" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="7" splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band height="9" splitType="Stretch"/>
+	</summary>
+</jasperReport>

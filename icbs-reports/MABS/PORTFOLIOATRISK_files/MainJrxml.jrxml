@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.2.1.final using JasperReports Library version 6.2.0  -->
+<!-- 2016-04-28T16:16:42 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="PortfolioAtRisk" pageWidth="842" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="1443c248-6956-403f-92b4-9b70a7ef774c">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="NRBSL Data Server"/>
+	<property name="ireport.jasperserver.url" value="http://localhost:8080/jasperserver/"/>
+	<property name="ireport.jasperserver.user" value="jasperadmin"/>
+	<property name="ireport.jasperserver.report.resource" value="/ICBS_REPORT/MABS/PORTFOLIOATRISK_files/MainJrxml"/>
+	<property name="ireport.jasperserver.reportUnit" value="/ICBS_REPORT/MABS/PORTFOLIOATRISK"/>
+	<property name="net.sf.jasperreports.export.xls.one.page.per.sheet" value="true"/>
+	<property name="net.sf.jasperreports.export.xls.sheet.names.1" value="CONSOLIDATED PORFOLIO AT RISK "/>
+	<property name="net.sf.jasperreports.export.xls.sheet.names.2" value="PER BRANCH PORFOLIO AT RISK"/>
+	<property name="net.sf.jasperreports.page.break.no.pagination" value="apply"/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<property name="net.sf.jasperreports.export.xls.ignore.graphics" value="false"/>
+	<style name="Crosstab_CH" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Crosstab_CG" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Crosstab_CT" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Crosstab_CD" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Crosstab 1_CH" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Crosstab 1_CG" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Crosstab 1_CT" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Crosstab 1_CD" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<subDataset name="CONSOLIDATED" uuid="6539b6c6-010c-42ef-9dc1-3ee6f049485a">
+		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="192.168.0.12(icbs_report)"/>
+		<queryString language="SQL">
+			<![CDATA[select
+(select param_value from institution where caption = 'Institution Name') as "BANK NAME", 
+* from(
+select 'DOSRI' as "BASIS",
+A.opening_date as "OPENING DATE",
+'' as "name",
+'' as "ID",
+C.description as "Performance",	
+'' as "Code",
+D.description,
+A.balance_amount as "AllSum" from loan A
+LEFT JOIN (select id,name from branch)B on A.branch_id = B."id"
+LEFT JOIN (select * from loan_performance_classification)C on 
+A.performance_classification_id = C."id"
+LEFT JOIN (select A.id,D.description from loan_application A
+LEFT JOIN (select * from loan_application_collaterals)B on A.id = B.loan_application_id
+LEFT JOIN (select id,collateral_type_id from collateral)C on B.collateral_id = C.id
+LEFT JOIN (select id,description from loan_collateral_type)D on C.collateral_type_id = D.id
+)D on A.loan_application_id = D.id
+LEFT JOIN (select id,dosri_code_id from customer)E on A.customer_id = E.id
+where E.dosri_code_id > 1
+GROUP BY C.description,D.description, A.balance_amount, A.opening_date
+
+
+UNION ALL
+select 'NON-DOSRI' as "BASIS",
+A.opening_date as "OPENING DATE",
+'' as "name",
+'' as "ID",
+C.description as "Performance",
+'' as "Code",
+D.description,
+A.balance_amount as "AllSum" from loan A
+LEFT JOIN (select id,name from branch)B on A.branch_id = B."id"
+LEFT JOIN (select * from loan_performance_classification)C on 
+A.performance_classification_id = C."id"
+LEFT JOIN (select A.id,D.description from loan_application A
+LEFT JOIN (select * from loan_application_collaterals)B on A.id = B.loan_application_id
+LEFT JOIN (select id,collateral_type_id from collateral)C on B.collateral_id = C.id
+LEFT JOIN (select id,description from loan_collateral_type)D on C.collateral_type_id = D.id
+)D on A.loan_application_id = D.id
+LEFT JOIN (select id,dosri_code_id from customer)E on A.customer_id = E.id
+where E.dosri_code_id = 1
+GROUP BY C.description,D.description, A.balance_amount, A.opening_date
+)A
+ORDER BY A."BASIS",A."Performance",A.description]]>
+		</queryString>
+		<field name="BANK NAME" class="java.lang.String"/>
+		<field name="BASIS" class="java.lang.String"/>
+		<field name="OPENING DATE" class="java.sql.Timestamp"/>
+		<field name="name" class="java.lang.String"/>
+		<field name="ID" class="java.lang.String"/>
+		<field name="Performance" class="java.lang.String"/>
+		<field name="Code" class="java.lang.String"/>
+		<field name="description" class="java.lang.String"/>
+		<field name="AllSum" class="java.lang.Double"/>
+	</subDataset>
+	<subDataset name="PER BRANCH" uuid="d4cfaa83-2d4e-4d06-aa3f-0ad6a1ca633d">
+		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="192.168.0.12(icbs_report)"/>
+		<queryString>
+			<![CDATA[select 
+(select param_value from institution where caption = 'Institution Name') as "BANK NAME",
+'BASIS' as "BASIS",
+A.opening_date as "OPENING DATE",
+B.name,
+C."id" as "ID",
+C.description as "Performance",
+E.name as "Code",
+D.description,
+A.balance_amount as "AllSum" from loan A
+LEFT JOIN (select id,name from branch)B on A.branch_id = B."id"
+LEFT JOIN (select * from loan_performance_classification)C on A.performance_classification_id = C."id"
+LEFT JOIN (select A.id,D.description from loan_application A
+LEFT JOIN (select * from loan_application_collaterals)B on A.id = B.loan_application_id
+LEFT JOIN (select id,collateral_type_id from collateral)C on B.collateral_id = C.id
+LEFT JOIN (select id,description from loan_collateral_type)D on C.collateral_type_id = D.id
+)D on A.loan_application_id = D.id
+LEFT JOIN (select * from product where product_type_id = 6 
+and config_item_status_id = 2
+)E on A.product_id = E.id
+GROUP BY B.name,E.name,C.description,D.description, A.balance_amount, C."id", A.opening_date 
+ORDER BY B.name,C.description,D.description,E.name]]>
+		</queryString>
+		<field name="BANK NAME" class="java.lang.String"/>
+		<field name="BASIS" class="java.lang.String"/>
+		<field name="OPENING DATE" class="java.sql.Timestamp"/>
+		<field name="name" class="java.lang.String"/>
+		<field name="ID" class="java.lang.Integer"/>
+		<field name="Performance" class="java.lang.String"/>
+		<field name="Code" class="java.lang.String"/>
+		<field name="description" class="java.lang.String"/>
+		<field name="AllSum" class="java.lang.Double"/>
+	</subDataset>
+	<parameter name="asofdate" class="java.util.Date"/>
+	<queryString language="SQL">
+		<![CDATA[select param_value FROM institution as "BANK NAME" where id = '1']]>
+	</queryString>
+	<field name="param_value" class="java.lang.String"/>
+	<group name="Group1">
+		<groupHeader>
+			<band height="92">
+				<break>
+					<reportElement x="0" y="91" width="100" height="1" uuid="baec6af5-06cb-4566-99b7-0f9d06eb61d2"/>
+				</break>
+				<subreport>
+					<reportElement x="0" y="0" width="802" height="91" uuid="094948c8-c509-4171-b6ac-283b55ca6b5d"/>
+					<subreportParameter name="asofdate">
+						<subreportParameterExpression><![CDATA[$P{asofdate}]]></subreportParameterExpression>
+					</subreportParameter>
+					<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+					<subreportExpression><![CDATA["repo:PortfolioAtRiskConsolidated.jrxml"]]></subreportExpression>
+				</subreport>
+			</band>
+		</groupHeader>
+	</group>
+	<group name="Group2">
+		<groupHeader>
+			<band height="90">
+				<subreport>
+					<reportElement x="1" y="8" width="802" height="80" uuid="bbbb4246-b700-4fd6-a367-a0bd7fc0140e"/>
+					<subreportParameter name="asofdate">
+						<subreportParameterExpression><![CDATA[$P{asofdate}]]></subreportParameterExpression>
+					</subreportParameter>
+					<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+					<subreportExpression><![CDATA["repo:PortfolioAtRiskPerBranch.jrxml"]]></subreportExpression>
+				</subreport>
+			</band>
+		</groupHeader>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<noData>
+		<band height="108">
+			<textField>
+				<reportElement x="690" y="0" width="112" height="13" uuid="d6bd886d-ecc2-44d2-815c-1eca511799b0">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA["Page: " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="MMMMM dd, yyyy">
+				<reportElement x="690" y="26" width="112" height="13" uuid="64676dc0-fa94-4aa4-bb7c-84682b663d3f">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField pattern="h:mm a">
+				<reportElement x="690" y="13" width="112" height="13" uuid="380f1edb-622f-41f6-a527-efbfd547395a">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="80" y="65" width="600" height="13" uuid="3db543a6-52df-4221-a8ff-9cf2da399a93">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="10"/>
+				</textElement>
+				<text><![CDATA[NO DATA FOR REPORT]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="80" y="43" width="600" height="21" uuid="126cf099-0fcf-4181-ae6d-e947496a7cd7">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="16" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PORTFOLIO AT RISK]]></text>
+			</staticText>
+			<image>
+				<reportElement x="0" y="0" width="50" height="50" uuid="07121877-8258-4cd2-a4c1-29b382e32b4c"/>
+				<imageExpression><![CDATA["repo:logo.png"]]></imageExpression>
+			</image>
+		</band>
+	</noData>
+</jasperReport>

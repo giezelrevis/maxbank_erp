@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.2.1.final using JasperReports Library version 6.2.0  -->
+<!-- 2016-04-29T10:41:59 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="icbs_fullTrialBalanceSubreport" pageWidth="612" pageHeight="792" columnWidth="612" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="2174950a-e6e9-433b-a8d2-bffed9d9bc3d">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="PostgresLocal"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="ireport.jasperserver.url" value="http://localhost:8080/jasperserver/"/>
+	<property name="ireport.jasperserver.user" value="jasperadmin"/>
+	<property name="ireport.jasperserver.report.resource" value="/ICBS_REPORT/GENERAL_LEDGER/icbs_fullTrialBalancePerBranch_files/icbs_fullTrialBalanceSubreportPerBranch.jrxml"/>
+	<property name="ireport.jasperserver.reportUnit" value="/ICBS_REPORT/GENERAL_LEDGER/icbs_fullTrialBalancePerBranch"/>
+	<parameter name="sort_code" class="java.lang.String"/>
+	<parameter name="ccy" class="java.lang.String"/>
+	<parameter name="branch_name" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[select 
+	glsc.sort_code,
+	'(' || right('000'|| ltrim(to_char((select code from branch where glac.branch_id=id),'999')),3) || ') ' || glac.code as code,
+	glac.short_name,
+	ccy.code as ccy,
+	case when glac.balance>=0 then abs(glac.balance) else null end  as debit,
+	case when glac.balance<0 then abs(glac.balance) else null  end as credit
+from gl_account as glac 
+inner join gl_sort_code as glsc on glac.parent_id = glsc.id
+inner join currency as ccy on glac.currency_id=ccy.id
+
+
+where 
+	balance<>0
+	and glsc.sort_code = $P{sort_code}
+	and ccy.code = $P{ccy}
+	and (select name from branch where glac.branch_id =id) = $P{branch_name}
+ order by sort_code]]>
+	</queryString>
+	<field name="sort_code" class="java.lang.String"/>
+	<field name="code" class="java.lang.String"/>
+	<field name="short_name" class="java.lang.String"/>
+	<field name="ccy" class="java.lang.String"/>
+	<field name="debit" class="java.lang.Double"/>
+	<field name="credit" class="java.lang.Double"/>
+	<detail>
+		<band height="14" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="2" width="170" height="12" uuid="ee54742c-7a34-49a5-91af-57fdfbf9d24d"/>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{code}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement positionType="Float" x="388" y="2" width="90" height="12" isRemoveLineWhenBlank="true" uuid="b140ad4e-d4dd-4513-af99-6d781f359407">
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{debit}.doubleValue()]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="481" y="2" width="90" height="12" isRemoveLineWhenBlank="true" uuid="374e4e09-2c8d-43ef-9f0b-0b45a5128fe6">
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.x" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{credit}.doubleValue()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="150" y="2" width="238" height="12" uuid="d941b5db-748b-4d4d-9893-bdc5203c09de">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{short_name}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>

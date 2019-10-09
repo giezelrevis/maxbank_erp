@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.0.3.final using JasperReports Library version 6.0.3  -->
+<!-- 2016-02-10T12:36:15 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="institution" pageWidth="612" pageHeight="792" whenNoDataType="AllSectionsNoDetail" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="49c561ba-130c-48bf-b518-01dced932fd7">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="localhost_icbs_nrbsl"/>
+	<queryString>
+		<![CDATA[select * from institution]]>
+	</queryString>
+	<field name="id" class="java.lang.Integer"/>
+	<field name="version" class="java.lang.Long"/>
+	<field name="caption" class="java.lang.String"/>
+	<field name="param_code" class="java.lang.String"/>
+	<field name="param_type" class="java.lang.String"/>
+	<field name="param_value" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="15" splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band height="16" splitType="Stretch"/>
+	</pageHeader>
+	<columnHeader>
+		<band height="137" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="100" width="100" height="30" uuid="b4d32337-9467-44bf-a331-453a137a724b"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[param_code]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="110" y="100" width="100" height="30" uuid="d76497c3-fda0-48bf-9429-f24c2a0a59c7"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[param_type]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="220" y="100" width="100" height="30" uuid="c26d0a37-ed07-44f1-8454-d4be37571dca"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[param_value]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="10" width="580" height="30" uuid="27c4441e-4216-4183-8b72-028aa07ac748"/>
+				<textElement textAlignment="Center">
+					<font size="16"/>
+				</textElement>
+				<text><![CDATA[Institution Parameters]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="34" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="10" width="100" height="20" uuid="c524dec5-ff25-4f0a-895a-2d470692ff34"/>
+				<textFieldExpression><![CDATA[$F{param_code}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="110" y="10" width="100" height="20" uuid="473f6f84-0145-47b1-bc87-ffa4bf55df1e"/>
+				<textFieldExpression><![CDATA[$F{param_type}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="220" y="10" width="350" height="20" uuid="8951d6c9-5ec9-483d-a2f9-8348199b5d53"/>
+				<textFieldExpression><![CDATA[$F{param_value}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="45" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="54" splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band height="42" splitType="Stretch"/>
+	</summary>
+</jasperReport>

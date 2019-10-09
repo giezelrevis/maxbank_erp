@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.0.3.final using JasperReports Library version 6.0.3  -->
+<!-- 2015-08-20T08:50:11 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="txn_cash_from_vault" pageWidth="612" pageHeight="792" whenNoDataType="BlankPage" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="71baf820-0d50-4c22-ab19-a8e94427c337">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="Postgre - ICBS - Demo"/>
+	<queryString>
+		<![CDATA[select A.txn_amt, A.txn_particulars, A.txn_timestamp, A.txn_date, B.username, C.description  
+from txn_file A
+inner join user_master B on A.user_id = B.id
+inner join txn_template C on A.txn_code = C.code]]>
+	</queryString>
+	<field name="txn_amt" class="java.lang.Double"/>
+	<field name="txn_particulars" class="java.lang.String"/>
+	<field name="txn_timestamp" class="java.sql.Timestamp"/>
+	<field name="txn_date" class="java.sql.Timestamp"/>
+	<field name="username" class="java.lang.String"/>
+	<field name="description" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="262" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="10" width="280" height="30" uuid="16606da4-5b88-4d46-ac73-44c8901cc61b"/>
+				<textFieldExpression><![CDATA[$F{description}]]></textFieldExpression>
+			</textField>
+			<textField pattern="yyyy/MM/dd">
+				<reportElement x="0" y="50" width="100" height="30" uuid="953fc61b-e101-4d13-b871-ee51b3e595dd"/>
+				<textFieldExpression><![CDATA[$F{txn_date}]]></textFieldExpression>
+			</textField>
+			<textField pattern="###,###,###,##0.00">
+				<reportElement x="180" y="50" width="100" height="30" uuid="ac17b81c-3c6d-46d6-9770-651c6c58790b"/>
+				<textFieldExpression><![CDATA[$F{txn_amt}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="90" width="280" height="30" uuid="b6402cbe-bf49-48db-80b6-1abf6de10f12"/>
+				<textFieldExpression><![CDATA[$F{txn_particulars}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="130" width="280" height="30" uuid="2885eb8f-16c3-4cf8-afbe-9267fd500fd9"/>
+				<textFieldExpression><![CDATA[$F{username}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="170" width="280" height="30" uuid="a8ecbd7b-997a-428e-8f64-d6304a7f6632"/>
+				<textFieldExpression><![CDATA[$F{txn_timestamp}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="140" y="50" width="30" height="30" uuid="cc518214-91a4-46ed-a452-c42a44fc8213"/>
+				<text><![CDATA[PHP]]></text>
+			</staticText>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="35" splitType="Stretch"/>
+	</pageHeader>
+	<columnHeader>
+		<band height="61" splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band height="125" splitType="Stretch"/>
+	</detail>
+	<columnFooter>
+		<band height="45" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="54" splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band height="42" splitType="Stretch"/>
+	</summary>
+</jasperReport>

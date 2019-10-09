@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.0.3.final using JasperReports Library version 6.0.3  -->
+<!-- 2015-08-20T09:17:47 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="txn_cash_deposit" pageWidth="216" pageHeight="360" whenNoDataType="BlankPage" columnWidth="176" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="0b4d47e6-8b15-432b-9b05-3dfb11fde184">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="Postgre - ICBS - Demo"/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="inch"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="inch"/>
+	<queryString language="SQL">
+		<![CDATA[select A.txn_amt, A.txn_timestamp, A.txn_date, B.username, C.short_description, D.acct_no, D.acct_name,
+(select count(*) from txncoci Z where Z.txn_file_id = A.id) as ChkCount   
+from txn_file A
+inner join user_master B on A.user_id = B.id
+inner join txn_template C on A.txn_code = C.code
+inner join deposit D on D.id = A.dep_acct_id]]>
+	</queryString>
+	<field name="txn_amt" class="java.lang.Double"/>
+	<field name="txn_timestamp" class="java.sql.Timestamp"/>
+	<field name="txn_date" class="java.sql.Timestamp"/>
+	<field name="username" class="java.lang.String"/>
+	<field name="short_description" class="java.lang.String"/>
+	<field name="acct_no" class="java.lang.String"/>
+	<field name="acct_name" class="java.lang.String"/>
+	<field name="chkcount" class="java.lang.Long"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="14" splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band splitType="Stretch"/>
+	</pageHeader>
+	<columnHeader>
+		<band height="9" splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band height="198" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="1" width="80" height="30" uuid="9dee330c-fa4c-475f-a446-42d948b11142"/>
+				<textFieldExpression><![CDATA[$F{short_description}]]></textFieldExpression>
+			</textField>
+			<textField pattern="yyyy/MM/dd">
+				<reportElement x="90" y="1" width="80" height="30" uuid="2c435f47-e765-49dd-9da7-11bb64e41504"/>
+				<textFieldExpression><![CDATA[$F{txn_date}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="31" width="170" height="30" uuid="23ad4c2a-8270-47e2-94c8-3343b18a80a1"/>
+				<textFieldExpression><![CDATA[$F{acct_no}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="61" width="170" height="30" uuid="f7505270-5c0d-4c48-98e2-ecafcccb528c"/>
+				<textFieldExpression><![CDATA[$F{acct_name}]]></textFieldExpression>
+			</textField>
+			<textField pattern="###,###,###,##0.00">
+				<reportElement x="0" y="93" width="100" height="30" uuid="ec3a7137-5d94-4e77-b172-ac317dc25ab2"/>
+				<textFieldExpression><![CDATA[$F{txn_amt}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="100" y="93" width="70" height="30" uuid="4f56ebe2-e547-4822-8dcc-d4fafa56b11b"/>
+				<textFieldExpression><![CDATA[$F{username}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="125" width="170" height="30" uuid="a5c34a89-1d44-4891-b3f2-546ca744f057"/>
+				<textFieldExpression><![CDATA[$F{txn_timestamp}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="70" y="155" width="100" height="30" uuid="71153b3a-6dd8-4b3e-a92e-94b5565a8f94"/>
+				<textFieldExpression><![CDATA[$F{chkcount}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="155" width="70" height="30" uuid="40cfad79-4f70-4ada-99e5-cab13814c746"/>
+				<text><![CDATA[Check #]]></text>
+			</staticText>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="37" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="7" splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band height="7" splitType="Stretch"/>
+	</summary>
+</jasperReport>

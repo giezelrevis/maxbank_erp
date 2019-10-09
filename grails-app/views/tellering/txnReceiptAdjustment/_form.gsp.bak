@@ -1,0 +1,36 @@
+<%@ page import="icbs.tellering.TxnFile" %>
+
+<div class="form-group">
+    <label class="control-label">Transaction Type</label>
+    <div class="col-sm-6">
+        <select id="txnType" name="txnType" class="many-to-one form-control">
+            <option selected="selected" disabled="true">-- Select a transaction type --</option>
+            <g:each in="${icbs.admin.TxnTemplate.findAllByTxnTypeAndMemoTxnType(icbs.lov.TxnType.read(19), icbs.lov.MemoTxnType.read(1))}" var="txnTemplateInstance">
+                <option value="${txnTemplateInstance.id}">${txnTemplateInstance.codeDescription}</option>
+            </g:each>
+        </select>
+    </div>
+</div>
+
+<div class="fieldcontain form-group ${hasErrors(bean: txnReceiptAdjustmentInstance, field: 'txnAmt', 'has-error')} required">
+    <label class="control-label">Transaction Amount</label>
+    <div class="col-sm-6">
+        <g:textField type="number" name="txnAmt" required="" value="${txnReceiptAdjustmentInstance?.txnAmt}"class="form-control"/>
+   </div>             
+</div>
+
+
+<div class="fieldcontain form-group ${hasErrors(bean: txnReceiptAdjustmentInstance, field: 'txnRef', 'has-error')} required">
+    <label class="control-label">Transaction Reference</label>
+    <div class="col-sm-6">
+        <g:textArea name="txnRef" required="" value="${txnReceiptAdjustmentInstance?.txnRef}"class="form-control"/>
+    </div>             
+</div>
+
+
+<div class="fieldcontain form-group ${hasErrors(bean: txnReceiptAdjustmentInstance, field: 'txnParticulars', 'has-error')} ">
+    <label class="control-label">Particulars</label>
+    <div class="col-sm-6">
+        <g:textArea name="txnParticulars" maxlength="100" value="${txnReceiptAdjustmentInstance?.txnParticulars}"class="form-control"/>
+    </div>             
+</div>

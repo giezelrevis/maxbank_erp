@@ -1,0 +1,197 @@
+<%@ page contentType="text/html;charset=UTF-8" %>
+
+
+<!DOCTYPE html>
+
+<html>
+    <head>  
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="layout" content="main">
+        <title>Fixed Deposit Pre-Termination Transaction</title>
+        
+        <script type="text/javascript" src="${resource(dir: 'js', file: 'customerSearch.js')}"></script>
+        <asset:javascript src="telleringHelper.js"/>
+        <asset:javascript src="checkPassbookBal.js"/>
+
+        <g:javascript>
+            var modal;
+            function refreshForm(params){
+                if(params.deposit){
+                    icbs.Tellering.depositDetails('getDepositDetailsCallback',"${createLink(controller : 'tellering', action:'changeDepositDetails')}",{flag:5, deposit:params.deposit});
+                }
+            }
+            function initializeDepositAcctSearchModal(){
+                modal = new icbs.UI.Modal({id:"addFundTransferSearchModal",url:"${createLink(controller : 'search', action:'search', params:[searchDomain: "deposit"])}",title:"Search Deposit Accounts",onCloseCallback:refreshForm});
+            }
+            function showSignature(){
+                $('#openDepositSignature').modal({show:true})  
+            }
+            function showSignatories(){
+                $('#openDepositSignatories').modal({show:true})  
+            }
+        </g:javascript>
+    </head>
+    
+    <body>
+        <content tag="main-content">
+            <div class="modal" id="openDepositSignature">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                            <h4 class="modal-title">Deposit Signature</h4>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <g:if test="${(depositInstance?.customer?.attachments?.find{it.isPrimarySig==true})?.id}"> <img width="240px" height="240px"src="${createLink(controller:'Attachment', action:'show', id: (depositInstance?.customer?.attachments?.find{it.isPrimarySig==true})?.id )}"/></g:if>
+                               </div>
+                            </div>
+
+                        </div>
+                        <div class="modal-footer">
+                            <a href="#" data-dismiss="modal" class="btn">Close</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal" id="openDepositSignatories">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                            <h4 class="modal-title">Other Owners/Signatories</h4>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                            <div class="col-xs-12 col-sm-6 col-md-6">
+                                <div class="section-container">
+                                    <fieldset>
+                                        <div class="infowrap">
+                                            <dl class="dl-horizontal">
+                                                <dt>Ownership Type</dt>
+                                                <dd>${depositInstance?.ownershipType?.description}</dd>
+                                            </dl>
+                                            <div class="table-responsive col-md-12">
+                                                <g:if test="${depositInstance?.signatories?.size()>0}">
+                                                    <table id="signatoryTable" class="table table-hover table-condensed table-striped">
+                                                        <tr>
+                                                            <td><label>CID</label></td>
+                                                            <td><label>Name</label></td>
+                                                            <td><label>Signatory</label></td>
+                                                        </tr>
+                                                        <tbody height="100px">
+                                                            <div id="signatoryList">
+                                                                <g:each var="signatory" in="${depositInstance?.signatories}" status="i">
+                                                                    <g:if test="${signatory.status.id!=3}">
+                                                                        <g:render template='form/signatory/onetomany/signatory' model="[signatory:signatory,i:i,displayOnly:'true']"/>
+                                                                    </g:if>
+                                                                </g:each>
+                                                        </tbody>
+                                                    </table>
+                                                </g:if>
+                                            </div>
+                                            <dl class="dl-horizontal">
+                                                <dt>Signatory Rules</dt>
+                                                <dd>${depositInstance?.sigRules}</dd>
+                                            </dl>
+                                            <dl class="dl-horizontal">
+                                                <dt>Signatory Remarks</dt>
+                                                <dd>${depositInstance?.sigRemarks}</dd>
+                                            </dl>
+                                        </div>
+                                    </fieldset>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <a href="#" data-dismiss="modal" class="btn">Close</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <g:if test="${flash.message}">
+                <div class="box-body">
+                <g:if test= "${flash.message == 'Success'}">
+                    <div class="alert alert-success alert-dismissable" role="alert">
+                        <div class="message" role="status">
+                            <i class="fa fa-check-circle"></i>
+                            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                            <strong>Transaction successfully created!</strong>
+                            <a href="index" class="alert-link">Back to Index</a>
+                        </div>
+                    </div>
+                </g:if>
+                <g:elseif test="${flash.message == 'Failed to transfer'}">
+                    <div class="alert alert-danger alert-dismissable" role="alert">
+                        <div class="message" role="status">
+                            <i class="fa fa-ban"></i>
+                            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                            <strong>Failed to create transaction</strong>
+                        </div>
+                    </div>
+                </g:elseif>
+                </div>
+            </g:if>
+            
+            <g:hasErrors bean="${txnFDPreTerminationInstance}">
+                <div id= "addCustomerRelatedError" class="box-body">
+                    <div class="alert alert-danger alert-dismissable">
+                        <i class="fa fa-ban"></i>
+                        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                        <b>Alert!</b> 
+                        <ul class="errors" role="alert">
+                            <div id="errorList">
+                            </div>
+                            <g:eachError bean="${txnFDPreTerminationInstance}" var="error">
+                                <li <g:if test="${error in org.springframework.validation.FieldError}">data-field-id="${error.field}"</g:if>><g:message error="${error}"/></li>
+                            </g:eachError>
+                        </ul>            
+                    </div>
+                </div>
+            </g:hasErrors>
+            
+            <g:form name="txnFDPreTerminationForm" action="saveTellerFDPreTerminationTxn" controller="tellering">
+                <g:render template='txnFDPreTermination/form' model="[txnFDPreTerminationInstance:txnFDPreTerminationInstance]"/>
+            </g:form>
+
+        </content>
+        
+        <content tag="main-actions">
+            <script>
+                function createnew()
+                {
+                    //console.log($('#www').val())
+                    //console.log($('#ww').val())
+                    if($('#w').val() == $('#ww').val() && $('#xx').val() != 0){
+                        if( confirm('Are you sure you want to continue this transaction?'))
+                        {
+                            jQuery('#txnFDPreTerminationForm').submit()
+                        }
+                        else{
+                            return false
+                        }
+                    }
+                    else{
+                        if($('#xx').val() != 0){
+                            alert('Transaction allowed in date closing.')
+                            return false
+                        }
+                        else
+                        {
+                            alert('Transaction not allowed in 0.00 withdrawal amount')
+                            return false
+                        }
+                    }
+                }
+            </script>
+            <ul>
+                <li><a class="save" onclick="createnew()">${message(code: 'default.button.create.label', default: 'Create')}</a></li></li>
+                <li><g:link action="index" onclick="return confirm('Are you sure you want to return to the Tellering Index page?');">Tellering Index</g:link></li>
+            </ul>                                        
+        </content>
+    </body>
+</html>

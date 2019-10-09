@@ -1,0 +1,56 @@
+<%@ page import="icbs.tellering.TxnDepositAcctLedger" %>
+
+<div class="form-group">
+    <label class="control-label">Transaction Type</label>
+    <div class="col-sm-6">
+        <select id="txnType" name="txnType" class="many-to-one form-control">
+            <option selected="selected" disabled="true">-- Select a transaction type --</option>
+            <g:each in="${icbs.admin.TxnTemplate.findAllByTxnType(icbs.lov.TxnType.read(18))}" var="txnTemplateInstance">
+                <option value="${txnTemplateInstance.id}" data-require-passbook="${txnTemplateInstance.requirePassbook}">${txnTemplateInstance.codeDescription}</option>
+            </g:each>
+        </select>
+    </div>
+</div>
+
+<fieldset class="form-group">
+    <g:if test="${!txnFDPreTerminationInstance?.acct}">
+        <input type="button" href="#" class="btn btn-primary" onclick="initializeDepositAcctSearchModal();modal.show()" value="Search Account"/>
+    </g:if>
+</fieldset>
+
+<div id="depositDetDiv">
+    <fieldset class="form-group">
+        <g:render template='/tellering/details/depositDetails' model="[depositInstance:txnFDPreTerminationInstance?.acct]"/>
+        <g:if test="${txnFDPreTerminationInstance?.acct}">
+            <g:render template='/tellering/details/signatureDetails' model="[depositInstance:txnFDPreTerminationInstance?.acct]"/>
+            <g:render template='/tellering/details/signatoryDetails' model="[depositInstance:txnFDPreTerminationInstance?.acct]"/>
+        </g:if>
+    </fieldset>
+</div>
+    
+<div class="fieldcontain form-group ${hasErrors(bean: txnFDPreTerminationInstance, field: 'passbookBal', 'has-error')} required">
+    <label class="control-label">Passbook Balance</label>
+    <div class="col-sm-6">
+        <g:textField type="number" name="passbookBal" required="" disabled="disabled" value="${txnFDPreTerminationInstance?.passbookBal}"class="form-control"/>
+    </div>
+    <div class="col-sm-2">
+        <i id="passbookValidate" class="glyphicon hide" style="margin-top: 10px;"></i>
+    </div>
+</div>
+
+<div class="fieldcontain form-group ${hasErrors(bean: txnFDPreTerminationInstance, field: 'debitAmt', 'has-error')} required">
+    <label class="control-label">Withdrawal Amount</label>
+    <div class="col-sm-6">
+        <g:textField type="number" name="debitAmt" readOnly="true" required="" value="${txnFDPreTerminationInstance?.debitAmt}"class="form-control"/>
+   </div>             
+</div>
+
+
+<div class="fieldcontain form-group ${hasErrors(bean: txnFDPreTerminationInstance, field: 'txnRef', 'has-error')} required">
+    <label class="control-label col-sm-4" for="txnRef">
+        <g:message code="txnFDPreTermination.txnRef.label" default="Transaction Reference" />
+    </label>
+    <div class="col-sm-6">
+        <g:textArea name="txnRef" required="" value="${txnFDPreTerminationInstance?.txnRef}"class="form-control"/>
+    </div>             
+</div>

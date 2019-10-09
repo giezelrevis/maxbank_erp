@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.2.0.final using JasperReports Library version 6.2.0  -->
+<!-- 2016-08-30T14:55:34 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="FixedDepositCertificate" pageWidth="612" pageHeight="288" columnWidth="572" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="b3f29e54-3d34-4db9-9a12-0410e7e5df4e">
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="inch"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="inch"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="ICBS Adapter "/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<queryString>
+		<![CDATA[]]>
+	</queryString>
+	<field name="deposit.acctNo" class="java.lang.String"/>
+	<field name="ctd.principalAmt" class="java.lang.Double"/>
+	<field name="ctd.maturityDate" class="java.util.Date"/>
+	<field name="ctd.term" class="java.lang.Integer"/>
+	<field name="ctd.interestRate" class="java.lang.Double"/>
+	<field name="ctd.dateOpened" class="java.util.Date"/>
+	<field name="ctd.ctdNo" class="java.lang.Long"/>
+	<field name="deposit.acctName" class="java.lang.String"/>
+	<detail>
+		<band height="210" splitType="Stretch">
+			<textField>
+				<reportElement x="480" y="0" width="70" height="20" uuid="8c9ef384-3a43-411c-a85f-f6e09b731974"/>
+				<textFieldExpression><![CDATA["CTD Number"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="0" width="130" height="20" uuid="a590daa6-2154-4e18-89f8-d1b3bc7fdd91"/>
+				<textFieldExpression><![CDATA["Acct. Number"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="10" y="100" width="120" height="20" uuid="362a4ad3-38c8-43e9-aadd-e28bfd41d798"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="10" y="120" width="90" height="20" uuid="2a6471b0-9c70-4968-b740-a7c577477621"/>
+				<textElement verticalAlignment="Top"/>
+				<textFieldExpression><![CDATA["Principal Owner : "]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="25" y="159" width="91" height="20" uuid="88a17efa-c07c-405a-a76c-6eb0cfc26ed3"/>
+				<textFieldExpression><![CDATA["Principal Amount"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="169" y="160" width="90" height="20" uuid="f2fd648a-3647-4d46-b312-4d415247ab2a"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA["Open Date"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="269" y="160" width="120" height="20" uuid="dacc9b4a-3070-49e3-a47a-f464a5ec0314"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA["Maturity Date"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="388" y="160" width="70" height="20" uuid="15ac01a5-b472-415c-893a-d4a5ba158c30"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA["Term (Days)"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="469" y="160" width="58" height="20" uuid="6c99e29e-dfad-420b-a88c-68c3fdda3a68"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA["Int. Rate"]]></textFieldExpression>
+			</textField>
+			<textField pattern="MM/dd/yy">
+				<reportElement x="173" y="180" width="100" height="30" uuid="c023b691-032d-4591-a19c-83c10725d7e6"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{ctd.dateOpened}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="60" y="180" width="111" height="30" uuid="5e341f68-4b9b-4010-88ff-43e1bf430540"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$F{ctd.principalAmt}]]></textFieldExpression>
+			</textField>
+			<textField pattern="MM/dd/yy">
+				<reportElement x="278" y="180" width="120" height="30" uuid="d956d11a-4d44-49eb-8ff8-23466312169d"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{ctd.maturityDate}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="480" y="180" width="58" height="30" uuid="1dc8e978-aa8e-4f41-b1a0-92426b176598"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{ctd.interestRate}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="20" width="100" height="30" uuid="da52167e-0feb-49f3-8c63-d60df18ca7fd"/>
+				<textFieldExpression><![CDATA[$F{deposit.acctNo}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="405" y="180" width="70" height="30" uuid="636d5f84-db67-43c3-8f52-0808a054678e"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{ctd.term}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="480" y="20" width="70" height="30" uuid="92997c16-82ba-4d70-a52f-6659ec61f5a9"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{ctd.ctdNo}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="100" y="121" width="210" height="20" uuid="fb663fb9-4982-4c92-9fd1-882669d89486">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textElement verticalAlignment="Top"/>
+				<textFieldExpression><![CDATA[$F{deposit.acctName}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>

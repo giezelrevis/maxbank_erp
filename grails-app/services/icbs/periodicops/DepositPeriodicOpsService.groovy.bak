@@ -1,0 +1,790 @@
+package icbs.periodicops
+
+import grails.transaction.Transactional
+import groovy.time.TimeCategory
+import icbs.tellering.TxnCOCI
+import icbs.tellering.TxnDepositAcctLedger
+import icbs.tellering.TxnFile
+import icbs.admin.TxnTemplate
+import java.text.SimpleDateFormat
+import java.util.Formatter.DateTime
+import icbs.deposit.Deposit
+import icbs.deposit.StandingOrder
+import icbs.deposit.Rollover
+import icbs.deposit.FixedDepositPreTermScheme
+import icbs.lov.ConfigItemStatus
+import icbs.lov.DepositStatus
+import icbs.lov.DepositType
+import icbs.admin.Branch
+import icbs.admin.UserMaster
+import icbs.deposit.DepositTaxFeeAndChargeScheme
+import icbs.admin.Branch
+import icbs.admin.UserMaster
+import icbs.lov.TxnType
+import icbs.lov.StandingOrderStatus
+import icbs.admin.Holiday
+
+@Transactional
+class DepositPeriodicOpsService {
+    
+    def GlTransactionService
+    
+    def startOfDay(Date currentDate,Branch branch,UserMaster user) {
+        currentDate = currentDate.clearTime()
+        //clearingChecks(currentDate)//working
+        timeDepositDailyInterestCalculation(currentDate,branch)//working
+        FDRollover(currentDate,branch,user)
+        standingOrderProcessing(currentDate,branch,user)//working
+    }
+    def endOfDay(Date currentDate,Branch branch,UserMaster user) {
+        currentDate = currentDate.clearTime()
+        //updateLastTxnDate(currentDate, branch)
+        dailyBalanceUpdate(currentDate,branch)//working
+        def today = new SimpleDateFormat("yyyy-MM-dd").format(currentDate)
+        def last_day_of_month = new SimpleDateFormat("yyyy-MM-dd").format(new SimpleDateFormat("yyyy-MM-dd").parse(new java.util.Date().format('yyyy') + "-" + (new Integer (new SimpleDateFormat("MM").format(new Date()))+1) + "-01")-1);
+        
+        def last_day_of_year
+        if(today.equals(last_day_of_month)){
+            this.endOfMonth(currentDate,branch,user)
+        }
+        if(today.equals(last_day_of_year)){
+            this.endOfYear()
+        }
+    }
+    private def endOfMonth(Date currentDate, Branch branch,UserMaster user){
+        this.depositInterestCalculation(currentDate,branch)
+        this.depositFeesProcessing(currentDate,branch,user)
+        this.monthlyBalanceUpdate(currentDate,branch)
+    }
+    private def endOfYear(){
+        
+    }
+    
+    def updateLastTxnDate(Date currentDate) {
+        def txnList = TxnFile.createCriteria().list{
+            and {
+                eq("txnDate",currentDate)
+                //eq("depAcct",!null)
+                //eq("branch",Branch.read(branch.id))
+            }
+        }
+        def di
+        for (txn in txnList) {
+            di = Deposit.get(txn.depAcct.id)
+            if (di) {
+                di.lastTxnDate = currentDate
+                di.save(failOnError:true)
+            }
+        }
+    }
+    
+    // transfer deposit accounts to dormant status
+    def TransferToDormant(Branch branch){
+         def depositList = Deposit.createCriteria().list{
+            and{
+                eq("status",DepositStatus.read(2))
+                //eq("branch",branch)
+            }
+        }   
+        def dormDate = branch.runDate
+        def lastDate
+        def txn
+        def ledger
+        
+        for (deposit in depositList) {
+            if (deposit.product.depositDormancyMonths > 0) {
+                    use (TimeCategory) {
+                        //standingOrder.endDate += 4.months
+                        dormDate -= deposit.product.depositDormancyMonths.months
+                    }     
+                if (deposit.lastTxnDate < dormDate) {
+                    // update txnFile
+                    txn = new TxnFile()
+                    txn.acctNo = deposit.acctNo
+                    txn.branch = deposit.branch
+                    txn.currency = deposit.product.currency
+                    txn.depAcct = deposit
+                    txn.status = ConfigItemStatus.get(2)
+                    txn.txnAmt = deposit.ledgerBalAmt
+                    // create txn_template for transfer to dormant
+                    txn.txnCode = '800001'
+                    txn.txnDate = branch.runDate
+                    txn.txnDescription = 'Transfer to Dormant'
+                    txn.TxnRef = branch.runDate.toString() + ' - Dormancy'
+                    txn.timeStamp = new Date()
+                    // create txn_template for transfer to dormant
+                    txn.txnType = TxnType.get(30)
+                    txn.user = UserMaster.get(session.user_id)
+                    txn.save(failOnError:true)
+                    
+                    // update ledger
+                    ledger = new TxnDepositAcctLedger()
+                    ledger.acctId = deposit
+                    ledger.acctNo = deposit.acctNo
+                    ledger.bal = deposit.ledgerBalAmt
+                    ledger.branch = deposit.branch
+                    ledger.creditAmt = deposit.ledgerBalAmt
+                    ledger.debitAmt = deposit.ledgerBalAmt
+                    ledger.currency = deposit.product.currency
+                    ledger.status = DepositStatus.get(5)
+                    ledger.txnDate = txn.txnDate
+                    ledger.txnFile = txn
+                    ledger.user = UserMaster.get(session.user_id)
+                    ledger.txnRef = txn.txnRef
+                    ldger.txnType = txn.txnType
+                    ledger.save(failOnError:true)
+                    
+                    // update deposit
+                    deposit.status = DepositStatus.get(5).id
+                    deposit.statusChangeDate = branch.runDate
+                    deposit.save(failOnError:trune)
+                    
+                    //create entry for glTxnBreakdown
+                    GlTransactionServicesaveTxnBreakdown()
+                }    
+            } 
+        }
+    }
+    
+    private def clearingChecks(Date currentDate){
+        Boolean withClearing = true
+        def holidays = Holiday.findAllWhere(holidayDate:currentDate)
+        Boolean bHoliday
+        
+        // check for countrywide holidays
+        if (holidays){
+            if (holidays.institutionWideHoliday){
+                withClearing = false
+            }
+        }
+        
+        // check for weekends (sunday and saturday no clearing)
+        def today = currentDate.toString()
+        if (Date.parse("yyyy-MM-dd", today.substring(0,10))[Calendar.DAY_OF_WEEK]==1){
+            withClearing = false
+        }
+        if (Date.parse("yyyy-MM-dd", today.substring(0,10))[Calendar.DAY_OF_WEEK]==7){
+            withClearing = false
+        }
+        if (withClearing){
+            def checkList = TxnCOCI.findAllByStatusAndClearingDate(ConfigItemStatus.read(2),currentDate)
+            for(check in checkList){
+                def deposit = Deposit.find(acctNo==check.acctNo)
+                if(deposit){
+                    check.status.id=3
+                    check.save()
+                    //deposit.outstandingBalAmt += check.Amt
+                    //deposit.ledgerBalAmt -= check.Amt
+                    deposit.availableBalAmt -= check.Amt
+                    deposit.save()
+                }else{
+                    //Acct no does not exist
+                }  
+            }
+        }
+  
+    }
+    //checked is working
+    private def standingOrderProcessing(Date currentDate,Branch branch,UserMaster user){
+        def standingOrderList 
+        def amount
+        standingOrderList = StandingOrder.createCriteria().list{
+            and{
+                eq("status",StandingOrderStatus.read(2))
+                eq("endDate",currentDate)   
+                'fundingDeposit'{
+                    eq("branch",branch)
+                }
+            }
+        }
+        println standingOrderList
+        for(standingOrder in standingOrderList){
+            if(standingOrder.type.id==1){//absolute
+                if(standingOrder.fundingDeposit.availableBalAmt>=standingOrder.fundFixedAmt){
+                    amount = standingOrder.fundFixedAmt 
+                    standingOrder.fundingDeposit.availableBalAmt-=amount
+                    standingOrder.fundingDeposit.outstandingBalAmt -= amount
+                    standingOrder.fundingDeposit.ledgerBalAmt -= amount
+                    standingOrder.fundedDeposit.availableBalAmt+=amount 
+                    standingOrder.fundedDeposit.outstandingBalAmt += amount
+                    standingOrder.fundedDeposit.ledgerBalAmt += amount
+                    if(standingOrder.freq.id==1){
+                        
+                        use (TimeCategory) {
+                            standingOrder.endDate+=1.day
+                            println standingOrder.endDate
+                        }
+                    }
+                    if(standingOrder.freq.id==2){
+                        use (TimeCategory) {
+                            standingOrder.endDate+= 1.week
+                        }
+                    }
+                    if(standingOrder.freq.id==3){
+                         use (TimeCategory) {
+                            standingOrder.endDate+=15.days
+                        }
+                    }
+                    if(standingOrder.freq.id==4){
+                        use (TimeCategory) {
+                            standingOrder.endDate += 1.month
+                        }
+                    }
+                    if(standingOrder.freq.id==5){
+                        use (TimeCategory) {
+                            standingOrder.endDate += 4.months
+                        }
+                    }
+                    def txnTemplate = TxnTemplate.findByCode("008001")
+                    def txnFile1 = new TxnFile(txnParticulars:txnTemplate.description,currency:standingOrder.fundingDeposit.currency,txnType:TxnType.read(8),acctStatus:standingOrder.fundingDeposit.status.id,status:ConfigItemStatus.read(2),txnTimestamp:new Date().toTimestamp(),user:user,branch:branch,txnCode:txnTemplate.code,acctNo:standingOrder.fundingDeposit.acctNo,txnAmt:amount,txnRef:txnTemplate.description,depAcct:standingOrder.fundingDeposit)
+                    def txnFile2 = new TxnFile(txnParticulars:txnTemplate.description,currency:standingOrder.fundedDeposit.currency,txnType:TxnType.read(8),acctStatus:standingOrder.fundedDeposit.status.id,status:ConfigItemStatus.read(2),txnTimestamp:new Date().toTimestamp(),user:user,branch:branch,txnCode:txnTemplate.code,acctNo:standingOrder.fundedDeposit.acctNo,txnAmt:amount,txnRef:txnTemplate.description,depAcct:standingOrder.fundedDeposit)
+                    def acctLedger1 = new TxnDepositAcctLedger(txnType:TxnType.read(8),user:user,branch:branch,currency:standingOrder.fundingDeposit.currency,status:ConfigItemStatus.read(2),txnDate:new Date(),txnFile:txnFile1,acct:standingOrder.fundingDeposit,acctNo:standingOrder.fundingDeposit.acctNo,debitAmt:amount,bal:standingOrder.fundingDeposit.availableBalAmt,txnRef:txnTemplate.description)
+                    def acctLedger2 = new TxnDepositAcctLedger(txnType:TxnType.read(8),user:user,branch:branch,currency:standingOrder.fundedDeposit.currency,status:ConfigItemStatus.read(2),txnDate:new Date(),txnFile:txnFile2,acct:standingOrder.fundedDeposit,acctNo:standingOrder.fundedDeposit.acctNo,creditAmt:amount,bal:standingOrder.fundedDeposit.availableBalAmt,txnRef:txnTemplate.description)
+                    
+                    standingOrder.fundingDeposit.save(failOnError:true)
+                    standingOrder.fundedDeposit.save(failOnError:true)
+                    standingOrder.save(failOnError:true)
+                    
+                    txnFile1.save(failOnError:true,flush:true,validate:false)
+                    txnFile2.save(failOnError:true,flush:true,validate:false)
+                    acctLedger1.save(failOnError:true)
+                    acctLedger2.save(failOnError:true)
+                }else{
+                    println "not enough money"+standingOrder.fundingDeposit
+                }
+            }
+            if(standingOrder.type.id==2){//percentage
+                amount = (standingOrder.fundingDeposit.availableBalAmt*standingOrder.percent)
+                standingOrder.fundingDeposit.availableBalAmt-= amount
+                standingOrder.fundingDeposit.outstandingBalAmt-=amount 
+                standingOrder.fundingDeposit.ledgerBalAmt-=amount 
+                
+                standingOrder.fundedDeposit.availableBalAmt+=amount
+                standingOrder.fundedDeposit.outstandingBalAmt+=amount
+                standingOrder.fundedDeposit.ledgerBalAmt+=amount
+                if(standingOrder.freq.id==1){
+                    use (TimeCategory) {
+                        standingOrder.endDate+=1.day
+                    }
+                }
+                if(standingOrder.freq.id==2){
+                    use (TimeCategory) {
+                        standingOrder.endDate+= 1.week
+                    }
+                }
+                if(standingOrder.freq.id==3){
+                    use(TimeCategory) {
+                        standingOrder.endDate+=15.days
+                    }
+                }
+                if(standingOrder.freq.id==4){
+                    use (TimeCategory) {
+                        standingOrder.endDate += 1.month
+                    }
+                }
+                if(standingOrder.freq.id==5){
+                    use (TimeCategory) {
+                        standingOrder.endDate += 4.months
+                    }
+                }
+                def txnTemplate = TxnTemplate.findByCode("008001")
+                def txnFile1 = new TxnFile(txnParticulars:txnTemplate.description,currency:standingOrder.fundingDeposit.currency,txnType:TxnType.read(8),acctStatus:standingOrder.fundingDeposit.status.id,status:ConfigItemStatus.read(2),txnTimestamp:new Date().toTimestamp(),user:user,branch:branch,txnCode:txnTemplate.code,acctNo:standingOrder.fundingDeposit.acctNo,txnAmt:amount,txnRef:txnTemplate.description,depAcct:standingOrder.fundingDeposit)
+                def txnFile2 = new TxnFile(txnParticulars:txnTemplate.description,currency:standingOrder.fundedDeposit.currency,txnType:TxnType.read(8),acctStatus:standingOrder.fundedDeposit.status.id,status:ConfigItemStatus.read(2),txnTimestamp:new Date().toTimestamp(),user:user,branch:branch,txnCode:txnTemplate.code,acctNo:standingOrder.fundedDeposit.acctNo,txnAmt:amount,txnRef:txnTemplate.description,depAcct:standingOrder.fundedDeposit)
+                def acctLedger1 = new TxnDepositAcctLedger(txnType:TxnType.read(8),user:user,branch:branch,currency:standingOrder.fundingDeposit.currency,status:ConfigItemStatus.read(2),txnDate:new Date(),txnFile:txnFile1,acct:standingOrder.fundingDeposit,acctNo:standingOrder.fundingDeposit.acctNo,debitAmt:amount,bal:standingOrder.fundingDeposit.availableBalAmt,txnRef:txnTemplate.description)
+                def acctLedger2 = new TxnDepositAcctLedger(txnType:TxnType.read(8),user:user,branch:branch,currency:standingOrder.fundedDeposit.currency,status:ConfigItemStatus.read(2),txnDate:new Date(),txnFile:txnFile2,acct:standingOrder.fundedDeposit,acctNo:standingOrder.fundedDeposit.acctNo,creditAmt:amount,bal:standingOrder.fundedDeposit.availableBalAmt,txnRef:txnTemplate.description)
+
+                standingOrder.fundingDeposit.save(failOnError:true)
+                standingOrder.fundedDeposit.save(failOnError:true)
+                standingOrder.save(failOnError:true)
+
+                txnFile1.save(failOnError:true,flush:true,validate:false)
+                txnFile2.save(failOnError:true,flush:true,validate:false)
+                acctLedger1.save(failOnError:true)
+                acctLedger2.save(failOnError:true)
+            }
+        }
+    }
+    //for automatic recovery only
+    private def FDRollover(Date currentDate,Branch branch,UserMaster user){
+        def fdList = Deposit.createCriteria().list{
+            and{
+                eq("type",DepositType.read(3))
+                eq("status",DepositStatus.read(2))
+                //eq("branch",branch)
+            }
+        }
+        for(fd in fdList){
+            if(fd.currentRollover.endDate == currentDate){ 
+                if(fd.currentRollover.type.id==1){
+                    //update status
+                    fd.currentRollover.status = RolloverStatus.get(2).id
+                    fd.currentRollover.save(failOnError:true)
+                    continue;
+                }  
+                if(fd.currentRollover.type.id==2){
+                    //send principal
+                    if(fd.currentRollover.interestPaymentMode.id==1){
+                        //withdrawal from amount
+                        
+                        def tax = 0
+                        fd.grossRolloverInterestAmt = fd.currentRollover.normalInterestAmt
+                        fd.netRolloverInterestAmt = fd.currentRollover.normalInterestAmt - fd.currentRollover.taxAmt1;
+                        //fd.currentRollover.normalInterestAmt = fd.acrintAmt
+                        def rolloverInstance = new Rollover(
+                            principalAmt:fd.ledgerBalAmt,
+                            type:fd.currentRollover.type,deposit:fd,
+                            startDate:currentRollover.endDate,currentRollover.endDate+fd.fixedDepositTermScheme.value,
+                        )
+                        fd.currentRollover.status = RolloverStatus.get(2).id
+                        fd.currentRollover.save(failOnError:true)
+                        
+                    }
+                    if(fd.currentRollover.interestPaymentMode.id==2){
+                        def tax = 0
+                        fd.grossRolloverInterestAmt = fd.currentRollover.normalInterestAmt
+                        fd.netRolloverInterestAmt = fd.currentRollover.normalInterestAmt - fd.currentRollover.taxAmt1;
+                        //fd.currentRollover.normalInterestAmt = fd.acrintAmt
+
+                        def rolloverInstance = new Rollover(
+                            principalAmt:fd.ledgerBalAmt,
+                            type:fd.currentRollover.type,deposit:fd,fundedDeposit:currentRollover.fundedDeposit,
+                            startDate:currentRollover.endDate,currentRollover.endDate+fd.fixedDepositTermScheme.value
+                        )
+                        def txnTemplate = TxnTemplate.findByTxnType(TxnType.read(30))
+                        //credit interest
+                        def acctLedger1 = new TxnDepositAcctLedger(txnType:TxnType.read(30),user:user,branch:branch,currency:fd.currency,status:ConfigItemStatus.read(2),txnDate:new Date(),acct:fd,acctNo:fd.acctNo,creditAmt:fd.acrintAmt,bal:fd.ledgerBalAmt,txnRef:"")
+                         //debit tax
+                        def acctLedger2 = new TxnDepositAcctLedger(txnType:TxnType.read(31),user:user,branch:branch,currency:fd.currency,status:ConfigItemStatus.read(2),txnDate:new Date(),acct:fd,acctNo:fd.acctNo,debitAmt:tax,bal:fd.ledgerBalAmt,txnRef:"")
+                         
+                        //credit to account
+                        fd.currentRollover.fundedDeposit.ledgerBalAmt+=amount
+                        fd.currentRollover.fundedDeposit.availableBalAmt+=amount
+                        fd.currentRollover.fundedDeposit.interestBalAmt+=amount
+                        def txnFile1 = new TxnFile(txnParticulars:"",currency:currentRollover.fundedDeposit,txnType:TxnType.read(9),acctStatus:currentRollover.fundedDeposit.status.id,status:ConfigItemStatus.read(2),txnTimestamp:new Date().toTimestamp(),user:user,branch:branch,txnCode:TxnTemplate.code,acctNo:currentRollover.fundedDeposit.acctNo,txnAmt:fd.netRolloverInterestAmt,txnRef:"",depAcct:currentRollover.fundedDeposit)
+                        def acctLedger3 = new TxnDepositAcctLedger(txnType:TxnType.read(9),user:user,branch:branch,currency:currentRollover.fundedDeposit.currency,status:ConfigItemStatus.read(2),txnDate:new Date(),txnFile:txnFile1,currentRollover.fundedDeposit.acct,acctNo:currentRollover.fundedDeposit.acctNo,creditAmt: fd.netRolloverInterestAmt,bal:currentRollover.fundedDeposit.ledgerBalAmt,txnRef:"")
+                        
+                        
+                        
+                        acctLedger1.save(failOnError:true)
+                        acctLedger2.save(failOnError:true)
+                        
+                        txnFile1.save(failOnError:true,flush:true,validate:false)
+                        acctLedger3.save(failOnError:true)
+                        fd.currentRollover.status = RolloverStatus.get(2).id                    
+                        fd.currentRollover.fundedDeposit.save(failOnError:true)
+                        fd.currentRollover.save(failOnError:true)
+                        fd.save(failOnError:true)
+                    }
+                    //net
+                }
+                if(fd.currentRollover.type.id==3){
+                    //send principal+interest 
+                    if(fd.currentRollover.interestPaymentMode.id==3){
+                        def tax = 0
+                        fd.grossRolloverInterestAmt = fd.acrintAmt
+                        fd.netRolloverInterestAmt = fd.acrintAmt - tax;
+                        fd.currentRollover.normalInterestAmt = fd.acrintAmt
+                        fd.ledgerBalAmt += fd.netRolloverInterestAmt
+                        def rolloverInstance = new Rollover(
+                            principalAmt:fd.ledgerBalAmt,
+                            type:fd.currentRollover.type,deposit:fd,
+                            startDate:currentRollover.endDate,currentRollover.endDate+fd.fixedDepositTermScheme.value
+                        )
+                        def txnTemplate = TxnTemplate.findByTxnType(TxnType.read(30))
+                        //credit interest
+                        def acctLedger1 = new TxnDepositAcctLedger(txnType:TxnType.read(30),user:user,branch:branch,currency:fd.currency,status:ConfigItemStatus.read(2),txnDate:new Date(),acct:fd,acctNo:fd.acctNo,creditAmt: fd.grossRolloverInterestAmt,bal:fd.ledgerBalAmt,txnRef:"")
+                         //debit tax
+                        def acctLedger2 = new TxnDepositAcctLedger(txnType:TxnType.read(31),user:user,branch:branch,currency:fd.currency,status:ConfigItemStatus.read(2),txnDate:new Date(),acct:fd,acctNo:fd.acctNo,debitAmt:tax,bal:fd.ledgerBalAmt,txnRef:"")
+                        
+                        
+                       //credit to account
+                        fd.ledgerBalAmt += fd.netRolloverInterestAmt
+                        fd.availableBalAmt+=fd.netRolloverInterestAmt
+                        fd.interestBalAmt+=fd.netRolloverInterestAmt
+                        def txnFile1 = new TxnFile(txnParticulars:"",currency:fd.currency,txnType:TxnType.read(9),acctStatus:fd.status.id,status:ConfigItemStatus.read(2),txnTimestamp:new Date().toTimestamp(),user:user,branch:branch,txnCode:TxnTemplate.code,acctNo:fd.acctNo,txnAmt:fd.netRolloverInterestAmt,txnRef:"",depAcct:fd)
+                        def acctLedger3 = new TxnDepositAcctLedger(txnType:TxnType.read(9),user:user,branch:branch,currency:fd.currency,status:ConfigItemStatus.read(2),txnDate:new Date(),txnFile:txnFile1,fd.acct,acctNo:fd.acctNo,creditAmt: fd.netRolloverInterestAmt,bal:fd.ledgerBalAmt,txnRef:"")
+                        
+                        acctLedger1.save(failOnError:true)
+                        acctLedger2.save(failOnError:true)
+                        
+                        txnFile1.save(failOnError:true,flush:true,validate:false)
+                        acctLedger3.save(failOnError:true)
+                        fd.currentRollover.status = RolloverStatus.get(2).id
+                        fd.currentRollover.save(failOnError:true)
+                        
+                    }
+                   
+                }
+            }
+        }
+    }
+    private depositFeesProcessing(Date currentDate,Branch branch, UserMaster user){
+        //----  EOM Dormant charges 
+        double chgAmt
+        def txnTemplateDormancy = TxnTemplate.findByCode("830001")
+        def dormantList = Deposit.createCriteria().list{
+            and{
+                eq("status",DepositStatus.read(5))
+                eq("branch",branch)
+            }
+        }
+        for(dormant in dormantList){
+            if (dormant.product.id==40) 
+            {
+                chgAmt = DepositTaxFeeAndChargeScheme.get(5).feeAmt
+            }
+            if (dormant.product.id==41) 
+            {
+                chgAmt = DepositTaxFeeAndChargeScheme.get(5).feeAmt
+            }
+            if (dormant.product.id==42) 
+            {
+                chgAmt = DepositTaxFeeAndChargeScheme.get(5).feeAmt
+            }
+            if (dormant.product.id==43) 
+            {
+                chgAmt = DepositTaxFeeAndChargeScheme.get(6).feeAmt
+            }
+            if (dormant.product.id==44) 
+            {
+                chgAmt = DepositTaxFeeAndChargeScheme.get(6).feeAmt
+            }
+            if (dormant.product.id==45) 
+            {
+                chgAmt = DepositTaxFeeAndChargeScheme.get(6).feeAmt
+            }
+            if (dormant.product.id==60) 
+            {
+                chgAmt = DepositTaxFeeAndChargeScheme.get(5).feeAmt
+            }
+            if (dormant.product.id==61) 
+            {
+                chgAmt = DepositTaxFeeAndChargeScheme.get(5).feeAmt
+            }
+            if (dormant.product.id==62) 
+            {
+                chgAmt = DepositTaxFeeAndChargeScheme.get(6).feeAmt
+            }
+            if (dormant.product.id==63) 
+            {
+                chgAmt = DepositTaxFeeAndChargeScheme.get(6).feeAmt
+            }
+            if (chgAmt > dormant.outstandingBalAmt)
+            {
+                chgAmt = dormant.outstandingBalAmt
+            }
+            dormant.outstandingBalAmt -= chgAmt
+            dormant.ledgerBalAmt -= chgAmt
+            dormant.availableBalAmt -= chgAmt
+            dormant.save(flush:true)
+           
+            def tf = new TxnFile()	
+            tf.acctNo = dormant.acctNo
+            tf.acctStatus= dormant.status.id
+            tf.branch = dormant.branch
+            tf.currency = dormant.currency
+            tf.depAcct = dormant
+            tf.status = ConfigItemStatus.read(2)
+            tf.txnTimestamp = currentDate.toTimestamp()
+            tf.txnAmt = chgAmt
+            tf.txnCode = txnTemplateDormancy.code
+            tf.txnType = TxnType.read(32)
+            tf.txnDescription=txnTemplateDormancy.description  
+            tf.txnRef = txnTemplateDormancy.description  
+            tf.user = user
+            tf.branch = branch
+            tf.save(flush:true)		
+		
+            def txnLedger = new TxnDepositAcctLedger()
+            txnLedger.acct = dormant
+            txnLedger.acctNo = dormant.acctNo
+            txnLedger.bal = dormant.ledgerBalAmt
+            txnLedger.branchId = dormant.branch
+            txnLedger.debitAmt = chgAmt
+            txnLedger.currency = dormant.currency
+            txnLedger.status = ConfigItemStatus.read(2)
+            txnLedger.txnDate = currentDate
+            txnLedger.txnFile = tf
+            txnLedger.txnRef = txnTemplateDormancy.description 
+            txnLedger.txnType = TxnType.read(32)
+            txnLedger.user = user
+            txnLedger.branch = branch	
+            txnLedger.save(flush:true)
+        }  
+        def txnTemplateActive= TxnTemplate.findByCode("830002")
+        //---  EOM Monthly charges 
+        def activeList = Deposit.createCriteria().list{
+            and{
+                'in'("status",[DepositStatus.read(2),DepositStatus.read(3)])
+                 eq("branch",branch)
+            }
+        }
+        chgAmt = 0
+        for(active in activeList){    
+            if (active.product.id == 40)
+            {
+                chgAmt = DepositTaxFeeAndChargeScheme.get(7).feeAmt
+            }
+            if (active.product.id == 41)
+            {
+                chgAmt = DepositTaxFeeAndChargeScheme.get(7).feeAmt
+            }
+            if (active.product.id  == 42)
+            {
+                chgAmt = DepositTaxFeeAndChargeScheme.get(7).feeAmt
+            }
+            if (active.product.id  == 43)
+            {
+                chgAmt = DepositTaxFeeAndChargeScheme.get(8).feeAmt
+            }
+            if (active.product.id  == 44)
+            {
+                chgAmt = DepositTaxFeeAndChargeScheme.get(8).feeAmt
+            }
+            if (active.product.id == 45)
+            {
+                chgAmt = DepositTaxFeeAndChargeScheme.get(8).feeAmt
+            }
+            if (active.product.id  == 60)
+            {
+                chgAmt = DepositTaxFeeAndChargeScheme.get(7).feeAmt
+            }
+            if (active.product.id  == 61)
+            {
+                chgAmt = DepositTaxFeeAndChargeScheme.get(7).feeAmt
+            }
+            if (active.product.id  == 62)
+            {
+                chgAmt = DepositTaxFeeAndChargeScheme.get(8).feeAmt
+            }
+            if (active.product.id  == 63)
+            {
+                chgAmt = DepositTaxFeeAndChargeScheme.get(8).feeAmt
+            }
+
+            if (chgAmt > active.outstandingBalAmt)
+            {
+                chgAmt = active.outstandingBalAmt
+            }
+
+            active.outstandingBalAmt -= chgAmt
+            active.ledgerBalAmt -= chgAmt
+            active.availableBalAmt -= chgAmt
+            active.save(flush:true)
+
+            def tf = new TxnFile()	
+            tf.acctNo = active.acctNo
+            tf.acctStatus= active.status.id
+            tf.branch = active.branch
+            tf.currency = active.currency
+            tf.depAcct = active
+            tf.status = ConfigItemStatus.read(2)
+            tf.txnTimestamp = currentDate.toTimestamp()
+            tf.txnAmt = chgAmt
+            tf.txnCode = txnTemplateActive.code
+            tf.txnType = TxnType.read(32)
+            tf.txnDescription=txnTemplateActive.description  
+            tf.txnRef = txnTemplateActive.description  
+            tf.user = user
+            tf.branch = branch
+            tf.save(flush:true)	       	
+
+            def txnLedger = new TxnDepositAcctLedger()
+            txnLedger.acct = active
+            txnLedger.acctNo = active.acctNo
+            txnLedger.bal = active.ledgerBalAmt
+            txnLedger.branchId = active.branch
+            txnLedger.debitAmt = chgAmt
+            txnLedger.currency = active.currency
+            txnLedger.status = ConfigItemStatus.read(2)
+            txnLedger.txnDate = currentDate
+            txnLedger.txnFile = tf
+            txnLedger.txnRef = txnTemplateActive.description 
+            txnLedger.txnType = TxnType.read(32)
+            txnLedger.user = user
+            txnLedger.branch = branch	
+            txnLedger.save(flush:true)
+        }
+    }
+    // for updating of Deposit Last Transaction Date 
+    private def PeriodicOpsUpdateDepositLastTxnDate (Date currentDate){
+       	def tf = txnFile.findAll("from txn_file where txn_type in ( '3','4','5','6') and txn_Date=?",[currentDate])
+	for (txnFile in tf)
+	{
+		def depositInstance = deposit.get(tf.depAcctId)
+		depositInstance.lastTxnDate = runDate
+		depositInstance.save(flush:TRUE)
+	}
+
+    }   
+    private def monthlyBalanceUpdate(Date currentDate,Branch branch){
+        def depositList = Deposit.createCriteria().list{
+            and{
+                eq("status",DepositStatus.read(2))
+                eq("branch",branch)
+            }
+        }
+        for(deposit in depositList){
+            def monthlyBalanceInstance = new DailyBalance(accountNo:deposit.acctNo,
+                refMonth:currentDate.format('yyyy'),
+                refYear:new SimpleDateFormat("MM").format(currentDate),
+                accountStatus:1,
+                currency:deposit.currency,
+                availableBal:deposit.availableBalAmt,
+                closingBal:deposit.ledgerBalAmt,
+                holdBal:deposit.holdBalAmt,
+            )
+            monthlyBalanceInstance.save(validate:false)     
+        }
+    }
+    private def dailyBalanceUpdate(Date currentDate,Branch branch){
+         def depositList = Deposit.createCriteria().list{
+            and{
+                eq("status",DepositStatus.read(2))
+                eq("branch",branch)
+            }
+        }
+        for(deposit in depositList){
+            def dailyBalanceInstance = new DailyBalance(accountNo:deposit.acctNo,
+                refDate:currentDate,
+                branch:branch,
+                accountStatus:1,
+                currency:icbs.admin.Currency.get(1),
+                availableBal:deposit.availableBalAmt,
+                closingBal:deposit.availableBalAmt,
+                holdBal:deposit.holdBalAmt,
+                refMonth:currentDate.format('yyyy'),
+                refYear:new SimpleDateFormat("MM").format(currentDate),
+                )
+            dailyBalanceInstance.save(validate:false)
+        }
+    }
+    private def timeDepositDailyInterestCalculation(Date currentDate, Branch branch){
+         def fdList = Deposit.createCriteria().list{
+            and{
+                eq("type",DepositType.read(3))
+                eq("status",DepositStatus.read(2))
+                eq("branch",branch)
+            }
+        }
+        def duration_days
+        def fd_term
+        def interestAmt
+        def preTermIntAmt
+        def preTermTax
+        def normalTax
+        def fdTax
+        def fdRoll
+        def ptScheme
+        
+        for(fd in fdList){
+            fdRoll = Rollover.get(fd.currentRollover.id)
+            ptScheme = FixedDepositPreTermScheme.get(fd.fixedDepositPreTermScheme.id)
+            preTermIntAmt = 0
+            
+            use(TimeCategory){
+                duration_days = (currentDate - fdRoll.startDate).days
+            }
+            interestAmt = fd.ledgerBalAmt * duration_days * fd.interestRate.div(fd.depositInterestScheme.divisor).div(100)            
+            //fd.acrintAmt = interestAmt
+            fd.save(flush:true,failOnError:true)
+            
+            // time based rate
+            if (ptScheme.type.id == 3){
+                use(TimeCategory){
+                    fd_term = (fdRoll.endDate - fdRoll.startDate).days
+                }
+                if (fd_term.div(2) > duration_days) {
+                    preTermIntAmt = fd.ledgerBalAmt * duration_days * (fd.interestRate * ptScheme.term2ndHalf.div(100)).div(fd.depositInterestScheme.divisor).div(100)  
+                }else{
+                    preTermIntAmt = fd.ledgerBalAmt * duration_days * (fd.interestRate * ptScheme.term1stHalf.div(100)).div(fd.depositInterestScheme.divisor).div(100)                      
+                }
+            }    
+            // savings rate
+            if (ptScheme.type.id == 2){
+                preTermIntAmt = fd.ledgerBalAmt * duration_days * ptScheme.rate.div(fd.depositInterestScheme.divisor).div(100) 
+            }           
+            
+            // compute tax
+            fdTax = DepositTaxFeeAndChargeScheme.get(fd.depositTaxChargeScheme.id)
+            preTermTax = preTermIntAmt * fdTax.taxRate.div(100)
+            normalTax = interestAmt * fdTax.taxRate.div(100)
+            fdRoll.normalInterestAmt = interestAmt
+            fdRoll.preTermInterestAmt = preTermIntAmt
+            fdRoll.taxAmt1 = normalTax
+            fdRoll.taxAmt2 = preTermTax
+            fdRoll.save(flush:true,failOnError:true)
+        }
+    }
+    private def depositInterestCalculation(Date currentDate,Branch branch){
+        
+        def first_day_of_month = new SimpleDateFormat("yyyy-MM-dd").format(new SimpleDateFormat("yyyy-MM-dd").parse(currentDate.format('yyyy') + "-" + (new Integer (new SimpleDateFormat("MM").format(currentDate)))+"-01"));
+        def last_day_of_month = new SimpleDateFormat("yyyy-MM-dd").format(new SimpleDateFormat("yyyy-MM-dd").parse(currentDate.format('yyyy') + "-" + (new Integer (new SimpleDateFormat("MM").format(currentDate))+1) + "-01")-1);
+        //println first_day_of_month
+        //println last_day_of_month
+         def depositList = Deposit.createCriteria().list{
+            and{
+                eq("status",DepositStatus.read(2))
+                eq("branch",branch)
+                'in'("type",[DepositType.read(1),DepositType.read(2)])
+            }
+        }
+        for(deposit in depositList){ 
+            //Average Daily Balance
+            if(deposit.depositInterestScheme.depositInterestCalculation.id ==1){
+                def result = DailyBalance.executeQuery("select sum(closingBal),count(*) as days from DailyBalance where accountNo = ? and DATE(ref_date) >= DATE(?) and DATE(ref_date) < Date(?)", [deposit.acctNo,first_day_of_month,last_day_of_month])
+                println result
+                def interestRate = deposit.interestRate
+                def days = result[0][1]
+                def averageBal = result[0][0].div(days)
+                def divisor = deposit.depositInterestScheme.divisor
+                def interestBalAmt = (averageBal*days).div(divisor)*interestRate
+                deposit.ledgerBalAmt = deposit.ledgerBalAmt +interestBalAmt
+                deposit.availableBalAmt = deposit.availableBalAmt +interestBalAmt
+                deposit.interestBalAmt = deposit.ledgerBalAmt
+                deposit.save(flush:true)
+            }
+            //actual
+            if(deposit.depositInterestScheme.depositInterestCalculation.id ==2){
+                def interestRate = deposit.interestRate
+                def divisor = deposit.depositInterestScheme.divisor
+                def interestBalAmt = (deposit.availableBalAmt).div(divisor)*interestRate
+                deposit.ledgerBalAmt = deposit.ledgerBalAmt +interestBalAmt
+                deposit.availableBalAmt = deposit.availableBalAmt +interestBalAmt
+                deposit.interestBalAmt = deposit.ledgerBalAmt
+                deposit.save(flush:true)
+            }
+            //minimum monthly
+             if(deposit.depositInterestScheme.depositInterestCalculation.id ==3){
+                def result = DailyBalance.executeQuery("select min(closingBal),count(*) as days from DailyBalance where accountNo = ? and DATE(ref_date) >= DATE(?) and DATE(ref_date) < Date(?)", [deposit.acctNo,first_day_of_month,last_day_of_month])
+                println result
+                def interestRate = deposit.interestRate
+                def days = result[0][1]
+                def averageBal = result[0][0].div(days)
+                def divisor = deposit.depositInterestScheme.divisor
+                def interestBalAmt = (averageBal*days).div(divisor)*interestRate
+                deposit.ledgerBalAmt = deposit.ledgerBalAmt +interestBalAmt
+                deposit.availableBalAmt = deposit.availableBalAmt +interestBalAmt
+                deposit.interestBalAmt = deposit.ledgerBalAmt
+                deposit.save(flush:true)
+                
+            }
+            //minimum quarterly
+            /*if(deposit.depositInterestScheme.depositInterestCalculation.id ==4){
+                def result = DailyBalance.executeQuery("select min(closingBal),count(*) as days from DailyBalance where accountNo = ? and DATE(ref_date) >= DATE(?) and DATE(ref_date) < Date(?)", [deposit.acctNo,first_day_of_month,last_day_of_month])
+                println result
+                def interestRate = deposit.interestRate
+                def days = result[0][1]
+                def averageBal = result[0][0].div(days)
+                def divisor = deposit.depositInterestScheme.divisor
+                def interestBalAmt = (averageBal*days).div(divisor)*interestRate
+                deposit.ledgerBalAmt = deposit.ledgerBalAmt +interestBalAmt
+                deposit.availableBalAmt = deposit.availableBalAmt +interestBalAmt
+                deposit.interestBalAmt = deposit.ledgerBalAmt
+                deposit.save() 
+            }*/
+        }
+    }
+    
+    
+}

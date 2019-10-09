@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.0.3.final using JasperReports Library version 6.0.3  -->
+<!-- 2016-02-10T12:24:06 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="ListofActiveUsersSOD" pageWidth="612" pageHeight="792" whenNoDataType="AllSectionsNoDetail" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="f0558e6a-de05-4b66-8d0f-f8b7c0b9fd01">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="localhost_icbs_nrbsl"/>
+	<queryString language="SQL">
+		<![CDATA[select * from user_master]]>
+	</queryString>
+	<field name="id" class="java.lang.Integer"/>
+	<field name="version" class="java.lang.Long"/>
+	<field name="address1" class="java.lang.String"/>
+	<field name="address2" class="java.lang.String"/>
+	<field name="birthdate" class="java.sql.Timestamp"/>
+	<field name="branch_id" class="java.lang.Integer"/>
+	<field name="cash_id" class="java.lang.Long"/>
+	<field name="coci_id" class="java.lang.Long"/>
+	<field name="config_item_status_id" class="java.lang.Integer"/>
+	<field name="contact" class="java.lang.String"/>
+	<field name="date_hired" class="java.sql.Timestamp"/>
+	<field name="designation_id" class="java.lang.Integer"/>
+	<field name="email" class="java.lang.String"/>
+	<field name="employment_type_id" class="java.lang.Integer"/>
+	<field name="expiry_date" class="java.sql.Timestamp"/>
+	<field name="expiry_pwd_date" class="java.sql.Timestamp"/>
+	<field name="gender_id" class="java.lang.Integer"/>
+	<field name="has_exceeded_max_login" class="java.lang.Boolean"/>
+	<field name="is_first_login" class="java.lang.Boolean"/>
+	<field name="is_locked" class="java.lang.Boolean"/>
+	<field name="is_teller_balanced" class="java.lang.Boolean"/>
+	<field name="name1" class="java.lang.String"/>
+	<field name="name2" class="java.lang.String"/>
+	<field name="name3" class="java.lang.String"/>
+	<field name="name4" class="java.lang.String"/>
+	<field name="password" class="java.lang.String"/>
+	<field name="province_id" class="java.lang.Integer"/>
+	<field name="username" class="java.lang.String"/>
+	<field name="zip_code" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="8" splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band height="9" splitType="Stretch"/>
+	</pageHeader>
+	<columnHeader>
+		<band height="201" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="49" width="570" height="21" uuid="c34da761-f429-4fbe-9eff-3de12185f615"/>
+				<textElement textAlignment="Center">
+					<font size="16"/>
+				</textElement>
+				<text><![CDATA[List of Active Users]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="160" width="180" height="30" uuid="09c6243e-d1db-461c-ae32-027c565c34e1"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[username]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="190" y="160" width="100" height="30" uuid="c0112511-11b9-42f2-82a0-da35775a7c7b"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[locked]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="295" y="160" width="100" height="30" uuid="33eb42b7-d769-4dfe-9d7f-c97481b954d4"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[expiry date]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="410" y="160" width="120" height="30" uuid="5b294aa4-f27e-4763-bcbc-dc3275b53e65"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[password expiry date]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="28" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="3" width="180" height="17" uuid="a10df883-5381-4a28-915b-208deba78784"/>
+				<textFieldExpression><![CDATA[$F{username}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="187" y="3" width="100" height="17" uuid="4dac5eb6-4056-49ec-97a7-93fdbc65c955"/>
+				<textFieldExpression><![CDATA[$F{is_locked}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="295" y="3" width="100" height="17" uuid="a45b78e4-b860-4574-8a99-f3128e1d6c94"/>
+				<textFieldExpression><![CDATA[$F{expiry_date}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="410" y="3" width="100" height="17" uuid="6342269c-5bb2-4cc7-8730-c3cf564fbb55"/>
+				<textFieldExpression><![CDATA[$F{expiry_pwd_date}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="45" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="54" splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band height="42" splitType="Stretch"/>
+	</summary>
+	<noData>
+		<band height="51">
+			<staticText>
+				<reportElement x="220" y="10" width="100" height="30" uuid="9b85c4a3-d7ef-4008-99d5-ce61a2e02cc3"/>
+				<text><![CDATA[NO DATA]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

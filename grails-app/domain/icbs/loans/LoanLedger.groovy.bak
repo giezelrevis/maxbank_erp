@@ -1,0 +1,70 @@
+package icbs.loans
+
+import icbs.lov.MemoTxnType
+import icbs.admin.TxnTemplate
+import icbs.deposit.Deposit
+
+class LoanLedger {
+	// disbursement - debit
+	// payment - credit
+	Loan loan	
+	Deposit deposit
+	MemoTxnType txnType
+	TxnTemplate txnTemplate
+	Date txnDate
+ 	String txnRef
+	String txnParticulars
+	Double principalDebit
+	Double principalCredit
+	Double principalBalance  // initial value is other charges, then add total net proceeds
+	Double interestDebit
+	Double interestCredit	
+	Double interestBalance
+	Double penaltyDebit	
+	Double penaltyCredit	
+	Double penaltyBalance
+	Double chargesDebit	
+	Double chargesCredit
+	Double chargesBalance
+
+	static constraints = {
+		loan nullable:false
+		deposit nullable:true
+		txnType nullable:false
+		txnTemplate nullable:false
+		txnDate	nullable:false
+		txnRef nullable:false
+		txnParticulars nullable:true
+		principalDebit nullable:true
+		principalCredit nullable:true
+		principalBalance nullable:true
+		interestDebit nullable:true
+		interestCredit nullable:true
+		interestBalance nullable:true
+		penaltyDebit nullable:true
+		penaltyCredit nullable:true
+		penaltyBalance nullable:true
+		chargesDebit nullable:true
+		chargesCredit nullable:true
+		chargesBalance nullable:true
+	}
+
+	static mapping = {
+		id sqlType: "int", generator: "increment"
+	}
+
+	def beforeInsert() {  
+        this.principalDebit = this.principalDebit ?: 0
+		this.principalCredit = this.principalCredit ?: 0
+		this.principalBalance = this.principalBalance ?: 0
+		this.interestDebit = this.interestDebit ?: 0
+		this.interestCredit = this.interestCredit ?: 0
+		this.interestBalance = this.interestBalance ?: 0
+		this.penaltyDebit = this.penaltyDebit ?: 0
+		this.penaltyCredit = this.penaltyCredit ?: 0
+		this.penaltyBalance = this.penaltyBalance ?: 0
+		this.chargesDebit = this.chargesDebit ?: 0
+		this.chargesCredit = this.chargesCredit ?: 0
+		this.chargesBalance = this.chargesBalance ?: 0
+    }
+}

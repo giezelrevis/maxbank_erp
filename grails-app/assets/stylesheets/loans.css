@@ -1,0 +1,119 @@
+/* All */
+
+#module-title {
+	font-size: 16px;
+	text-align: center;
+	margin-bottom: 20px;
+}
+
+/* Index */
+
+table {
+	margin: 0px auto ;
+}
+
+th {
+	width: 200px;
+}
+
+#list-form {
+	width: 350px;
+	margin: 0px auto ;
+	margin-bottom: 10px;
+}
+
+#list-form select {
+	width: 40px;
+	height: 26px;
+}
+
+.pagination {
+	display: block;
+	width: 500px;
+	margin: 0px auto;
+	margin-top: 20px; 
+	text-align: center;
+}
+
+.pagination a, span {	
+	margin-right: 10px;
+}
+
+/* Create and Edit */
+
+fieldset {
+	width: 500px;
+	margin: 0px auto ;
+}
+
+.fieldcontain {
+	margin-bottom: 3px;
+}
+
+label {
+	width: 200px;
+	vertical-align: top;
+}
+
+select {
+	width: 137px;
+}
+
+#add-links {
+	display: inline-block;
+	width: 137px;
+	margin: 0;
+	padding: 0;
+	border: 1px solid #AAAAAA;
+	list-style-type: none;
+}
+
+#add-links li {
+	padding-left: 5px;
+	padding-bottom: 5px;
+}
+
+#add-links span {
+	margin-left: 5px;
+}
+
+/* Show */
+
+.property-list {
+	width: 500px;
+	margin: 0px auto ;
+	margin-bottom: 10px;
+	padding: 0;
+	list-style-type: none;
+}
+
+.property-label {
+	display: inline-block;
+	width: 200px;
+	vertical-align: top;
+}
+
+#show-links ul {
+	display: inline-block;
+	width: 137px;
+	margin: 0;
+	padding: 0;
+	list-style-type: none;
+}
+
+.buttons button {
+	margin-right: 3px;
+	height: 25px;
+}
+
+.edit {
+	color: #333333;
+}
+
+.edit:hover {
+	color: #333333;
+}
+
+.buttons form {
+	display: inline-block;
+}

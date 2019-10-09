@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.0.3.final using JasperReports Library version 6.0.3  -->
+<!-- 2016-04-19T16:46:56 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="ReprintPassbookCA" pageWidth="595" pageHeight="842" columnWidth="575" leftMargin="0" rightMargin="20" topMargin="20" bottomMargin="20" uuid="c1103967-550f-42a1-975a-e9da5c69209c">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="icbs_base_121815"/>
+	<parameter name="id" class="java.lang.Integer"/>
+	<parameter name="startdate" class="java.util.Date"/>
+	<parameter name="enddate" class="java.util.Date"/>
+	<queryString language="SQL">
+		<![CDATA[SELECT 
+(select min(passbook_line)
+	 from txn_deposit_acct_ledger
+	 where id =(select min(id) FROM txn_deposit_acct_ledger WHERE A.acct_id = $P{id} and A.txn_date >= $P{startdate} and A.txn_date <= $P{enddate}
+	 	 and passbook_line is not null 
+	 )) as "First",
+	A.id,
+  B.txn_template_id,
+	A.acct_id,
+	B.id as "TRN NO.",
+	A.txn_date as "Date",
+	B.txn_code as "TRN Code",
+	A.txn_ref as "CheqNo",
+	A.debit_amt as "DEBT AMT",
+	A.credit_amt as "CRDT AMT",
+	A.bal as "BAL",
+	A.passbook_line as "PB LINE"
+FROM txn_deposit_acct_ledger as A
+LEFT JOIN (select * from txn_file) as B on A.txn_file_id = B.id
+LEFT JOIN (select * from deposit)as C on A.acct_id = C.id
+ WHERE A.acct_id = $P{id} and A.txn_date >= $P{startdate} and A.txn_date <= $P{enddate}
+ and A.passbook_line is not null 
+ORDER BY B.id]]>
+	</queryString>
+	<field name="First" class="java.lang.Integer"/>
+	<field name="id" class="java.lang.Integer"/>
+	<field name="txn_template_id" class="java.lang.Long"/>
+	<field name="acct_id" class="java.lang.Long"/>
+	<field name="TRN NO." class="java.lang.Integer"/>
+	<field name="Date" class="java.sql.Timestamp"/>
+	<field name="TRN Code" class="java.lang.String"/>
+	<field name="CheqNo" class="java.lang.String"/>
+	<field name="DEBT AMT" class="java.lang.Double"/>
+	<field name="CRDT AMT" class="java.lang.Double"/>
+	<field name="BAL" class="java.lang.Double"/>
+	<field name="PB LINE" class="java.lang.Integer"/>
+	<variable name="FirstRow" class="java.lang.Integer" resetType="Page" incrementType="Page" calculation="First">
+		<variableExpression><![CDATA[$F{PB LINE}]]></variableExpression>
+	</variable>
+	<pageHeader>
+		<band height="65">
+			<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+		</band>
+	</pageHeader>
+	<detail>
+		<band height="10" splitType="Stretch">
+			<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+			<printWhenExpression><![CDATA[($V{FirstRow} >= 1 && $V{FirstRow} <= 27 ? Boolean.TRUE : Boolean.FALSE)]]></printWhenExpression>
+			<textField isStretchWithOverflow="true">
+				<reportElement positionType="Float" stretchType="RelativeToTallestObject" x="22" y="0" width="100" height="10" uuid="c443dd72-d878-4b11-8bc9-2be27b52e30e">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textElement markup="html">
+					<font size="7.5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[($V{FirstRow} == 1) ? "" :
+($V{FirstRow} == 2) ? "<br>" :  
+($V{FirstRow}  == 3) ? "<br><br>" : 
+($V{FirstRow} == 4) ? "<br><br><br>" : 
+($V{FirstRow} == 5) ? "<br><br><br><br>" : 
+($V{FirstRow} == 6) ? "<br><br><br><br><br>" : 
+($V{FirstRow} == 7) ? "<br><br><br><br><br><br>" : 
+($V{FirstRow} == 8) ? "<br><br><br><br><br><br><br>" : 
+($V{FirstRow} == 9) ? "<br><br><br><br><br><br><br><br>" : 
+($V{FirstRow} == 10) ? "<br><br><br><br><br><br><br><br><br>" : 
+($V{FirstRow} == 11) ? "<br><br><br><br><br><br><br><br><br><br>" : 
+($V{FirstRow} == 12) ? "<br><br><br><br><br><br><br><br><br><br><br>" : 
+($V{FirstRow} == 13) ? "<br><br><br><br><br><br><br><br><br><br><br><br>" : 
+"<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>"]]></textFieldExpression>
+			</textField>
+		</band>
+		<band height="10" splitType="Stretch">
+			<printWhenExpression><![CDATA[($V{FirstRow} >= 14 && $V{FirstRow} <= 27 ? Boolean.TRUE : Boolean.FALSE)]]></printWhenExpression>
+			<textField isStretchWithOverflow="true">
+				<reportElement stretchType="RelativeToTallestObject" x="22" y="0" width="100" height="10" uuid="0bd9f31d-e859-4fb8-ab31-6d3816645a51">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textElement markup="html">
+					<font size="7.5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{First} == 14 ? "" : 
+$F{First} == 15 ? "<br>" : 
+$F{First} == 16 ? "<br><br>" : 
+$F{First} == 17 ? "<br><br><br>" : 
+$F{First} == 18 ? "<br><br><br><br>" : 
+$F{First} == 19 ? "<br><br><br><br><br>" : 
+$F{First} == 20 ? "<br><br><br><br><br><br>" : 
+$F{First} == 21 ? "<br><br><br><br><br><br><br>" : 
+$F{First} == 22 ? "<br><br><br><br><br><br><br><br>" : 
+$F{First} == 23 ? "<br><br><br><br><br><br><br><br><br>" : 
+$F{First} == 24 ? "<br><br><br><br><br><br><br><br><br><br>" : 
+$F{First} == 25 ? "<br><br><br><br><br><br><br><br><br><br><br>" : 
+$F{First} == 26 ? "<br><br><br><br><br><br><br><br><br><br><br><br>" : 
+$F{First} == 27 ? "<br><br><br><br><br><br><br><br><br><br><br><br><br>" : 
+""]]></textFieldExpression>
+			</textField>
+		</band>
+		<band height="10">
+			<textField>
+				<reportElement x="21" y="0" width="35" height="9" uuid="1ce6b709-b9be-4018-9c67-9f61751e4fa5">
+					<printWhenExpression><![CDATA[(
+	($F{PB LINE} <= 2 ? Boolean.TRUE : Boolean.FALSE) || 
+		($F{PB LINE} >= 2 ? Boolean.TRUE : Boolean.FALSE)
+			)]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font fontName="Courier New" size="7.5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TRN NO.}]]></textFieldExpression>
+			</textField>
+			<textField pattern="">
+				<reportElement x="56" y="0" width="58" height="9" uuid="13fa34a9-1201-41b2-808a-1778ba4fd76b">
+					<printWhenExpression><![CDATA[(
+	($F{PB LINE} <= 2 ? Boolean.TRUE : Boolean.FALSE) || 
+		($F{PB LINE} >= 2 ? Boolean.TRUE : Boolean.FALSE)
+			)]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font fontName="Courier New" size="7.5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.text.SimpleDateFormat("dd/MM/yy").format($F{Date})]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="114" y="0" width="58" height="9" uuid="482435fc-046a-4f84-acbf-96ab6d352d4e">
+					<printWhenExpression><![CDATA[(
+	($F{PB LINE} <= 2 ? Boolean.TRUE : Boolean.FALSE) || 
+		($F{PB LINE} >= 2 ? Boolean.TRUE : Boolean.FALSE)
+			)]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font fontName="Courier New" size="7.5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TRN Code}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="217" y="0" width="83" height="9" uuid="f9b51e58-58bf-49a2-99dc-2b6ec1a12d12">
+					<printWhenExpression><![CDATA[(
+	($F{PB LINE} <= 2 ? Boolean.TRUE : Boolean.FALSE) || 
+		($F{PB LINE} >= 2 ? Boolean.TRUE : Boolean.FALSE)
+			)]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font fontName="Courier New" size="7.5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DEBT AMT} == null ? "" : "*"+new java.text.DecimalFormat("#,##0.00").format($F{DEBT AMT})]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="300" y="0" width="60" height="9" uuid="d8eb223b-82ce-4284-a94b-7ab4c805e3fb">
+					<printWhenExpression><![CDATA[(
+	($F{PB LINE} <= 2 ? Boolean.TRUE : Boolean.FALSE) || 
+		($F{PB LINE} >= 2 ? Boolean.TRUE : Boolean.FALSE)
+			)]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font fontName="Courier New" size="7.5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CRDT AMT} == null ? "" : "*"+new java.text.DecimalFormat("#,##0.00").format($F{CRDT AMT})]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="360" y="0" width="60" height="9" uuid="c2989a88-c6ea-479c-b374-7cc4a44731b8">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+					<printWhenExpression><![CDATA[(
+	($F{PB LINE} <= 2 ? Boolean.TRUE : Boolean.FALSE) || 
+		($F{PB LINE} >= 2 ? Boolean.TRUE : Boolean.FALSE)
+			)]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font fontName="Courier New" size="7.5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BAL} == null ? "0.00" : "*"+new java.text.DecimalFormat("#,##0.00").format($F{BAL})]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="420" y="0" width="20" height="9" uuid="f8d9f365-b509-4a30-983b-e25b2453f348"/>
+				<textElement textAlignment="Center">
+					<font fontName="Courier New" size="7.5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PB LINE}]]></textFieldExpression>
+			</textField>
+			<break>
+				<reportElement x="0" y="9" width="100" height="1" uuid="1aa59dd4-f38f-46f2-8901-6b4edaaddeb6">
+					<printWhenExpression><![CDATA[new java.lang.Boolean((int)($F{PB LINE}.intValue())% 27 == 0)]]></printWhenExpression>
+				</reportElement>
+			</break>
+			<textField>
+				<reportElement x="172" y="0" width="45" height="9" uuid="b4c81d35-4723-40d3-95ca-da981e5b9e4b"/>
+				<textElement textAlignment="Center">
+					<font fontName="Courier New" size="7.5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[($F{txn_template_id} == 12 || $F{txn_template_id} == 13 ||
+$F{txn_template_id} == 17 || $F{txn_template_id} == 19
+? $F{CheqNo} : "")]]></textFieldExpression>
+			</textField>
+		</band>
+		<band height="60" splitType="Stretch">
+			<printWhenExpression><![CDATA[($F{PB LINE} == 13 ? Boolean.TRUE:Boolean.FALSE)]]></printWhenExpression>
+		</band>
+	</detail>
+</jasperReport>

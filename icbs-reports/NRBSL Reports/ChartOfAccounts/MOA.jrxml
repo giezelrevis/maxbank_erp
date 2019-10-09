@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.2.1.final using JasperReports Library version 6.2.1  -->
+<!-- 2016-05-11T14:19:31 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="MOA" pageWidth="612" pageHeight="792" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="c3175ec1-dc0d-48a7-9717-0c6a42df76e7">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="Local PostgreSQL"/>
+	<property name="ireport.jasperserver.url" value="http://localhost:8080/jasperserver/"/>
+	<property name="ireport.jasperserver.user" value="jasperadmin"/>
+	<property name="ireport.jasperserver.report.resource" value="/My_ICBS_Report/GL/Manual_of_Accounts_files/main_jrxml"/>
+	<property name="ireport.jasperserver.reportUnit" value="/My_ICBS_Report/GL/Manual_of_Accounts"/>
+	<parameter name="currency_code" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[select 
+	ccy.id as ccy,
+	ccy.code as ccy_code,
+	glsc.parent_id_id ,
+	glsc.sort_code ,
+	glsc.sort_name,
+	(select cast(extract(year from new_run_date)as integer) from BRANCH where id=1)  as finyr,
+	(select a.param_value as institution from institution as a where a.param_code='GEN.10000') as institution
+	
+from currency as ccy
+inner join gl_sort_code as glsc on 1=1
+
+where ccy.code = $P{currency_code} 
+
+order by ccy, glsc.sort_code]]>
+	</queryString>
+	<field name="ccy" class="java.lang.Integer"/>
+	<field name="ccy_code" class="java.lang.String"/>
+	<field name="parent_id_id" class="java.lang.Integer"/>
+	<field name="sort_code" class="java.lang.String"/>
+	<field name="sort_name" class="java.lang.String"/>
+	<field name="finyr" class="java.lang.Integer"/>
+	<field name="institution" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<columnHeader>
+		<band height="107" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="63" width="572" height="21" uuid="632d1909-8642-4e00-8f9e-e85ee3b6f6ac">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="16" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Manual of Accounts]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="469" y="0" width="100" height="13" uuid="eb810efb-a6ff-4c42-a5ad-078c792cb9d6">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA["Page: " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="HH:mm">
+				<reportElement x="469" y="13" width="100" height="13" uuid="598e16b6-d9ae-47f4-a632-9091d12eb374">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField pattern="MMMMM dd, yyyy">
+				<reportElement x="469" y="26" width="100" height="13" uuid="35b28f2e-6a0a-460a-b56e-023632a9b33c">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="39" width="572" height="24" uuid="49d60655-9e8a-4b06-8eb8-23f60c345016">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="18" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{institution}]]></textFieldExpression>
+			</textField>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="28" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="0" width="170" height="13" uuid="01167154-cd4b-49df-acb6-aa5d5bc21d0c">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.x" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{sort_code}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="171" y="0" width="401" height="13" uuid="ae6c2b26-c9f8-4a91-ae0b-e8dc2c7ddf0f">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.x" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{sort_name}]]></textFieldExpression>
+			</textField>
+			<subreport>
+				<reportElement positionType="Float" x="0" y="15" width="572" height="13" isRemoveLineWhenBlank="true" uuid="261ddf4c-27ec-42cc-ab6a-5dd5d5b89c35">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<subreportParameter name="sort_code">
+					<subreportParameterExpression><![CDATA[$F{sort_code}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="ccy">
+					<subreportParameterExpression><![CDATA[$F{ccy_code}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="finyr">
+					<subreportParameterExpression><![CDATA[$F{finyr}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA["MOASubreport.jasper"]]></subreportExpression>
+			</subreport>
+		</band>
+	</detail>
+</jasperReport>

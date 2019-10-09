@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.2.1.final using JasperReports Library version 6.2.0  -->
+<!-- 2016-04-28T16:15:24 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="MABS-Notice#1" pageWidth="595" pageHeight="842" whenNoDataType="NoDataSection" columnWidth="451" leftMargin="72" rightMargin="72" topMargin="72" bottomMargin="72" uuid="38ba599c-1f76-441d-b414-3f0be5491303">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="ICBS"/>
+	<property name="ireport.jasperserver.url" value="http://localhost:8080/jasperserver/"/>
+	<property name="ireport.jasperserver.user" value="jasperadmin"/>
+	<property name="ireport.jasperserver.report.resource" value="/ICBS_REPORT/LETTER/LETTERMABSNotice1_files/MainJrxml"/>
+	<property name="ireport.jasperserver.reportUnit" value="/ICBS_REPORT/LETTER/LETTERMABSNotice1"/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="inch"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="inch"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="inch"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="inch"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<style name="Table_TH" mode="Opaque" backcolor="#F0F8FF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Table_CH" mode="Opaque" backcolor="#BFE1FF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Table_TD" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<subDataset name="Empty Dataset1" uuid="b840ccd9-5824-453c-96a6-b60781386af3"/>
+	<parameter name="Signatory" class="java.lang.String">
+		<defaultValueExpression><![CDATA[""]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Position" class="java.lang.String">
+		<defaultValueExpression><![CDATA[""]]></defaultValueExpression>
+	</parameter>
+	<queryString language="SQL">
+		<![CDATA[SELECT
+	F.param_value as "BANK NAME",
+	D.display_name as "ACCOUNT NAME",
+	D.short_address as "ADDRESS",
+	C.account_no as "ACCOUNT NUMBER",
+	C.id as "ID",	
+	B.installment_date as "DATE",  
+	sum(B.total_installment_amount) as "INSTALLMENT AMOUNT",
+	count(A.loan_installment_id) AS "COUNT MISSED"
+FROM loan_loan_installment A	
+	LEFT JOIN (SELECT * FROM loan_installment)B ON A.loan_installment_id = B.id
+	LEFT JOIN (select * from loan)C on A.loan_loan_installments_id = C.id
+	LEFT JOIN (select * from customer)D on C.customer_id = D.id
+	LEFT JOIN (SELECT * from product)E on C.product_id = E.id
+	LEFT JOIN (SELECT * FROM institution WHERE id = '1')F ON F.param_value is not NULL
+WHERE B.status_id = 3 
+	and B.principal_installment_paid > 0
+ 	and E.is_microfinance = 't'
+GROUP BY A.loan_loan_installments_id, B.installment_date,
+	D.display_name,
+	D.short_address,
+	C.account_no,
+	C.id,
+	B.total_installment_amount,
+	F.param_value]]>
+	</queryString>
+	<field name="ACCOUNT NAME" class="java.lang.String"/>
+	<field name="ADDRESS" class="java.lang.String"/>
+	<field name="ACCOUNT NUMBER" class="java.lang.String"/>
+	<field name="ID" class="java.lang.Integer"/>
+	<field name="DATE" class="java.sql.Timestamp"/>
+	<field name="INSTALLMENT AMOUNT" class="java.lang.Double"/>
+	<field name="COUNT MISSED" class="java.lang.Long"/>
+	<field name="BANK NAME" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="56" splitType="Stretch">
+			<image>
+				<reportElement x="205" y="6" width="50" height="50" uuid="48818aee-411e-4732-98d3-1f59701adcda"/>
+				<imageExpression><![CDATA["repo:logo.png"]]></imageExpression>
+			</image>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="69" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="39" width="450" height="20" uuid="54ed22f4-8920-40c7-b6ff-73eb8640892e"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[UNANG SULAT PAALALA]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="0" y="0" width="450" height="20" uuid="2eb09471-054a-4be7-bd68-ede8fffcab7a"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BANK NAME}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="100" splitType="Stretch">
+			<textField pattern="MMMMM dd, yyyy">
+				<reportElement x="0" y="8" width="190" height="20" uuid="1b6cb1f7-68df-4ac0-86b5-53202c2923a8"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="38" width="290" height="20" uuid="a9384c05-3b37-4bcf-ad0b-8d7e540aa680"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ACCOUNT NAME}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="58" width="290" height="32" uuid="34646ac8-2d15-4a5f-9e68-1a02c1de10cb"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ADDRESS}]]></textFieldExpression>
+			</textField>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="293" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="180" width="180" height="20" uuid="bb458f50-e319-4368-b3fe-2c705b43b513"/>
+				<textElement textAlignment="Left"/>
+				<text><![CDATA[Lubos na gumagalang, ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="60" width="450" height="60" uuid="ed84cc3d-2cf8-42ce-aafc-72cb45b3d55b"/>
+				<textElement textAlignment="Justified"/>
+				<text><![CDATA[Nais namin ipaalala na kapag hindi ninyo mabayaran ang nasabing halaga sa loob ng tatlong (3) araw mula sa pagtanggap ng sulat na ito, aming sisimulan ang pagpataw ng 3% penalty charge kada araw hanggang sa araw na hindi niyo nabayaran. Ito ay ayon na rin sa Promissory Note (PN) na inyong nilagdaan. At masusundan po ito ng huling sulat paalala.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="120" width="450" height="30" uuid="1674f3c6-c8c7-4c29-9ceb-0b07f5f0b5bc"/>
+				<textElement textAlignment="Justified"/>
+				<text><![CDATA[Huwag ninyong pabayaan masira ang inyong magandang kredito dito sa Bangko. Ang may malinis na kredito ay karangalan ng isang tao.]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="0" y="22" width="450" height="36" uuid="da310087-980c-47e5-afd9-dc9fc95c6170"/>
+				<textFieldExpression><![CDATA["Ayon sa aming talaan kayo ay hindi nakapagbayad ng " +$F{COUNT MISSED} +" linggong hulog mula pa noong Ika - " +(new SimpleDateFormat("MMMM dd, yyyy").format($F{DATE})) +" na nagkakahalaga ng " +(new java.text.DecimalFormat("#,##0.00").format($F{INSTALLMENT AMOUNT}))]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="240" width="180" height="20" uuid="8c009898-ca33-4fd5-85ef-499aeab57ebe"/>
+				<textElement textAlignment="Left">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Signatory}.toUpperCase()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="260" width="180" height="20" uuid="c4377c6e-e382-47e8-b56a-b7517ae1da63"/>
+				<textElement textAlignment="Left">
+					<font isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Position}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="47" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="54" splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band height="42" splitType="Stretch"/>
+	</summary>
+	<noData>
+		<band height="79">
+			<textField pattern="MMMMM dd, yyyy">
+				<reportElement x="340" y="23" width="112" height="13" uuid="9b54ed6a-38bf-49dd-a128-70fd4235c6c6">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="340" y="-3" width="112" height="13" uuid="c364d756-1255-47de-b264-d2cfa22bb7fd">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA["Page: " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="h:mm a">
+				<reportElement x="340" y="10" width="112" height="13" uuid="7ac371ed-2f0f-403a-857f-9230e19a3106">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="80" y="43" width="300" height="21" uuid="253480c3-cc92-4d99-907d-53ad2fc64cf8">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="16" isBold="true"/>
+				</textElement>
+				<text><![CDATA[MABS NOTICE #1]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="80" y="66" width="300" height="13" uuid="218bf2df-03ad-418a-be20-183a66187562">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="10"/>
+				</textElement>
+				<text><![CDATA[NO DATA FOR REPORT]]></text>
+			</staticText>
+			<image>
+				<reportElement x="0" y="0" width="50" height="50" uuid="3008ad4a-2896-4282-b939-1314c4f37b04"/>
+				<imageExpression><![CDATA["repo:logo.png"]]></imageExpression>
+			</image>
+		</band>
+	</noData>
+</jasperReport>

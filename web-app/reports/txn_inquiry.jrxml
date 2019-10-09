@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="FixedDepositCertificate" pageWidth="612" pageHeight="288" columnWidth="572" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="b3f29e54-3d34-4db9-9a12-0410e7e5df4e">
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="inch"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="inch"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="One Empty Record"/>
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<field name="txnDescription" class="java.lang.String">
+		<fieldDescription><![CDATA[txnDescription]]></fieldDescription>
+	</field>
+	<field name="txnDate" class="java.util.Date">
+		<fieldDescription><![CDATA[txnDate]]></fieldDescription>
+	</field>
+	<field name="sender.displayName" class="java.lang.String">
+		<fieldDescription><![CDATA[sender.displayName]]></fieldDescription>
+	</field>
+	<field name="beneficiary.displayName" class="java.lang.String">
+		<fieldDescription><![CDATA[beneficiary.displayName]]></fieldDescription>
+	</field>
+	<field name="txnAmt" class="java.lang.Double">
+		<fieldDescription><![CDATA[txnAmt]]></fieldDescription>
+	</field>
+	<field name="txnRef" class="java.lang.String">
+		<fieldDescription><![CDATA[txnRef]]></fieldDescription>
+	</field>
+	<title>
+		<band height="50">
+			<textField>
+				<reportElement x="186" y="16" width="210" height="20" uuid="9a90878b-4884-48db-96d2-1223a26fdaed"/>
+				<textElement textAlignment="Center">
+					<font size="14" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Teller Transaction"]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="50">
+			<textField>
+				<reportElement x="39" y="15" width="210" height="20" uuid="2a6471b0-9c70-4968-b740-a7c577477621"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{txnDescription}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="50">
+			<textField>
+				<reportElement x="39" y="15" width="94" height="20" uuid="88a17efa-c07c-405a-a76c-6eb0cfc26ed3"/>
+				<textElement>
+					<font isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Date Created"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="145" y="15" width="90" height="20" uuid="f2fd648a-3647-4d46-b312-4d415247ab2a"/>
+				<textElement>
+					<font isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Sender"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="353" y="15" width="90" height="20" uuid="15ac01a5-b472-415c-893a-d4a5ba158c30"/>
+				<textElement>
+					<font isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Amount"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="457" y="15" width="72" height="20" uuid="6c99e29e-dfad-420b-a88c-68c3fdda3a68"/>
+				<textElement>
+					<font isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Reference"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="249" y="15" width="90" height="20" uuid="13b936cc-cc28-4a0c-a1b3-895484a32efc"/>
+				<textElement>
+					<font isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Beneficiary"]]></textFieldExpression>
+			</textField>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="80" splitType="Stretch">
+			<textField>
+				<reportElement x="39" y="15" width="94" height="30" uuid="5e341f68-4b9b-4010-88ff-43e1bf430540"/>
+				<textFieldExpression><![CDATA[$F{txnDate}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="145" y="15" width="90" height="30" uuid="c023b691-032d-4591-a19c-83c10725d7e6"/>
+				<textFieldExpression><![CDATA[$F{sender.displayName}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="457" y="15" width="72" height="30" uuid="1dc8e978-aa8e-4f41-b1a0-92426b176598"/>
+				<textFieldExpression><![CDATA[$F{txnRef}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="353" y="15" width="90" height="30" uuid="636d5f84-db67-43c3-8f52-0808a054678e"/>
+				<textFieldExpression><![CDATA[$F{txnAmt}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="249" y="15" width="90" height="30" uuid="d6403044-9b12-48da-8562-ed5cd5eb68ca"/>
+				<textFieldExpression><![CDATA[$F{beneficiary.displayName}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>

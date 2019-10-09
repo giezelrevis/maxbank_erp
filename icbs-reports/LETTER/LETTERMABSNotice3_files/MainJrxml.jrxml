@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.2.1.final using JasperReports Library version 6.2.0  -->
+<!-- 2016-04-28T16:15:49 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="MABS-Notice3" pageWidth="595" pageHeight="842" whenNoDataType="NoDataSection" columnWidth="451" leftMargin="72" rightMargin="72" topMargin="72" bottomMargin="72" uuid="38ba599c-1f76-441d-b414-3f0be5491303">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="ICBS"/>
+	<property name="ireport.jasperserver.url" value="http://localhost:8080/jasperserver/"/>
+	<property name="ireport.jasperserver.user" value="jasperadmin"/>
+	<property name="ireport.jasperserver.report.resource" value="/ICBS_REPORT/LETTER/LETTERMABSNotice3_files/MainJrxml"/>
+	<property name="ireport.jasperserver.reportUnit" value="/ICBS_REPORT/LETTER/LETTERMABSNotice3"/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="inch"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="inch"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="inch"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="inch"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<style name="Table_TH" mode="Opaque" backcolor="#F0F8FF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Table_CH" mode="Opaque" backcolor="#BFE1FF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="Table_TD" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<pen lineWidth="0.5" lineColor="#000000"/>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<leftPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+			<rightPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<subDataset name="Empty Dataset1" uuid="b840ccd9-5824-453c-96a6-b60781386af3"/>
+	<parameter name="Signatory" class="java.lang.String">
+		<defaultValueExpression><![CDATA[""]]></defaultValueExpression>
+	</parameter>
+	<parameter name="Position" class="java.lang.String">
+		<defaultValueExpression><![CDATA[""]]></defaultValueExpression>
+	</parameter>
+	<queryString language="SQL">
+		<![CDATA[SELECT C.loan_application_id,
+	F.param_value as "BANK NAME",
+	D.display_name as "ACCOUNT NAME",  
+	D.short_address as "ADDRESS",
+	I.display_name as "COMAKER NAME",
+	I.short_address as "COMAKER ADDRESS",
+	C.balance_amount as "PRINSIPAL NA BALANSE",
+	C.balance_amount + SUM(B.interest_installment_amount) as "OVERDUE",
+	SUM(B.interest_installment_amount) as "TUBO O INTEREST",
+	SUM(B.penalty_installment_amount) as "DAGDAG REKARGO"
+FROM loan_loan_installment A
+	LEFT JOIN (SELECT * FROM loan_installment)B ON A.loan_installment_id = B.id
+	LEFT JOIN (select * from loan)C on A.loan_loan_installments_id = C.id
+	LEFT JOIN (select * from customer)D on C.customer_id = D.id
+	LEFT JOIN (SELECT * from product)E on C.product_id = E.id
+	LEFT JOIN (SELECT * FROM loan_application)G ON C.loan_application_id = G.id
+	LEFT JOIN (SELECT * FROM loan_application_comaker)H ON G.id = H.loan_application_id
+	LEFT JOIN (SELECT * FROM customer)I ON H.customer_id = I.id
+	LEFT JOIN (SELECT * FROM institution WHERE id = '1')F ON F.param_value is not NULL
+WHERE B.status_id = 3 
+	and B.principal_installment_paid > 0
+ 	and E.is_microfinance = 't'
+GROUP BY A.loan_loan_installments_id, B.installment_date,
+	D.display_name,
+	D.short_address,
+	F.param_value,
+	B.penalty_installment_amount,
+	C.balance_amount,
+	B.interest_installment_amount,I.display_name,C.loan_application_id,I.short_address]]>
+	</queryString>
+	<field name="BANK NAME" class="java.lang.String"/>
+	<field name="ACCOUNT NAME" class="java.lang.String"/>
+	<field name="ADDRESS" class="java.lang.String"/>
+	<field name="PRINSIPAL NA BALANSE" class="java.lang.Double"/>
+	<field name="OVERDUE" class="java.lang.Double"/>
+	<field name="TUBO O INTEREST" class="java.lang.Double"/>
+	<field name="DAGDAG REKARGO" class="java.lang.Double"/>
+	<field name="loan_application_id" class="java.lang.Long"/>
+	<field name="COMAKER NAME" class="java.lang.String"/>
+	<field name="COMAKER ADDRESS" class="java.lang.String"/>
+	<variable name="KabuuangBalanse" class="java.lang.Double"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="70" splitType="Stretch">
+			<image>
+				<reportElement x="205" y="10" width="50" height="50" uuid="d56c2b7f-fb4c-4048-bbd8-91d2587b306b"/>
+				<imageExpression><![CDATA["repo:logo.png"]]></imageExpression>
+			</image>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="52" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="0" width="450" height="20" uuid="fcd2e1b0-93e3-4c7a-a2d8-d30dbc2fd5a4"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BANK NAME}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="20" width="450" height="20" uuid="54ed22f4-8920-40c7-b6ff-73eb8640892e">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[SULAT PAALALA SA CO-MAKER]]></text>
+			</staticText>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="69" splitType="Stretch">
+			<textField pattern="MMMMM dd, yyyy">
+				<reportElement x="0" y="0" width="100" height="20" uuid="032b3a1d-292f-4774-a1f9-cd6b947aeb1f"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="29" width="270" height="20" uuid="8287dc88-0c76-45a5-86ca-a444a68e7ea6"/>
+				<textFieldExpression><![CDATA[$F{COMAKER NAME}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="49" width="270" height="20" uuid="ac29e6d6-5ba2-4fcc-a4e3-ff14765e08cf"/>
+				<textFieldExpression><![CDATA[$F{COMAKER ADDRESS}]]></textFieldExpression>
+			</textField>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="486" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="390" width="145" height="16" uuid="bb458f50-e319-4368-b3fe-2c705b43b513"/>
+				<textElement textAlignment="Left"/>
+				<text><![CDATA[Lubos na gumagalang,        
+                                                                           
+                                                 
+                                               ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="466" width="145" height="20" uuid="3baf4f05-52e1-4b54-a00c-371589c5bb4c"/>
+				<text><![CDATA[MABS Department]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="0" y="20" width="450" height="53" uuid="a8548e11-1eb7-4b0c-b53f-831de55d5b82"/>
+				<textElement textAlignment="Justified" markup="html">
+					<paragraph firstLineIndent="36"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Nais po naming ipabatid sa inyong kaalaman na ang taong inyong ginarantiyahan sa aming " +$F{BANK NAME}+ " Microfinance Program na si: " +"<b>"+"<u>"+$F{ACCOUNT NAME}+"</b>"+"</u>"+ " na nakatira sa " +"<b>"+"<u>"+$F{ADDRESS}+"</b>"+"</u>"+ " ay patuloy na hindi na nakakatupad sa ating pinagkasunduang Kontrata sa inyo pong nilagdaan;"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="73" width="450" height="40" uuid="92e331a5-79cb-40cd-b977-62b60938d51a"/>
+				<textElement textAlignment="Justified" markup="html">
+					<paragraph lineSpacing="Single" firstLineIndent="36"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Ayon po sa ating kontrata, ang"+"<b>"+"<u>"+" Main Borrower "+"</b>"+"</u>"+ "ay kailanganng aktibong magbayad ng kanyang linguhang paghuhulog hanggang sa matapusan niya ang naturang halaga na aming ipinagkatiwala sa kanila bilang puhunang pang kabuhayan."]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="205" width="450" height="30" uuid="6fac97b5-c7ac-41cc-9961-d8fa3c297cb8"/>
+				<textElement textAlignment="Justified" markup="html">
+					<paragraph firstLineIndent="36"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Ang hindi po niya pagtupad sa kasunduang ito, ay nangangahulugan ng pagiging " +"<b>"+"<u>"+"Delinquent Borrower."+"</u>"+"</b>"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="235" width="450" height="52" uuid="12bb73fc-5347-4dd0-8f59-742abaabfb5f"/>
+				<textElement textAlignment="Justified" markup="html">
+					<paragraph firstLineIndent="36" leftIndent="0"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Bilang isang " +"<b>"+"<u>"+ "Co-Maker, " +"</u>"+"</b>"+ "may obligasyon po kayo sa kontrata na inyo rin pong pinirmahan, kasama ng taong amin pong nabanggit. Upang maiwasan ang patuloy na pagpalya sa paghuhulog ng " +"<b>"+"<u>"+"Main Borrower."+"</u>"+"</b>"]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="287" width="450" height="36" uuid="0033bb20-d07b-4a2f-97fb-e56d5e2010d8"/>
+				<textElement textAlignment="Justified"/>
+				<text><![CDATA[	Humuhingi po kami sa inyo ng tulong o suporta upang ma-obliga siya sa kanyang obligasyon sa pagbabayad ng naturang halaga o balanse ng perang kanyang nahiram.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="323" width="450" height="30" uuid="6982536c-3819-4165-aee1-030723442add"/>
+				<textElement textAlignment="Justified"/>
+				<text><![CDATA[	At upang maiwasan rin na kayo ay ma-obliga na magpasan ng kanilang obligasyon na patuloy na maghulog ng naturang balanse sa pagkaka-utang.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="353" width="220" height="20" uuid="80178b49-af5e-4960-a049-f2f6ceefdcd6"/>
+				<textElement textAlignment="Justified"/>
+				<text><![CDATA[	Maraming Salamat Po.]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="0" y="426" width="145" height="20" uuid="1664fdba-3854-4fb5-aa59-e55c83977f06"/>
+				<textFieldExpression><![CDATA[$P{Signatory}.toUpperCase()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="446" width="145" height="20" uuid="2862ca44-4890-44cd-938a-a5d05625129d"/>
+				<textFieldExpression><![CDATA[$P{Position}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="30" y="128" width="110" height="18" uuid="bdcb2db1-786a-42ff-9614-a877065956b4">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<text><![CDATA[Overdue]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="30" y="146" width="110" height="18" uuid="2a13ba8f-b1e8-4dac-8b1f-418cdbe1552c">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<text><![CDATA[Dagdag Rekargo]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="30" y="171" width="110" height="17" uuid="90f312ad-b790-4969-91b6-940082e1200f">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<text><![CDATA[Kabuuang Balanse	]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="140" y="128" width="287" height="18" uuid="49b8df6d-dcfb-47b3-adff-9088afc4fc05"/>
+				<textFieldExpression><![CDATA["	:	P    "+ (new java.text.DecimalFormat("#,##0.00").format($F{OVERDUE}))]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="140" y="146" width="287" height="18" uuid="bf8754d5-1fd6-4946-9335-2e3d81c60bf5"/>
+				<textFieldExpression><![CDATA["	:	P    " + (new java.text.DecimalFormat("#,##0.00").format($F{DAGDAG REKARGO}))]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="140" y="170" width="287" height="18" uuid="e6674022-5bd0-443d-9a6b-bf2edabe2965"/>
+				<textFieldExpression><![CDATA["	:	P   " + (new java.text.DecimalFormat("#,##0.00").format($F{OVERDUE} + $F{DAGDAG REKARGO}))]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="42" splitType="Stretch"/>
+	</summary>
+	<noData>
+		<band height="108">
+			<textField pattern="h:mm a">
+				<reportElement x="340" y="10" width="112" height="13" uuid="b109233b-39ec-42f6-b948-64efd8738709">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="340" y="-3" width="112" height="13" uuid="ff578b1a-39eb-440c-b1de-2686bf92562f">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA["Page: " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="MMMMM dd, yyyy">
+				<reportElement x="340" y="23" width="112" height="13" uuid="9c9b4351-06ca-4538-b8f2-ee1c74b5fb7c">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<image>
+				<reportElement x="0" y="0" width="50" height="50" uuid="2a74b694-a2a9-46fb-88c4-d84c02b9dc89"/>
+				<imageExpression><![CDATA["repo:logo.png"]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement x="80" y="66" width="300" height="13" uuid="8dd0d1ff-2a22-4373-976c-5b5c7b54e287">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="10"/>
+				</textElement>
+				<text><![CDATA[NO DATA FOR REPORT]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="80" y="43" width="300" height="21" uuid="51b832b2-0038-40c1-b059-833e1eebbd27">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="16" isBold="true"/>
+				</textElement>
+				<text><![CDATA[MABS NOTICE #3]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

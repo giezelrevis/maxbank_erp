@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.3.0.final using JasperReports Library version 6.3.0  -->
+<!-- 2016-10-30T19:10:45 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="PN" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="495033ab-bdfe-45bd-9b76-2aa370d5c777">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="LocalHost"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<parameter name="id" class="java.lang.Integer"/>
+	<queryString>
+		<![CDATA[select
+
+(select param_value from institution where id = '1')::text as institutuion_name,
+(select run_date::date from branch where branch.id = loan.branch_id)::text as run_date,
+(select name from branch where branch.id = loan.branch_id)::text as branch_name,
+(select address from branch where branch.id = loan.branch_id)::text as branch_address,
+
+loan.account_no::text as acct_no,
+
+loan.pn_no::text as pn_no,
+
+cif_basic_info.customer_id,
+
+cif_basic_info.cont_name::text as cont_name,
+
+cif_address_view.address::text as cont_address,
+
+trim(to_char(loan.granted_amount,'99,999,999.99'))::text as loan_granted,
+
+cash_words(cast(loan.granted_amount::text as money))::text as granted_amount_words,
+
+trim(to_char(loan.interest_rate,'99,999,999'))::text as intrest_rate,
+
+(select trim(to_char(total_installment_amount,'99,999,999.99'))::text from loan_installment where id in (select loan_installment_id from loan_loan_installment where loan_loan_installments_id = loan.id)  limit 1) as installment_amount,
+
+cash_words(cast((select trim(to_char(total_installment_amount,'99,999,999.99'))::text from loan_installment where id in (select loan_installment_id from loan_loan_installment where loan_loan_installments_id = loan.id)  limit 1) as money)) as installment_amount_words,
+
+trim(to_char(loan.num_installments,'99,999,999'))::text as num_installments,
+
+replace(replace(cash_words(cast(trim(to_char(loan.num_installments,'99,999,999'))::text as money)),' dollar and zero cents',''),' dollars and zero cents','') as num_installments_word,
+
+(select description from loan_installment_freq where loan_installment_freq.id = loan.frequency_id) as frequency,
+
+(select code from currency where currency.id = loan.currency_id) as currency_code,
+
+(select description from loan_type where loan_type.id = loan_type_id) as ln_type_employer,
+
+(select description from loan_project where loan_project.id = loan.loan_project_id) as loan_projec_desc,
+
+loan.penalty_rate
+
+from loan
+inner join cif_basic_info on cif_basic_info.id = loan.customer_id
+inner join cif_address_view on cif_basic_info.customer_id = cif_address_view.customer_id
+
+where loan.id =  $P{id} ]]>
+	</queryString>
+	<field name="institutuion_name" class="java.lang.String"/>
+	<field name="run_date" class="java.lang.String"/>
+	<field name="branch_name" class="java.lang.String"/>
+	<field name="branch_address" class="java.lang.String"/>
+	<field name="acct_no" class="java.lang.String"/>
+	<field name="pn_no" class="java.lang.String"/>
+	<field name="customer_id" class="java.lang.String"/>
+	<field name="cont_name" class="java.lang.String"/>
+	<field name="cont_address" class="java.lang.String"/>
+	<field name="loan_granted" class="java.lang.String"/>
+	<field name="granted_amount_words" class="java.lang.String"/>
+	<field name="intrest_rate" class="java.lang.String"/>
+	<field name="installment_amount" class="java.lang.String"/>
+	<field name="installment_amount_words" class="java.lang.String"/>
+	<field name="num_installments" class="java.lang.String"/>
+	<field name="num_installments_word" class="java.lang.String"/>
+	<field name="frequency" class="java.lang.String"/>
+	<field name="currency_code" class="java.lang.String"/>
+	<field name="ln_type_employer" class="java.lang.String"/>
+	<field name="loan_projec_desc" class="java.lang.String"/>
+	<field name="penalty_rate" class="java.lang.Double"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<pageHeader>
+		<band height="66">
+			<textField>
+				<reportElement x="0" y="10" width="555" height="30" uuid="34bf8b3f-85a5-4c74-8383-2873a86c054c"/>
+				<textElement textAlignment="Left" verticalAlignment="Bottom"/>
+				<textFieldExpression><![CDATA["LOAN AGREEMENT, PROMISSORY NOTE, AND GUARANTY \n"+
+""+$F{acct_no}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<detail>
+		<band height="238" splitType="Stretch">
+			<textField isStretchWithOverflow="true">
+				<reportElement positionType="Float" x="0" y="0" width="555" height="90" uuid="880a6eb4-0379-4f5f-b2bb-e1d49ef7f90b"/>
+				<textElement textAlignment="Left" markup="none">
+					<paragraph leftIndent="25" rightIndent="25"/>
+				</textElement>
+				<textFieldExpression><![CDATA["	This Loan Agreement, Promissory Note, and Guaranty (collectively \"Loan Document\"), is made\n" +
+"between Ajejdrikdrik, Incorporated, P.O. Box 318, Majuro, MH 96960 (\"Ajejdrikdrik\") and "+
+$F{cont_name} +", " + $F{cont_address} +" (\"Borrower\").  \n\n"+
+
+"	In consideration of the mutual promises set forth herein, the parties agree as follows: \n\n" +
+
+"		1. Purpose. At the request of Borrower, Ajejdrikdrik will loan money to Borrower for the \n" +
+"		purpose of " + $F{loan_projec_desc} +".\n" +
+"		The loan shall be used and repaid as provided by the terms of this Loan Document and\n" +
+"		any other agreement the parties may execute from time to time. \n\n" +
+
+"		2. Promise to pay. Borrower promises to pay to Ajejdrikdrik the principal sum of\n" + 
+"		" + $F{loan_granted} + " plus interest thereon calculated on a daily basis at the rate \n" +
+"		of "+ $F{intrest_rate} + "%  per annum. \n\n" +
+
+"		3. Installment Payments. Until the principal, interest, and any additional charges that\n" +
+"		 may accrue are paid in full, Borrower shall pay in the following manner:  \n\n" +
+
+"		" + $F{currency_code} + " " + $F{installment_amount} + "; \n" +
+"		with " + $F{frequency} + " payment frequency for  " + $F{num_installments} + " no. of installments. \n\n" +
+
+"		4. Security. This Loan Document is secured by the following documents, the terms of \n" +
+"		which are incorporated in their entirety by reference herein: \n\n"  +
+
+"		" + $F{installment_amount_words}  + ";\n" +
+"		with " + $F{frequency} + " allotment from " + $F{ln_type_employer} + " for " + $F{num_installments} + " pay period. \n\n" +
+
+"		5. Application of payments; Prepayment; Excess payments. All payments shall first be \n" +
+"		applied to late charges, then to accrued interest, and finally to the principal balance. \n" +
+"		Borrower shall have the right to prepay the obligation set forth in this Loan Document \n" +
+"		at any time without penalty.  However, any extra payment in excess of a scheduled \n" +
+"		installment payment is applied to the outstanding loan principal without excusing any \n" +
+"		scheduled payments called for by this Loan Document. \n\n" +
+
+" 		6. Late charges. Borrower shall pay a late charge of "+$F{penalty_rate} + "% of the \n" +
+"		overdue principal amount and interest due. \n\n" +
+
+"		7. Default. Borrower shall be in default of this Loan Document if: \n\n" +
+
+"			A. Borrower fails to make a payment when it is due;\n\n" +
+
+"			B. Borrower fails to perform or observe any other obligation, condition, or\n" +
+"			covenant	under this Loan Document, other agreements with \n" +
+"			Ajejdrikdrik, or the documents providing security for this loan; \n\n" +
+
+"			C. Borrower makes an assignment for the benefit of creditors or becomes\n" +
+"			insolvent, either because Borrower’s liabilities exceed assets or Borrower\n" + 
+"			is unable to pay debts as they become due; \n\n" +
+
+"			D. Borrower dies or becomes legally incompetent; \n\n" +
+
+"			E. Borrower makes any verbal or written statement or provides financial\n" +
+"			information to Ajejdrikdrik that is untrue, inaccurate, or conceals a material\n" +
+"			fact at the time it is made or provided; \n\n" +
+
+"			F. Borrower fails to satisfy any judgment against Borrower within 90 days;  \n\n" +
+
+"			G. Borrower changes names or assumes an additional name without first \n" +
+"			notifying Ajejdrikdrik; \n\n" +
+
+"			H. Borrower transfers all or a substantial part of Borrower’s money or \n" +
+"			property out of the country without the express written approval of \n" +
+"			Ajejdrikdrik;\n\n" +
+
+"			I . The value of the property pledged as collateral for the loan declines \n" +
+"			or is impaired; or \n\n" +
+
+"			J. Ajejdrikdrik believes, for any reason, that Borrower is insecure. \n\n" +
+
+"			In the event of such default, Ajejdrikdrik may, without notice or demand, \n" +
+"			declare the entire principal sum then unpaid, together with accrued \n" +
+"			interest and late charges, immediately due and payable.\n\n" +
+
+"		8. Waivers and consent. Borrower hereby waives demand, protest, presentment \n" +
+"		for payment, notice of acceleration, notice of intent to accelerate, and notice \n" +
+"		of dishonor. Borrower waives any defenses, counterclaims, offsets, and the like \n" +
+"		which Borrower may have in respect to the debt described herein, including the\n" + 
+"		defense of the expiration of the statute of limitations. \n\n" +
+
+"		9. Payment of costs by Borrower. In the event any suit is commenced to enforce\n" + 
+"		payment of this note, Borrower agrees to pay costs incurred by Ajejdrikdrik in such\n" +
+"		suit, including attorney's fees of 30% of the amount of principal, interest, and late \n" +
+"		charges due at the time of judgment. \n\n" +
+
+"		10. Remedies.  In case of default, Ajejdrikdrik may, at it’s option do any one or more\n" +
+"		 of the following: \n\n" +
+
+"			A. Acceleration.  Ajejdrikdrik may make all or any part of the amount owing \n" +
+"			immediately due.\n\n" +
+
+"			B. Sources.  Ajejdrikdrik may use any and all remedies it may have under \n" +
+"			law or in any document securing the Loan Document.\n\n" +
+
+"			C. Attachment.  Ajejdrikdrik may attach the wages, earnings, or dividend \n" +
+"			checks of Borrower.\n\n" +
+
+"		11. General provisions. The following general provisions of this Loan Document shall \n" +
+"		apply to and be incorporated in each and every other agreement executed between the \n" +
+"		parties in conjunction with this loan: \n\n" +
+
+"			A. Time is of the essence. \n\n" +
+
+"			B. This Loan Document is the entire agreement between the parties and\n" +
+"			supersedes any prior agreement between the parties relating to this loan. \n" +
+"			Any amendment, modification, or other alteration to the terms of this \n" +
+"			Loan Document shall not be effective unless agreed to by the parties\n" +
+"			in writing. \n\n" +
+
+"			C. All notices shall be in writing and sent by mail to such address as\n" +
+"			the parties have knowledge of or personally delivered and shall be \n" +
+"			deemed complete upon mailing or being personally received. \n\n" +
+
+"			D. The rights and remedies granted Ajejdrikdrik under the provisions\n" + 
+"			of this Loan Document or by law or in equity shall be cumulative and\n" +
+"			may be exercised at any time. Failure of Ajejdrikdrik to enforce any \n" +
+"			provision in this Loan Document shall not be deemed to be a waiver\n" +
+"			of that or any other provision nor preclude any exercise of any right, \n" +
+"			remedy, or power either at law or equity or under this Loan Document.\n\n" +
+
+ "			E. This Loan Document shall be binding upon and inure to the benefit\n" +
+ "			of the parties and their personal representatives, heirs, successors, \n" +
+ "			or assigns. \n\n" +
+
+"			F. This Loan Document shall be construed and enforced under the\n" +
+"			laws of the Republic. \n\n" +
+ 
+"			G. The provisions of this Loan Document are severable and if any\n" +
+"			provision is held invalid or unenforceable the remaining provisions\n" +
+"			shall remain in full force and effect. \n\n" +
+
+"			H. This Loan Document shall remain in full force and effect until all\n" +
+"			indebtedness of the Borrower to Ajejdrikdrik has been paid in full, \n" +
+"			and all other obligations of the Borrower shall have been performed.  \n\n" +
+
+"			I. Ajejdrikdrik may at any time, without the consent of Borrower, \n" +
+"			sell, assign, or otherwise transfer its interest, in whole or in part, \n" +
+"			in this Loan Document to third parties. \n\n" +
+
+"			J. Ajejdrikdrik may at any time record this Loan Document or a \n" +
+"			summary thereof with the Secured Transactions Office.\n\n" +
+
+"		12. Loan origination and insurance fees. Loan origination is the total of the Loan Fees\n" +
+"		and Service Charge.  They are described as included in the principal amount of the loan\n" +
+"		as the same will be deducted from the principal to get the net proceeds of the loan. \n" +
+"		Insurance will be applicable only when we are able to get an insurance provider.\n\n" +
+
+"		13. Personal guaranty. By executing this Loan Document, the undersigned Guarantor(s) \n" +
+"		personally guarantee(s) compliance with all terms of this Loan Document, and such\n" +
+"		Guarantor(s) is(are) jointly and severally liable with Borrower in case of default.\n\n" +
+
+"		IN WITNESS WHEREOF, the parties have executed this Loan Document on the dates\n" +
+"		indicated below:\n\n"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="10" y="110" width="122" height="13" uuid="44ed4dbd-8192-4db8-a75e-803d5bd0a6c9">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textFieldExpression><![CDATA["Date:	" + $F{run_date}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="290" y="110" width="122" height="13" uuid="1ded375e-08ed-422e-bdd7-ffd00921df7a">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textFieldExpression><![CDATA["Date:	" + $F{run_date}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="10" y="149" width="266" height="60" uuid="00f37744-ae5c-4d20-84c2-747c06d61a77">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textFieldExpression><![CDATA["_______________________________________________\n"+
+$F{cont_name} + " - ("+$F{customer_id}+")\n"+
+"Borrower"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="290" y="150" width="265" height="60" uuid="d94e57f1-4d5f-4e8c-86ec-666c15d1cad7"/>
+				<textFieldExpression><![CDATA["_______________________________________________\n"+
+"Ajejdrikdrik, Incorporated by\n"+
+"Harold Ian B. de la Torre\n"+
+"General Manager"]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<pageFooter>
+		<band height="30" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="0" width="555" height="30" uuid="3af2af77-da5a-4015-8d67-44ce0f431f05"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA["Page " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+</jasperReport>

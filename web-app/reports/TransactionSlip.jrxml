@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.0.3.final using JasperReports Library version 6.0.3  -->
+<!-- 2016-09-16T13:54:39 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="TransactionSlip" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="a4c444b4-a31e-4c14-b6b8-8d1a3668426c">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="net.sf.jasperreports.awt.ignore.missing.font" value="true"/>
+	<property name="net.sf.jasperreports.default.font.name" value="Courier New"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="icbs_local"/>
+	<parameter name="depositID" class="java.lang.Integer">
+		<defaultValueExpression><![CDATA[10]]></defaultValueExpression>
+	</parameter>
+	<parameter name="ledgerID1" class="java.lang.Integer">
+		<defaultValueExpression><![CDATA[1030]]></defaultValueExpression>
+	</parameter>
+	<parameter name="usermasterID" class="java.lang.Integer">
+		<defaultValueExpression><![CDATA[1]]></defaultValueExpression>
+	</parameter>
+	<parameter name="ledgerID2" class="java.lang.Integer">
+		<parameterDescription><![CDATA[]]></parameterDescription>
+		<defaultValueExpression><![CDATA[1031]]></defaultValueExpression>
+	</parameter>
+	<queryString language="SQL">
+		<![CDATA[(select DISTINCT
+1 as "GROUP",
+F.id as "DEP ACCT ID",
+B.id as "TXN FILE ID",
+A.id as "DEPOSIT ID", 
+B.txn_description  as "DESCRIPTION",
+CASE WHEN COALESCE(to_char(B.txn_date, 'MM/DD/YY')) is not NULL THEN '' ELSE '' END as "RUN DATE",
+A.acct_name as "NAME", 
+(select address1 || address2 || address3 from address where customer_id = A.id) as  "ADDRESS",
+'status2' as "STATUS",
+COALESCE(to_char(B.txn_date, 'MM/DD/YY')) as "DATE OF LAST TRN",
+F.bal as "PREVIOUS BALANCE",
+B.id as "TRN NO",
+B.txn_date "TRANSACTION DATE",
+B.txn_description as "TXN TYPE",
+B.txn_amt as "TXN AMOUNT",
+A.available_bal_amt as "BALANCE",
+A.acrint_amt as "ACCRUED INT",
+ H.name1 || ' ' || H.name2 || ' ' || H.name3 as "SYSTEM SUPERVISOR",
+H.username as "USERNAME",
+F.credit_amt as "credit",
+F.debit_amt as "debit"
+from deposit as A
+inner join (select * from txn_file)as B on A.id = B.dep_acct_id
+inner join (select * from deposit_status)as D on A.status_id = D.id
+inner join (select * from config_item_status) as E on B.status_id = E.id
+inner join (select * from txn_deposit_acct_ledger) as F on A.id = F.acct_id and B.id = F.txn_file_id
+inner join (select * from branch) as G on A.branch_id = G.id and B.branch_id = G.id and F.branch_id = G.id
+inner join (select * from user_master) as H ON G.id = H.branch_id
+where A.id = $P{depositID}
+and B.id = $P{ledgerID2} 
+and H.id = $P{usermasterID})]]>
+	</queryString>
+	<field name="GROUP" class="java.lang.Integer"/>
+	<field name="DEP ACCT ID" class="java.lang.Integer"/>
+	<field name="TXN FILE ID" class="java.lang.Integer"/>
+	<field name="DEPOSIT ID" class="java.lang.Integer"/>
+	<field name="DESCRIPTION" class="java.lang.String"/>
+	<field name="RUN DATE" class="java.lang.String"/>
+	<field name="NAME" class="java.lang.String"/>
+	<field name="ADDRESS" class="java.lang.String"/>
+	<field name="STATUS" class="java.lang.String"/>
+	<field name="DATE OF LAST TRN" class="java.lang.String"/>
+	<field name="PREVIOUS BALANCE" class="java.lang.Double"/>
+	<field name="TRN NO" class="java.lang.Integer"/>
+	<field name="TRANSACTION DATE" class="java.sql.Timestamp"/>
+	<field name="TXN TYPE" class="java.lang.String"/>
+	<field name="TXN AMOUNT" class="java.lang.Double"/>
+	<field name="BALANCE" class="java.lang.Double"/>
+	<field name="ACCRUED INT" class="java.lang.Double"/>
+	<field name="SYSTEM SUPERVISOR" class="java.lang.String"/>
+	<field name="USERNAME" class="java.lang.String"/>
+	<field name="credit" class="java.lang.Double"/>
+	<field name="debit" class="java.lang.Double"/>
+	<group name="Group1">
+		<groupExpression><![CDATA[$F{GROUP}]]></groupExpression>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band splitType="Stretch">
+			<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+		</band>
+	</title>
+	<detail>
+		<band height="141" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="1" width="270" height="15" uuid="d87a190c-b3c4-4855-8fce-5833cc7f4e06">
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{NAME}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="16" width="270" height="30" uuid="28f66d0e-8c10-4e09-9d0c-d40901eb4cf7">
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{ADDRESS} == null ? "" : $F{ADDRESS}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="47" width="100" height="15" uuid="677307de-2655-430b-af18-c5e0c15d2ae4">
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Left"/>
+				<textFieldExpression><![CDATA[$F{STATUS}.equals("status2") ? "" : "Status:	"+$F{STATUS}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="55" y="69" width="45" height="15" uuid="96afccd0-8e6c-482e-bad8-7e330edee7b4">
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{DATE OF LAST TRN}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="370" y="69" width="90" height="15" uuid="9d60711c-803b-4a99-8aee-52baae8ae951">
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{PREVIOUS BALANCE}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="69" width="55" height="15" uuid="701d2842-a5a6-4103-852f-4c93ba55e1c2">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{TRN NO} == 0 ? "" : $F{TRN NO}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="100" y="69" width="170" height="30" uuid="cf9c8338-3700-479b-b1bf-aaac3cc10f84">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{TXN TYPE}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="109" width="170" height="15" uuid="351c2e03-9c0e-4ce1-a87c-6cea2e397f47">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$F{SYSTEM SUPERVISOR}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="170" y="109" width="110" height="15" uuid="cebc0b41-0be2-4ba6-870a-7b5dd1d9f860">
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{USERNAME}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,#00.00">
+				<reportElement x="460" y="69" width="80" height="15" uuid="27fbcf7a-d6ce-49c5-84cf-5218d5009b72">
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Left"/>
+				<textFieldExpression><![CDATA[$F{ACCRUED INT} == 01 ? "" :  new java.text.DecimalFormat("#,##0.00").format($F{ACCRUED INT})]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00">
+				<reportElement x="280" y="69" width="90" height="15" uuid="b7857ba2-5009-4691-95d0-8728c86a1060">
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[new java.text.DecimalFormat("#,##0.00").format($F{TXN AMOUNT})]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="340" y="109" width="120" height="15" uuid="b0c1ae5e-2f2c-4415-adba-a7c614ec48a3">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Left"/>
+				<textFieldExpression><![CDATA[($F{debit} == null) ? ""  : 
+($F{debit} == 00) ? "" :
+"****"+new DecimalFormat("#,##0.00").format($F{debit})+" DR"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="340" y="109" width="120" height="15" uuid="4068738f-aae4-4eb6-acec-41e8631387f2"/>
+				<textElement textAlignment="Left"/>
+				<textFieldExpression><![CDATA[($F{credit} == null) ? ""  : 
+($F{credit} == 00) ? "" :
+"****"+new DecimalFormat("#,##0.00").format($F{credit})+" CR"]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="80" splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band height="42" splitType="Stretch"/>
+	</summary>
+</jasperReport>

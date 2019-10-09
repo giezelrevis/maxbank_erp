@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.0.3.final using JasperReports Library version 6.0.3  -->
+<!-- 2015-11-12T11:32:25 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="FullTrialBalance" pageWidth="612" pageHeight="792" columnWidth="572" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="14e04ca2-0e1a-49dd-8fb1-b207f77b6000">
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="NRBSL_DB_Server"/>
+	<property name="ireport.jasperserver.url" value="http://192.168.0.4:8080/jasperserver/"/>
+	<property name="ireport.jasperserver.user" value="jasperadmin"/>
+	<property name="ireport.jasperserver.report.resource" value="/MB_Express_O_Report/General_Ledger_Report/GLTrialBalance_files/MainJrxml"/>
+	<property name="ireport.jasperserver.reportUnit" value="/MB_Express_O_Report/General_Ledger_Report/GLTrialBalance"/>
+	<queryString language="SQL">
+		<![CDATA[select 
+	GLSC.parent_id_id as ParentID,
+	GLTYpe.Description as GLHeader,
+	GLSC.sort_code as SortCode,
+	GLSC.sort_name as SortCodeDescription,
+	'(' || right('000'|| ltrim(to_char(Branch.code,'999')),3) || ') ' || GLAC.code as FrmtGLCode,
+	GLAC.code as GLCode,
+	GLAC.debit_balance as DrBalance,
+	GLAC.credit_balance as CrBalance,
+	GLAC.short_name as GLShortDesc,
+	institution.param_value as InstName,
+	Branch.id as BranchID,
+	Branch.name as BranchName
+from institution as institution 
+	inner join branch as Branch on 1=1
+	inner join gl_sort_code as GLSC on GLSC.sort_code_status = TRUE
+	inner join gl_acct_type as GLType on GLSC.parent_id_id = GLType.id 
+	left join gl_account as GLAC on GLAC.parent_id = GLSC.id and Branch.id = GLAC.branch_id
+where institution.param_code = 'GEN.10000' 
+and GLAC.Balance<>0
+
+order by
+	 GLSC.parent_id_id,
+	 GLAC.code, GLAC.short_name,
+	 GLSC.sort_code,GLSC.sort_name ,	 
+	 institution.param_value, branch.id, branch.name]]>
+	</queryString>
+	<field name="parentid" class="java.lang.Integer"/>
+	<field name="sortcode" class="java.lang.String"/>
+	<field name="sortcodedescription" class="java.lang.String"/>
+	<field name="glcode" class="java.lang.String"/>
+	<field name="drbalance" class="java.lang.Double"/>
+	<field name="crbalance" class="java.lang.Double"/>
+	<field name="glshortdesc" class="java.lang.String"/>
+	<field name="instname" class="java.lang.String"/>
+	<field name="branchid" class="java.lang.Integer"/>
+	<field name="branchname" class="java.lang.String"/>
+	<field name="glheader" class="java.lang.String"/>
+	<field name="frmtglcode" class="java.lang.String"/>
+	<variable name="drbalance1" class="java.lang.Integer" resetType="Column" calculation="Count">
+		<variableExpression><![CDATA[$F{drbalance}]]></variableExpression>
+	</variable>
+	<variable name="drbalance2" class="java.lang.Double" resetType="Column" calculation="Sum">
+		<variableExpression><![CDATA[$F{drbalance}]]></variableExpression>
+	</variable>
+	<variable name="drbalance3" class="java.lang.Double" resetType="Page" calculation="Sum">
+		<variableExpression><![CDATA[$F{drbalance}]]></variableExpression>
+	</variable>
+	<variable name="crbalance1" class="java.lang.Double" calculation="Sum">
+		<variableExpression><![CDATA[$F{crbalance}]]></variableExpression>
+	</variable>
+	<variable name="drbalance4" class="java.lang.Double" resetType="Group" resetGroup="GroupByParentId" calculation="Sum">
+		<variableExpression><![CDATA[$F{drbalance}]]></variableExpression>
+	</variable>
+	<variable name="crbalance2" class="java.lang.Double" resetType="Group" resetGroup="GroupByParentId" calculation="Sum">
+		<variableExpression><![CDATA[$F{crbalance}]]></variableExpression>
+	</variable>
+	<variable name="drbalance5" class="java.lang.Double" resetType="Group" resetGroup="GroupBySortCode" calculation="Sum">
+		<variableExpression><![CDATA[$F{drbalance}]]></variableExpression>
+	</variable>
+	<variable name="crbalance3" class="java.lang.Double" resetType="Group" resetGroup="GroupBySortCode" calculation="Sum">
+		<variableExpression><![CDATA[$F{crbalance}]]></variableExpression>
+	</variable>
+	<variable name="crbalance4" class="java.lang.Double" resetType="Group" resetGroup="GroupBySortCode" calculation="Sum">
+		<variableExpression><![CDATA[$F{crbalance}]]></variableExpression>
+	</variable>
+	<variable name="drbalance6" class="java.lang.Double" calculation="Sum">
+		<variableExpression><![CDATA[$F{drbalance}]]></variableExpression>
+	</variable>
+	<variable name="crbalance5" class="java.lang.Double" calculation="Sum">
+		<variableExpression><![CDATA[$F{crbalance}]]></variableExpression>
+	</variable>
+	<group name="GroupByParentId" isStartNewPage="true" isReprintHeaderOnEachPage="true">
+		<groupExpression><![CDATA[$F{parentid}]]></groupExpression>
+		<groupHeader>
+			<band height="22">
+				<property name="local_mesure_unitheight" value="pixel"/>
+				<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				<textField>
+					<reportElement x="180" y="4" width="227" height="18" uuid="0b5cc527-c947-4a48-ade3-dffcc32f23e4">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement verticalAlignment="Bottom">
+						<font size="11" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{glheader}]]></textFieldExpression>
+					<patternExpression><![CDATA[$F{sortcodedescription}]]></patternExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="GroupByParentId" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement mode="Transparent" x="411" y="4" width="75" height="18" printWhenGroupChanges="GroupByParentId" forecolor="#000000" backcolor="#FFFFFF" uuid="504d937c-4d71-4536-84b5-fd616851216c">
+						<property name="local_mesure_unitheight" value="pixel"/>
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+						<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					</reportElement>
+					<textElement textAlignment="Right" verticalAlignment="Bottom" rotation="None" markup="none">
+						<font fontName="SansSerif" size="10" isBold="true" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Helvetica" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{drbalance4}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="true" isBlankWhenNull="false">
+					<reportElement mode="Transparent" x="2" y="4" width="178" height="18" forecolor="#000000" backcolor="#FFFFFF" uuid="7ad875fc-826d-4d24-b875-79a3161f6e40">
+						<property name="local_mesure_unitheight" value="pixel"/>
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+						<property name="local_mesure_unitwidth" value="pixel"/>
+						<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					</reportElement>
+					<box>
+						<topPen lineWidth="0.0"/>
+						<leftPen lineWidth="0.0"/>
+						<bottomPen lineWidth="0.0"/>
+						<rightPen lineWidth="0.0"/>
+					</box>
+					<textElement textAlignment="Left" verticalAlignment="Bottom" rotation="None" markup="none">
+						<font fontName="SansSerif" size="11" isBold="true" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Helvetica" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{parentid}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="GroupByParentId" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement mode="Transparent" x="492" y="4" width="75" height="18" printWhenGroupChanges="GroupByParentId" forecolor="#000000" backcolor="#FFFFFF" uuid="ceb048fd-50c4-4781-bc49-75c011e6f2d5">
+						<property name="local_mesure_unitheight" value="pixel"/>
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+						<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					</reportElement>
+					<textElement textAlignment="Right" verticalAlignment="Bottom" rotation="None" markup="none">
+						<font fontName="SansSerif" size="10" isBold="true" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Helvetica" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{crbalance2}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+	</group>
+	<group name="GroupBySortCode">
+		<groupExpression><![CDATA[$F{sortcode}]]></groupExpression>
+		<groupHeader>
+			<band height="20">
+				<property name="local_mesure_unitheight" value="pixel"/>
+				<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				<textField>
+					<reportElement x="2" y="5" width="178" height="14" uuid="ef86ae5c-8f09-4dad-98ce-a033990de39e">
+						<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					</reportElement>
+					<box>
+						<topPen lineWidth="0.0"/>
+						<leftPen lineWidth="0.0"/>
+						<bottomPen lineWidth="0.0"/>
+						<rightPen lineWidth="0.0"/>
+					</box>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{sortcode}]]></textFieldExpression>
+					<patternExpression><![CDATA[$F{sortcode}]]></patternExpression>
+				</textField>
+				<textField>
+					<reportElement x="180" y="5" width="227" height="14" uuid="06f1f0fc-7f14-46a4-af40-694d84f025d8"/>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{sortcodedescription}]]></textFieldExpression>
+					<patternExpression><![CDATA[$F{sortcodedescription}]]></patternExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="GroupBySortCode" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement mode="Transparent" x="411" y="5" width="75" height="13" forecolor="#000000" backcolor="#FFFFFF" uuid="fe351e66-3370-4c2a-96f7-a48a59d0a58f">
+						<property name="local_mesure_unitheight" value="pixel"/>
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+						<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					</reportElement>
+					<textElement textAlignment="Right" verticalAlignment="Top" rotation="None" markup="none">
+						<font fontName="SansSerif" size="10" isBold="true" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Helvetica" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{drbalance5}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="GroupBySortCode" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement mode="Transparent" x="492" y="5" width="75" height="13" forecolor="#000000" backcolor="#FFFFFF" uuid="663a37ac-e485-43cd-a44b-c975ffffcfeb">
+						<property name="local_mesure_unitheight" value="pixel"/>
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+						<property name="local_mesure_unitwidth" value="pixel"/>
+						<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					</reportElement>
+					<textElement textAlignment="Right" verticalAlignment="Top" rotation="None" markup="none">
+						<font fontName="SansSerif" size="10" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Helvetica" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{crbalance4}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="20" splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band height="83" splitType="Stretch">
+			<textField>
+				<reportElement x="80" y="22" width="400" height="30" uuid="61a08f26-34f9-4479-aff4-5c502e3db468"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="16" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{instname}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="52" width="572" height="18" uuid="fd77ecd1-1b1f-451a-a571-ee9e023e5191"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{branchname}]]></textFieldExpression>
+			</textField>
+			<image>
+				<reportElement x="3" y="3" width="50" height="50" uuid="da86a698-fa4b-4fb9-bbb4-d93f238d9b87"/>
+				<imageExpression><![CDATA["C:/Users/673n5k13/JaspersoftWorkspace/MyReports/logo.png"]]></imageExpression>
+			</image>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="36" splitType="Stretch">
+			<staticText>
+				<reportElement x="2" y="3" width="100" height="13" uuid="09e13f35-853d-4df9-b390-84a11e52b539">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[GL Account]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="157" y="3" width="250" height="13" uuid="2ca11c72-2d35-41d4-bd12-33fa5d020ec2">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Description]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="410" y="3" width="75" height="13" uuid="29824755-0917-4225-8049-c7b326a709be">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dr Amount]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="492" y="3" width="75" height="13" uuid="09d337a8-b3da-400c-a2d6-9aff80a0ca0d">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cr Amount]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="18" splitType="Stretch">
+			<textField>
+				<reportElement x="2" y="2" width="178" height="14" uuid="2e19efec-45b0-426a-aad8-78a924adbc7f">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<box>
+					<topPen lineWidth="0.0"/>
+					<leftPen lineWidth="0.0"/>
+					<bottomPen lineWidth="0.0"/>
+					<rightPen lineWidth="0.0"/>
+				</box>
+				<textElement textAlignment="Left"/>
+				<textFieldExpression><![CDATA[$F{frmtglcode}]]></textFieldExpression>
+				<patternExpression><![CDATA[$F{frmtglcode}]]></patternExpression>
+			</textField>
+			<textField>
+				<reportElement x="180" y="2" width="227" height="14" uuid="ed0ffa55-a6d7-47dd-ba9c-c44a2b87a963"/>
+				<textFieldExpression><![CDATA[$F{glshortdesc}]]></textFieldExpression>
+				<patternExpression><![CDATA[$F{sortcodedescription}]]></patternExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement mode="Transparent" x="411" y="2" width="75" height="13" forecolor="#000000" backcolor="#FFFFFF" uuid="c392621e-e23e-40f0-89ca-b3bb047ea797">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Top" rotation="None" markup="none">
+					<font fontName="SansSerif" size="10" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Helvetica" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{drbalance}.longValue()]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement mode="Transparent" x="492" y="2" width="75" height="13" forecolor="#000000" backcolor="#FFFFFF" uuid="be3c1c39-64d9-436d-b5c6-a126223f4d5c">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Top" rotation="None" markup="none">
+					<font fontName="SansSerif" size="10" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Helvetica" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{crbalance}.longValue()]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<summary>
+		<band height="42" splitType="Stretch">
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement x="411" y="0" width="75" height="13" uuid="39407650-b5ae-4a2f-8c59-d3bd33dc82fd">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="local_mesure_unitwidth" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$V{drbalance6}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00" isBlankWhenNull="true">
+				<reportElement mode="Transparent" x="492" y="0" width="75" height="13" forecolor="#000000" backcolor="#FFFFFF" uuid="a3678cf6-3936-421f-8a78-90ab3df42150">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right" verticalAlignment="Top" rotation="None" markup="none">
+					<font fontName="SansSerif" size="10" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" pdfFontName="Helvetica" pdfEncoding="Cp1252" isPdfEmbedded="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{crbalance5}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+</jasperReport>

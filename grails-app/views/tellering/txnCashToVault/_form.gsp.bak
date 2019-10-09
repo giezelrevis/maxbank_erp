@@ -1,0 +1,198 @@
+<%@ page import="icbs.tellering.TxnTellerCash" import="icbs.tellering.TxnFile" %>
+
+<div class="form-group">
+    <label class="control-label">Transaction Type</label>
+    <div class="col-sm-6">
+        <select id="txnTemplate" name="txnTemplate" required="true" class="many-to-one form-control">
+            <option selected="selected" disabled="true">-- Select a transaction type --</option>
+            <g:each in="${icbs.admin.TxnTemplate.findAllByTxnType(icbs.lov.TxnType.read(23))}" var="txnTemplateInstance">
+                <option value="${txnTemplateInstance.id}">${txnTemplateInstance.codeDescription}</option>
+            </g:each>
+        </select>
+    </div>
+</div>
+
+<div class="fieldcontain form-group ${hasErrors(bean: txnCashToVaultInstance, field: 'txnAmt', 'has-error')} ">
+    <label class="control-label col-sm-4" for="txnAmt">
+        <g:message code="txnCashToVault.txnAmt.label" default="Total Cash Received" />
+    </label>
+
+    <div class="col-sm-6">
+        <g:field name="txnAmt" required="true" value="${fieldValue(bean: txnCashToVaultInstance, field: 'txnAmt')}" onkeyup="add_commas(1500000);" class="txn-amt form-control"/>
+    </div>             
+</div>
+
+<div class="container-fluid">
+    <fieldset class="col-xs-9">
+        <div class="infowrap">
+            <table class="table table-bordered table-striped">
+                <legend class="section-header"><h4>Breakdown</h4> </legend>
+                <tr>
+                    <td>
+                        <strong>1000-Peso Bills</strong>
+                    </td>
+                    <td>
+                        <g:textField type="number" name="bills1000" value="${txnCashToVaultInstance?.bills1000}"class="form-control to-compute"/>
+                    </td>
+                    <td>
+                        <g:textField type="number" disabled="true" name="total1000" id="total1000" value="${txnCashToVaultInstance?.total1000}" placeholder="0" class="form-control"/>
+                    </td>                  
+                </tr>
+                <tr>
+                    <td>
+                        <strong>500-Peso Bills</strong>
+                    </td>
+                    <td>
+                        <g:textField type="number" name="bills500" value="${txnCashToVaultInstance?.bills500}" class="form-control to-compute"/>
+                    </td>
+                    <td>
+                        <g:textField type="number" disabled="true" name="total500" id="total500" value="${txnCashToVaultInstance?.total500}" placeholder="0" class="form-control"/>
+                    </td>                   
+                </tr>
+                <tr>
+                    <td>
+                        <strong>200-Peso Bills</strong>
+                    </td>
+                    <td>
+                        <g:textField type="number" name="bills200" value="${txnCashToVaultInstance?.bills200}"class="form-control to-compute"/>
+                    </td>
+                    <td>
+                        <g:textField type="number" disabled="true" name="total200" id="total200" value="${txnCashToVaultInstance?.total200}" placeholder="0" class="form-control"/>
+                    </td>                   
+                </tr>
+                <tr>
+                    <td>
+                        <strong>100-Peso Bills</strong>
+                    </td>
+                    <td>
+                        <g:textField type="number" name="bills100" value="${txnCashToVaultInstance?.bills100}"class="form-control to-compute"/>
+                    </td>
+                    <td>
+                        <g:textField type="number" disabled="true" name="total100" id="total100" value="${txnCashToVaultInstance?.total100}" placeholder="0" class="form-control"/>
+                    </td>                   
+                </tr>
+                <tr>
+                    <td>
+                        <strong>50-Peso Bills</strong>
+                    </td>
+                    <td>
+                        <g:textField type="number" name="bills50" value="${txnCashToVaultInstance?.bills50}"class="form-control to-compute"/>
+                    </td>    
+                    <td>
+                        <g:textField type="number" disabled="true" name="total50" id="total50" value="${txnCashToVaultInstance?.total50}" placeholder="0" class="form-control"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>20-Peso Bills</strong>
+                    </td>
+                    <td>
+                        <g:textField type="number" name="bills20" value="${txnCashToVaultInstance?.bills20}"class="form-control to-compute"/>
+                    </td>  
+                    <td>
+                        <g:textField type="number" disabled="true" name="total20" id="total20" value="${txnCashToVaultInstance?.total20}" placeholder="0" class="form-control"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>10-Peso Coins</strong>
+                    </td>
+                    <td>
+                        <g:textField type="number" name="coins10" value="${txnCashToVaultInstance?.coins10}"class="form-control to-compute"/>
+                    </td> 
+                    <td>
+                        <g:textField type="number" disabled="true" name="total10" id="total10" value="${txnCashToVaultInstance?.total10}" placeholder="0" class="form-control"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>5-Peso Coins</strong>
+                    </td>
+                    <td>
+                        <g:textField type="number" name="coins5" value="${txnCashToVaultInstance?.coins5}"class="form-control to-compute"/>
+                    </td> 
+                    <td>
+                        <g:textField type="number" disabled="true" name="total5" id="total5" value="${txnCashToVaultInstance?.total5}" placeholder="0" class="form-control"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>1-Peso Coins</strong>
+                    </td>
+                    <td>
+                        <g:textField type="number" name="coins1" value="${txnCashToVaultInstance?.coins1}"class="form-control to-compute"/>
+                    </td>  
+                    <td>
+                        <g:textField type="number" disabled="true" name="total1" id="total1" value="${txnCashToVaultInstance?.total1}" placeholder="0" class="form-control"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>25-Centavo Coins</strong>
+                    </td>
+                    <td>
+                        <g:textField type="number" name="coins025" value="${txnCashToVaultInstance?.coins025}"class="form-control to-compute"/>
+                    </td>
+                    <td>
+                        <g:textField type="number" disabled="true" name="total025" id="total025" value="${txnCashToVaultInstance?.total025}" placeholder="0" class="form-control"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>10-Centavo Coins</strong>
+                    </td>
+                    <td>
+                        <g:textField type="number" name="coins010" value="${txnCashToVaultInstance?.coins010}"class="form-control to-compute"/>
+                    </td>
+                    <td>
+                        <g:textField type="number" disabled="true" name="total010" id="total010" value="${txnCashToVaultInstance?.total010}" placeholder="0" class="form-control"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>5-Centavo Coins</strong>
+                    </td>
+                    <td>
+                        <g:textField type="number" name="coins005" value="${txnCashToVaultInstance?.coins005}"class="form-control to-compute"/>
+                    </td>
+                    <td>
+                        <g:textField type="number" disabled="true" name="total005" id="total005" value="${txnCashToVaultInstance?.total005}" placeholder="0" class="form-control"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>1-Centavo Coins</strong>
+                    </td>
+                    <td>
+                        <g:textField type="number" name="coins001" value="${txnCashToVaultInstance?.coins001}"class="form-control to-compute"/>
+                    </td>
+                    <td>
+                        <g:textField type="number" disabled="true" name="total001" id="total001" value="${txnCashToVaultInstance?.total001}" placeholder="0" class="form-control"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        
+                    </td>
+                    <td>
+                        
+                    </td>
+                    <td>
+                        <g:textField disabled="true" name="total" id="total" value="0" class="form-control total"/>
+                        <i style="color:green" class="fa fa-check-circle fa-2x fa-align-center total-match dont-show"></i>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </fieldset>
+</div>
+
+<div class="fieldcontain form-group ${hasErrors(bean: txnCashTpVaultInstance, field: 'txnRef', 'has-error')} ">
+    <label class="control-label col-sm-4" for="txnRef">
+            <g:message code="txnCashToVault.txnRef.label" default="Transaction Reference" />
+    </label>
+
+    <div class="col-sm-6">
+        <g:textArea name="txnRef" required="true" value="${txnCashToVaultInstance?.txnRef}"class="form-control"/>
+    </div>             
+</div>

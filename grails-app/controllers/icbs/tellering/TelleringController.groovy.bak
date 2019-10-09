@@ -1,0 +1,3387 @@
+package icbs.tellering
+import grails.transaction.Transactional
+import grails.converters.JSON
+import grails.converters.deep.JSON
+import javax.servlet.http.HttpSession
+import org.springframework.web.context.request.RequestContextHolder
+import icbs.cif.Customer
+import icbs.tellering.TxnBillsPayment
+import icbs.loans.Loan
+import icbs.loans.LoanInstallment
+import icbs.loans.LoanLedger
+import icbs.lov.LoanInstallmentStatus
+import icbs.deposit.Deposit
+import icbs.lov.TxnType
+import icbs.admin.CheckDepositClearingType
+import icbs.admin.TxnTemplate
+import icbs.lov.CheckStatus
+//add d2
+import icbs.lov.TxnCheckStatus
+import icbs.lov.ConfigItemStatus
+import icbs.lov.DepositStatus
+import icbs.tellering.TxnFile
+import icbs.admin.Branch
+import icbs.admin.UserMaster
+import icbs.admin.Currency
+import icbs.admin.ProductTxn
+import icbs.lov.ProductType
+import icbs.deposit.Rollover
+import groovy.sql.Sql
+import icbs.tellering.TxnDepositAcctLedger
+import icbs.lov.YesNoNa
+
+@Transactional
+class TelleringController {
+    
+    def userMasterService
+    def policyService
+    def glTransactionService
+    def dataSource
+    
+    def takeAction() {
+        def txnFileInstance = TxnFile.get(params.txnFileInstanceId)
+        if (txnFileInstance == null) {
+            notFound()
+            return
+        }
+        policyService.takeAction(txnFileInstance, ConfigItemStatus, 'txnFile', (boolean)params.isApproved)
+    }
+    
+    def createReport = {
+
+        def txnFileInstance = null
+        def senderInstance = null
+        def beneficiaryInstance = null
+        def txnTemplateInstance = null
+        String indicator = "BAMF"
+        def newtid
+        
+        txnFileInstance = TxnFile.get(params.tid)
+        if(params.tid){
+           newtid = (params.tid).toInteger()
+        }
+        if (txnFileInstance?.sender?.id) {
+            senderInstance = Customer.get(txnFileInstance?.sender?.id)
+        }
+        if (txnFileInstance?.beneficiary?.id){
+            beneficiaryInstance = Customer.get(txnFileInstance?.beneficiary?.id)
+        }
+        if (txnFileInstance?.txnType) {
+            int txnTypeNo = txnFileInstance?.txnType.toInteger()
+            println txnTypeNo
+            txnTemplateInstance = TxnTemplate.get(txnTypeNo)
+            println txnTemplateInstance.txnType.codeDescription
+            if((txnTypeNo >= 1 && txnTypeNo <= 4) || (txnTypeNo >= 118 && txnTypeNo <= 121)){
+                indicator = "Teller Cash"
+                if(txnTypeNo >= 1 && txnTypeNo <= 2){
+                    params._file = "txn_cash_from_vault"
+                }
+                if(txnTypeNo >= 3 && txnTypeNo <= 4){
+                    params._file = "txn_teller_cash_transfer"
+                }
+                if(txnTypeNo >= 118 && txnTypeNo <= 119){
+                    params._file = "txn_checks_to_COCI"
+                }
+                if(txnTypeNo >= 120 && txnTypeNo <= 121){
+                    params._file = "txn_cash_to_vault"
+                }
+            }
+            if((txnTypeNo >= 5 && txnTypeNo <= 32) || (txnTypeNo >= 79 && txnTypeNo <= 86)){
+                indicator = "Deposit"
+                if(txnTypeNo >= 5 && txnTypeNo <= 12){
+                    params._file = "txn_cash_deposit"
+                }
+                if(txnTypeNo >= 13 && txnTypeNo <= 20){
+                    params._file = "txn_check_deposit"
+                }
+                if(txnTypeNo >= 21 && txnTypeNo <= 30){
+                    params._file = "txn_cash_withdrawal"
+                }
+                if(txnTypeNo >= 31 && txnTypeNo <= 32){
+                    params._file = "txn_check_encashment"
+                }
+                if(txnTypeNo >= 79 && txnTypeNo <= 82){
+                    params._file = "txn_fd_interest_withdrawal"
+                }
+                if(txnTypeNo >= 83 && txnTypeNo <= 86){
+                    params._file = "txn_fd_pretermination"
+                }
+            }
+            if(txnTypeNo >= 87 && txnTypeNo <= 117){
+                indicator = "Other Cash/Check"
+                if((txnTypeNo >= 87 && txnTypeNo <= 89) || (txnTypeNo >= 101 && txnTypeNo <= 103) || (txnTypeNo >= 116 && txnTypeNo <= 117)){
+                    params._file = "txn_remittance"
+                }
+                if((txnTypeNo >= 104 && txnTypeNo <= 109) || (txnTypeNo >= 90 && txnTypeNo <= 95)){
+                    params._file = "txn_bills_payment"
+                }
+                if((txnTypeNo >= 96 && txnTypeNo <= 100)){
+                    params._file = "txn_cash_receipt"
+                }
+                if((txnTypeNo >= 114 && txnTypeNo <= 117)){
+                    params._file = "txn_cash_payment"
+                }
+            }
+            if((txnTypeNo >= 56 && txnTypeNo <= 78)){
+                indicator = "Loan"
+                if((txnTypeNo >= 56 && txnTypeNo <= 57) || (txnTypeNo >= 66 && txnTypeNo <= 69)){
+                    params._file = "txn_loan_disbursement"
+                }
+                if((txnTypeNo >= 58 && txnTypeNo <= 65) || (txnTypeNo >= 70 && txnTypeNo <= 71)){
+                    params._file = "txn_loan_payment"
+                }
+            }
+        }
+            
+        println indicator
+        
+        println params
+        
+        def txn = TxnFile.getAll(newtid)
+        
+        chain(controller:'jasper',action:'index',model:[data:txn],params:params)
+        
+        return
+
+    }
+    
+    def index(){ 
+        //List of transactions
+    }
+    
+    def toggleCheckStatus() {
+        def check = TxnCOCI.get(params.id)
+        def statusTrue = CheckStatus.get(2)
+        def statusFalse = CheckStatus.get(1)
+        
+        if (check){
+            if (params.cleared == 'true'){
+                check.cleared = 'true'
+                check.checkStatus = statusTrue
+            }
+            else if (params.cleared == 'false'){
+                check.cleared = 'false'
+                check.checkStatus = statusFalse
+            }
+            save(flush:true,failOnError:true)
+        }
+        render ''
+    }
+    
+    def showAddCheckAjax() {    
+        render(template:"checks/form") as JSON
+        return
+    }
+    
+    def showChecksAjax() {
+        render(template:"checks/list") as JSON
+        return
+    }
+    
+    def changeForm() {
+        println params.checkTypeId
+        def checkTypeInstance = CheckDepositClearingType.get(params.checkTypeId)
+        
+        if(!checkTypeInstance){
+            println "debug1"
+            notFound()
+            return
+        } else {
+            println "debug2"
+            render(template: '/tellering/checks/newForm', model: [checkTypeInstance:checkTypeInstance]) as JSON
+            return
+        }
+    }
+    
+    def addCheckAjax() {            
+        def checkType = params?.checkType
+        def bank = params?.bank
+        //def acctNo = params?.acctNo
+        def checkDate = params?.checkDate
+        def checkNo = params?.checkNo
+        def clearingDate = params?.checkDate
+        def checkAmt = params?.checkAmt
+        def checkStatus = CheckStatus.get(1)
+//        add d2
+        def txnCheckStatus = TxnCheckStatus.get(1)
+        println "Value "+txnCheckStatus
+        
+        println params
+           
+        def check = new TxnCOCI(checkType: checkType, bank: bank, checkDate: checkDate, checkNo: checkNo,  checkAmt: checkAmt, checkStatus: checkStatus, cleared:false)        
+        //check.depAcct = Deposit.get(params?.deposit_id)
+        check.acctNo = params?.acctNo
+        check.clearingDate = Branch.get(1).runDate
+        check.branch = UserMaster.get(session.user_id).branch
+        check.currency = Currency.get(1)
+        check.status = ConfigItemStatus.get(1)
+        check.user = UserMaster.get(session.user_id)
+//        add d2
+        check.txnCheckStatus = txnCheckStatus
+        
+        if (!check.validate()) {
+            check.errors.each {
+            println it
+            }    
+            def message = 'Validation Error'
+            render(template:"checks/form", model:[check:check]) as JSON
+            return
+        }        
+        check.save(flush:true);
+       
+        def checks
+        if (session["checks"]) {
+            checks = session["checks"]
+        } else {
+            checks = []
+        }        
+        checks.add(check)
+        session["checks"] = checks
+        println checks
+
+        def message = "Check successfully added"
+        render(template:"checks/form", model:[message:message]) as JSON
+
+        return
+    }
+    
+    def deleteCheckAjax() {
+        def id = params?.id?.toInteger()
+        session["checks"].remove(id)
+
+        render "success"
+        return
+    }
+    
+    def validatePassbookBal() {
+        if (!params.acctNo || !params.passbookBal) {
+            render(text: false) as JSON
+            return
+        }
+
+        def depositInstance = Deposit.findByAcctNo(params.acctNo)
+        if(Double.parseDouble(params.passbookBal) == depositInstance.passbookBalAmt) {
+            render(text: true) as JSON
+            return
+        } else {
+            render(text: false) as JSON
+            return
+        }
+    }
+
+    def showCustomerDetailsAjax(){
+        if(params.customer){
+            def customerInstance = Customer.read(params.customer)
+            def field = 'customer'
+            
+            if (params.field) {
+                field = params.field
+            }
+            
+            render(template: '/customer/details/txnCustomerDetails', model: [customerInstance:customerInstance, field: field]) as JSON
+        }
+    }
+    
+    def changeLoanDetails(){
+        
+        def loanInstance = Loan.get(params.loan)
+        
+        if(!loanInstance){
+            println "debug1"
+            notFound()
+            return
+        }
+        else {
+            println "debug2"
+            if(loanInstance.status.id == 3){
+                println("WEEEEW")
+                render(template: '/tellering/txnLoanProceedsDisbursement/form')
+            }
+            else{
+                render(template: '/tellering/details/loanDetails', model: [loanInstance:loanInstance]) as JSON
+            }
+            return
+        }
+    }
+    
+     def changeDepositDetails(){
+         println "TEST PARAMS" + params
+        def depositInstance = Deposit.get(params.deposit)
+        def id
+        def rolloverInstance
+        def rollenddate
+        def dateclosing
+        def branchrundate
+        if(depositInstance.type.id == 3){
+            if(params.flag != 5){
+                //println "HERE : "
+                id = depositInstance.id
+                rolloverInstance = depositInstance.currentRollover
+                rollenddate = rolloverInstance.endDate
+                branchrundate = Branch.get(depositInstance.branchId).runDate
+            }
+            else
+            {
+                //println "THERE : "
+                id = depositInstance.id
+                rolloverInstance = depositInstance.currentRollover
+                dateclosing = depositInstance.dateClosed
+                branchrundate = Branch.get(depositInstance.branchId).runDate
+            }
+        }
+        if(!depositInstance){
+            notFound()
+            return
+        } else {
+            if(depositInstance.status.id != 5){
+                if(depositInstance.type.id == 3){
+                    if(rollenddate != branchrundate)
+                    {
+                        flash.message = "Transaction allowed in maturity date."
+                    }
+                    render(template: '/tellering/details/depositDetails', model: [depositInstance:depositInstance,rolloverInstance:rolloverInstance,rollenddate:rollenddate,branchrundate:branchrundate,dateclosing:dateclosing,params:params]) as JSON
+                    render(template: '/tellering/details/signatureDetails', model: [depositInstance:depositInstance]) as JSON
+                    render(template: '/tellering/details/signatoryDetails', model: [depositInstance:depositInstance]) as JSON
+                }
+                else
+                {
+                    render(template: '/tellering/details/depositDetails', model: [depositInstance:depositInstance]) as JSON
+                    render(template: '/tellering/details/signatureDetails', model: [depositInstance:depositInstance]) as JSON
+                    render(template: '/tellering/details/signatoryDetails', model: [depositInstance:depositInstance]) as JSON
+                }
+                
+            }
+        }
+    }
+    
+    def search(Integer max) {
+        params.max = Math.min(max ?: 10, 100)   
+
+        if (params.sort == null) {
+            params.sort = "id"
+        }
+
+        if (params.query == null || params.query.trim() == "") {  // show all instances
+            render(template:"details/txnDetails", model:[params:params, domainInstanceList:TxnFile.list(params), domainInstanceCount:TxnFile.count()]) as JSON
+        } else {    // show query results
+            def result = TxnFile.createCriteria().list(params) {                
+                idEq(params.query.trim().toLong())
+            }
+            render(template:"details/txnDetails", model:[params:params, domainInstanceList:result, domainInstanceCount:result.totalCount]) as JSON
+        }            
+        return
+    }
+    
+    def showTxnAjax() {
+        def txnFileInstance = null
+        def senderInstance = null
+        def beneficiaryInstance = null
+        def txnTemplateInstance = null
+        String indicator = "BAMF"
+        
+        
+        if (params?.id) {
+            txnFileInstance = TxnFile.get(params?.id)
+            if (txnFileInstance?.sender?.id) {
+                println "-----MAY SENDER-----"
+                senderInstance = Customer.get(txnFileInstance?.sender?.id)
+            }
+            println "yay1111"
+            if (txnFileInstance?.beneficiary?.id){
+                println "-----MAY BENEFICIARY-----"
+                beneficiaryInstance = Customer.get(txnFileInstance?.beneficiary?.id)
+            }
+            if (txnFileInstance?.txnType) {
+                println "-----MAY TXNTYPE-----"
+                int txnTypeNo = txnFileInstance?.txnType.toInteger()
+                println txnTypeNo
+                txnTemplateInstance = TxnTemplate.get(txnTypeNo)
+                println txnTemplateInstance.txnType.codeDescription
+                if((txnTypeNo >= 1 && txnTypeNo <= 4) || (txnTypeNo >= 118 && txnTypeNo <= 121)){
+                    indicator = "Teller Cash"
+                }
+                if((txnTypeNo >= 5 && txnTypeNo <= 32) || (txnTypeNo >= 79 && txnTypeNo <= 86)){
+                    indicator = "Deposit"
+                }
+                if((txnTypeNo >= 5 && txnTypeNo <= 55) || (txnTypeNo >= 87 && txnTypeNo <= 117)){
+                    indicator = "Other Cash/Check"
+                }
+                if((txnTypeNo >= 56 && txnTypeNo <= 78)){
+                    indicator = "Loan"
+                }
+            }
+            println "yay2222"
+        }
+        
+        println indicator
+
+        render(template:"details/txnInfo", model:[txnFileInstance:txnFileInstance, senderInstance:senderInstance, beneficiaryInstance:beneficiaryInstance, txnTemplateInstance:txnTemplateInstance, indicator:indicator]) as JSON
+        return
+    }
+    
+/* CASH FROM VAULT */
+
+    def saveTellerCashFromVaultTxn(TxnTellerCash tc, TxnFile tf){       
+        println params //Error check
+        
+        if(tc.hasErrors() || tf.hasErrors()){
+            flash.message = 'Failed to transfer'
+            render(view: '/tellering/txnCashFromVault/create', model: [txnCashFromVaultInstance:tc])
+        }
+        else{
+            def tb = new TxnCashCheckBlotter()
+            tb.cashOutAmt = 0;
+            tb.cashInAmt = 0;
+            tb.checkInAmt = 0;
+            tb.checkOutAmt = 0;
+            
+           
+            tf.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+           
+            def txnBranch = Branch.get(UserMaster.get(session.user_id).branchId)
+            
+            tf.txnDescription = tf.txnTemplate.codeDescription
+            tf.currency = Currency.get(tf.txnTemplate.currencyId)
+            tf.txnCode = tf.txnTemplate.code
+            tf.txnType = tf.txnTemplate.txnType
+            tf.txnDate = txnBranch.runDate
+            tf.txnTimestamp = new Date().toTimestamp()
+            tf.user = UserMaster.get(session.user_id)            
+            tf.save(flush:true,failOnError:true)
+            
+            tc.txnFile = tf
+            tc.user = UserMaster.get(session.user_id)
+            tc.save(flush:true,failOnError:true)
+            //tf.txnId = tc.id
+            //tf.txnDate = new Date()
+            tf.status = ConfigItemStatus.get(2)
+            def amt = (tf.txnAmt).longValue()
+            //def txntemp = tf.txnTemplate
+            def isTxnAllowed =  policyService.isTxnAllowed(tf.txnTemplate.code, amt)
+            if(isTxnAllowed == false) {
+                tf.status = tf.status = ConfigItemStatus.get(1)
+                policyService.createException('TLR00100', 'txnFile', tf.id, 'tellering/viewTellerTxnInquiry2/'+tf.id)
+            }
+            tf.save(flush:true,failOnError:true)
+            tb.txnFile = tf
+            tb.save(flush:true,failOnError:true)
+            //if(tb.id > 1){
+            //    def tm = TxnCashCheckBlotter.get(tb.id - 1)
+            //    tb.cashOutAmt = tm.cashOutAmt
+            //    tb.cashInAmt += tm.cashInAmt
+            //    tb.checkInAmt = tm.checkInAmt
+            //    tb.checkOutAmt = tm.checkOutAmt
+            //}
+            tb.cashInAmt += tc.txnAmt
+            tb.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            tb.currency = Currency.get(tf.txnTemplate.currencyId)
+            tb.user = UserMaster.get(session.user_id)
+            tb.txnParticulars = tf.txnRef
+            tb.save(flush:true,failOnError:true)
+            
+            //def txnBreakdownInstance = new TxnBreakdown(creditAmt:tf.txnAmt, txnDate:tf.txnDate, txnFile:tf)
+            //txnBreakdownInstance.save(flush:true)
+            //glTransactionService.saveTxnBreakdown(tf.id)
+            
+            userMasterService.updateTellerBalanceStatus(false)
+            glTransactionService.saveTxnBreakdown(tf.id)
+            //params._file = "txn_inquiry"
+            //params._format = "PDF"
+            //params._name = "Teller Transaction Report"
+            //def txn = TxnFile.get(tf.id)
+         
+            //chain(controller:'jasper',action:'index',model:[data:txn],params:params)
+            
+            flash.message = 'Success'
+            render(view: '/tellering/index', model: [txnCashFromVaultInstance:new TxnTellerCash()])
+        }
+    }
+    def createTellerCashFromVaultTxn(){
+        // check user
+        def user = UserMaster.get(session.user_id)
+        if (user.cash){
+            def txnFileInstance = new TxnFile()
+            def txnCashFromVaultInstance = new TxnTellerCash()
+            render(view:'/tellering/txnCashFromVault/create', model: [txnCashFromVaultInstance:txnCashFromVaultInstance])       
+        }
+        else{
+            println user.cash
+            flash.message = 'Error! No cash account defined'
+            render(view: '/tellering/index')            
+        }
+    }
+
+    
+/* CASH TO VAULT */
+
+    def saveTellerCashToVaultTxn(TxnTellerCash tc, TxnFile tf){
+        println params //Error check
+        
+        if(tc.hasErrors() || tf.hasErrors()){
+            flash.message = 'Failed to transfer'
+            render(view: '/tellering/txnCashToVault/create', model: [txnCashToVaultInstance:tc])
+        }
+        else{
+            def tb = new TxnCashCheckBlotter()
+            tb.cashOutAmt = 0;
+            tb.cashInAmt = 0;
+            tb.checkInAmt = 0;
+            tb.checkOutAmt = 0;
+            
+            tf.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+           
+            def txnBranch = Branch.get(UserMaster.get(session.user_id).branchId)
+            
+            tf.txnDescription = tf.txnTemplate.codeDescription
+            tf.currency = Currency.get(tf.txnTemplate.currencyId)
+            tf.txnCode = tf.txnTemplate.code
+            tf.txnDate = txnBranch.runDate
+            tf.txnTimestamp = new Date().toTimestamp()
+            tf.user = UserMaster.get(session.user_id) 
+            tf.txnType = tf.txnTemplate.txnType
+            tf.save(flush:true,failOnError:true)
+            
+            tc.txnFile = tf
+            tc.user = UserMaster.get(session.user_id)
+            tc.save(flush:true,failOnError:true)
+            //tf.txnId = tc.id
+            //tf.txnDate = new Date()
+            tf.status = ConfigItemStatus.get(2)
+            def amt = (tf.txnAmt).longValue()
+            def isTxnAllowed =  policyService.isTxnAllowed(tf.txnTemplate.code, amt)
+            if(isTxnAllowed == false) {
+                tf.status = tf.status = ConfigItemStatus.get(1)
+                policyService.createException('TLR00100', 'txnFile', tf.id, 'tellering/viewTellerTxnInquiry2/'+tf.id)
+            }
+            tf.save(flush:true,failOnError:true)
+            tb.txnFile = tf
+            tb.save(flush:true,failOnError:true)
+            //if(tb.id > 1){
+            //    def tm = TxnCashCheckBlotter.get(tb.id - 1)
+            //    tb.cashOutAmt = tm.cashOutAmt
+            //    tb.cashInAmt += tm.cashInAmt
+            //    tb.checkInAmt = tm.checkInAmt
+            //    tb.checkOutAmt = tm.checkOutAmt
+            //}
+            tb.cashOutAmt += tc.txnAmt
+            tb.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            tb.currency = Currency.get(tf.txnTemplate.currencyId)
+            tb.user = UserMaster.get(session.user_id)
+            tb.txnParticulars = tf.txnRef
+            tb.save(flush:true,failOnError:true)
+            
+            //def txnBreakdownInstance = new TxnBreakdown(creditAmt:tf.txnAmt, txnDate:tf.txnDate, txnFile:tf)
+            //txnBreakdownInstance.save(flush:true)
+            
+            userMasterService.updateTellerBalanceStatus(false)
+            glTransactionService.saveTxnBreakdown(tf.id)
+            
+            flash.message = 'Success'
+            render(view: '/tellering/index', model: [txnCashFromVaultInstance:new TxnTellerCash()])
+        }
+    }
+    def createTellerCashToVaultTxn(){
+        def user = UserMaster.get(session.user_id)
+        if (user.cash){
+            def txnFileInstance = new TxnFile()
+            def txnCashToVaultInstance = new TxnTellerCash()
+            render(view:'/tellering/txnCashToVault/create', model: [txnCashToVaultInstance:txnCashToVaultInstance])       
+        }
+        else{
+            println user.cash
+            flash.message = 'Error! No cash account defined'
+            render(view: '/tellering/index')            
+        } 
+    }
+    
+
+/* TELLER CASH TRANSFER */
+
+    def saveTellerCashTransferTxn(TxnTellerCash tc, TxnFile tf){
+        println params //Error check
+        
+        if(tc.hasErrors() || tf.hasErrors()){
+            flash.message = 'Failed to transfer'
+            render(view: '/tellering/txnCashTransfer/create', model: [txnCashTransferInstance:tc])
+        }
+        else{
+            def tb = new TxnCashCheckBlotter()
+            tb.cashOutAmt = 0;
+            tb.cashInAmt = 0;
+            tb.checkInAmt = 0;
+            tb.checkOutAmt = 0;
+            
+            tf.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            
+            def txnBranch = Branch.get(UserMaster.get(session.user_id).branchId)
+            
+            tf.txnDescription = tf.txnTemplate.codeDescription
+            tf.currency = Currency.get(tf.txnTemplate.currencyId)
+            tf.txnCode = tf.txnTemplate.code
+            tf.txnDate = txnBranch.runDate
+            tf.txnTimestamp = new Date().toTimestamp()
+            tf.user = UserMaster.get(session.user_id)    
+            tf.txnType = tf.txnTemplate.txnType
+            tf.save(flush:true,failOnError:true)
+            
+            tc.txnFile = tf
+            tc.user = UserMaster.get(session.user_id)
+            tc.save(flush:true,failOnError:true)
+            //tf.txnId = tc.id
+            //tf.txnDate = new Date()
+            tf.status = ConfigItemStatus.get(2)
+            def amt = (tf.txnAmt).longValue()
+            def isTxnAllowed =  policyService.isTxnAllowed(tf.txnTemplate.code, amt)
+            if(isTxnAllowed == false) {
+                tf.status = tf.status = ConfigItemStatus.get(1)
+                policyService.createException('TLR00100', 'txnFile', tf.id, 'tellering/viewTellerTxnInquiry2/'+tf.id)
+            }
+            tf.save(flush:true,failOnError:true)
+            tb.txnFile = tf
+            tb.save(flush:true)
+            //if(tb.id > 1){
+            //    def tm = TxnCashCheckBlotter.get(tb.id - 1)
+            //    tb.cashOutAmt = tm.cashOutAmt
+            //    tb.cashInAmt += tm.cashInAmt
+            //    tb.checkInAmt = tm.checkInAmt
+            //    tb.checkOutAmt = tm.checkOutAmt
+            //}
+            tb.cashOutAmt += tc.txnAmt
+            tb.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            tb.currency = Currency.get(tf.txnTemplate.currencyId)
+            tb.user = UserMaster.get(session.user_id)
+            tb.txnParticulars = tf.txnRef
+            tb.save(flush:true,failOnError:true)
+            
+            //def txnBreakdownInstance = new TxnBreakdown(creditAmt:tf.txnAmt, txnDate:tf.txnDate, txnFile:tf)
+            //txnBreakdownInstance.save(flush:true)
+            
+            userMasterService.updateTellerBalanceStatus(false)
+            glTransactionService.saveTxnBreakdown(tf.id)
+            
+            flash.message = 'Success'
+            render(view: '/tellering/index', model: [txnCashFromVaultInstance:new TxnTellerCash()])
+                    
+            // for receiving teller, create transaction
+            def tfRec = new TxnFile()
+            tfRec.branch =  Branch.get(UserMaster.get(params.user).branchId)
+            //def DescRec = TxnTemplate.get(tf.txnType.toInteger())
+            tfRec.txnDescription = tf.txnTemplate.codeDescription
+            tfRec.currency = Currency.get(tf.txnTemplate.currencyId)
+            tfRec.txnCode = tf.txnTemplate.code
+            tfRec.txnAmt = tf.txnAmt
+            tfRec.txnTemplate = tf.txnTemplate
+            tfRec.txnRef = tf.txnRef
+            tfRec.txnType = tf.txnTemplate.txnType
+            tfRec.txnDate = txnBranch.runDate
+            tfRec.txnTimestamp = new Date().toTimestamp()
+            tfRec.user = UserMaster.get(session.user_id)           
+            tfRec.save(flush:true,failOnError:true)
+            
+            //tfRec.txnId = tc.id
+            //tf.txnDate = new Date()
+            tfRec.status = ConfigItemStatus.get(2)
+            def tbRec = new TxnCashCheckBlotter()
+            tbRec.cashOutAmt = 0;
+            tbRec.cashInAmt = tf.txnAmt;
+            tbRec.checkInAmt = 0;
+            tbRec.checkOutAmt = 0;
+            
+            tbRec.branch = Branch.get(UserMaster.get(params.user).branchId)
+            tbRec.currency = Currency.get(tf.txnTemplate.currencyId)
+            tbRec.user = UserMaster.get(params.user)
+            tbRec.txnParticulars = tf.txnRef
+              
+            tfRec.save(flush: true)
+            tbRec.txnFile = tf
+            tbRec.save(flush:true,failOnError:true)
+            
+            HttpSession session = RequestContextHolder.currentRequestAttributes().getSession();
+            //def txnBreakdownInstance = new TxnBreakdown(debitAcct:UserMaster.get(session.user_id).name, creditAcct:user, debitAmt:tf.txnAmt, creditAmt:tf.txnAmt, txnDate:tf.txnDate, txnFile:tf)
+            //txnBreakdownInstance.save(flush:true)
+            
+            userMasterService.updateTellerBalanceStatus(false)
+            
+            //flash.message = 'Success'
+            render(view: '/tellering/index', model: [txnCashTransferInstance:new TxnTellerCash()])
+        }
+    }
+    def createTellerCashTransferTxn(){
+      def db = new Sql(dataSource)
+      def user = UserMaster.get(session.user_id)
+        if (user.cash){
+            def jList = db.rows("select A.id,concat(name1,' ',name2) as name from user_master A LEFT JOIN (select id,role_id,user_master_id from user_role)B  on A.id = B.user_master_id where B.role_id in (select id from role where code LIKE '%TELLER%' or code LIKE '%CASHIER%') and A.id != ?",[user.id])
+            //println jList
+            def txnFileInstance = new TxnFile()
+            def txnCashTransferInstance = new TxnTellerCash()
+            render(view:'/tellering/txnCashTransfer/create', model: [txnCashTransferInstance:txnCashTransferInstance,jList:jList])       
+        }
+        else{
+            println user.cash
+            flash.message = 'Error! No cash account defined'
+            render(view: '/tellering/index')            
+        }      
+    }
+    
+/* CHECK TO COCI */
+
+    def saveTellerCheckToCOCITxn(TxnCOCI tc, TxnFile tf){
+        println params //Error check
+        
+        if(tf.hasErrors()){
+            flash.message = 'Failed to transfer'
+            render(view: '/tellering/txnCheckToCOCI/create', model: [txnCheckToCOCIInstance:tf])
+        }
+        else{
+            def tb = new TxnCashCheckBlotter()
+            tb.cashOutAmt = 0;
+            tb.cashInAmt = 0;
+            tb.checkInAmt = 0;
+            tb.checkOutAmt = 0;
+            
+            tf.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+           
+            def txnBranch = Branch.get(UserMaster.get(session.user_id).branchId)
+            
+            tf.txnDescription = tf.txnTemplate.codeDescription
+            tf.currency = Currency.get(tf.txnTemplate.currencyId)
+            tf.txnCode = tf.txnTemplate.code
+            tf.txnDate = txnBranch.runDate
+            tf.txnAmt = params.totalChecks.toLong()
+            tf.txnTimestamp = new Date().toTimestamp()
+            tf.user = UserMaster.get(session.user_id)            
+            tf.save(flush:true,failOnError:true)
+            tf.txnType = tf.txnTemplate.txnType
+            
+            //tf.txnDate = new Date()
+            tf.status = ConfigItemStatus.get(2)
+            def amt = (tf.txnAmt).longValue()
+            def isTxnAllowed =  policyService.isTxnAllowed(tf.txnTemplate.code, amt)
+            if(isTxnAllowed == false) {
+                tf.status = tf.status = ConfigItemStatus.get(1)
+                policyService.createException('TLR00100', 'txnFile', tf.id, 'tellering/viewTellerTxnInquiry2/'+tf.id)
+            }
+            tf.save(flush:true,failOnError:true)
+            tb.txnFile = tf
+            tb.save(flush:true,failOnError:true)
+            //if(tb.id > 1){
+            //    def tm = TxnCashCheckBlotter.get(tb.id - 1)
+            //    tb.cashOutAmt = tm.cashOutAmt
+            //    tb.cashInAmt += tm.cashInAmt
+            //    tb.checkInAmt = tm.checkInAmt
+            //    tb.checkOutAmt = tm.checkOutAmt
+            //}
+            tb.checkOutAmt += tf.txnAmt
+            tb.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            tb.currency = Currency.get(tf.txnTemplate.currencyId)
+            tb.user = UserMaster.get(session.user_id)
+            tb.txnParticulars = tf.txnRef
+            tb.save(flush:true,failOnError:true)
+            
+            //def txnBreakdownInstance = new TxnBreakdown(creditAmt:tf.txnAmt, txnDate:tf.txnDate, txnFile:tf)
+            //txnBreakdownInstance.save(ffailOnErrorlush:true)
+            
+            userMasterService.updateTellerBalanceStatus(false)
+            glTransactionService.saveTxnBreakdown(tf.id)
+            
+            
+//            flash.message = 'Success'
+            render(view: '/tellering/index', model: [txnCheckToCOCIInstance:new TxnFile()])
+        }
+    }
+    def createTellerCheckToCOCITxn(){
+        def user = UserMaster.get(session.user_id)
+        if (user.cash){
+            println "parameter "+params
+            def statConfig = ConfigItemStatus.get(2)
+            def TxnCOCIList = TxnCOCI.createCriteria().list (params) {  
+                eq('cleared', 'false')
+                eq('status', statConfig)
+         }
+            //respond TxnCOCIList, model:[params:params,TxnCOCIInstanceCount: TxnCOCIList.totalCount]
+            
+            def statlist1 = TxnCOCIList.status
+            println " asdf "+ statlist1
+            def txnFileInstance = new TxnFile()
+            def txnCheckToCOCIInstance = new TxnCOCI()
+            render(view:'/tellering/txnCheckToCOCI/create', model: [txnCheckToCOCIInstance:txnCheckToCOCIInstance, TxnCOCIList: TxnCOCIList, TxnCOCIInstanceCount: TxnCOCIList.totalCount])
+           
+        }
+        
+        else{
+            println user.cash
+            flash.message = 'Error! No cash account defined'
+            render(view: '/tellering/index')            
+        }  
+    }
+    
+    
+    
+/* OTHER CASH RECEIPT BILLS PAYMENT */
+
+    def saveTellerOtherCashReceiptBillsPaymentTxn(TxnBillsPayment tc, TxnFile tf){
+        println params //Error check
+        
+        if(tc.hasErrors() || tf.hasErrors()){
+            flash.message = 'Failed to transfer'
+            render(view: '/tellering/txnBillsPayment/create', model: [txnBillsPaymentInstance:tc])
+        }
+        else{
+            def tb = new TxnCashCheckBlotter()
+            tb.cashOutAmt = 0;
+            tb.cashInAmt = 0;
+            tb.checkInAmt = 0;
+            tb.checkOutAmt = 0;
+            
+            tf.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+           
+            def txnBranch = Branch.get(UserMaster.get(session.user_id).branchId)
+            
+            tf.txnDescription = tf.txnTemplate.codeDescription
+            tf.currency = Currency.get(tf.txnTemplate.currencyId)
+            tf.txnCode = tf.txnTemplate.code
+            tf.txnDate = txnBranch.runDate
+            tf.txnTimestamp = txnBranch.runDate
+            tf.user = UserMaster.get(session.user_id)   
+            tf.txnType = tf.txnTemplate.txnType
+            tf.save(flush:true,failOnError:true)
+            
+            tc.txnFile = tf
+            tc.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            tc.currency = Currency.get(tf.txnTemplate.currencyId)
+            tc.status = ConfigItemStatus.get(2)
+            tc.txnDate = txnBranch.runDate
+            tc.save(flush:true,failOnError:true)
+            //tf.txnId = tc.id
+            //tf.txnDate = new Date()
+            tf.txnType = tf.txnTemplate.txnType
+            tf.status = ConfigItemStatus.get(2)
+            def amt = (tf.txnAmt).longValue()
+            def isTxnAllowed =  policyService.isTxnAllowed(tf.txnTemplate.code, amt)
+            if(isTxnAllowed == false) {
+                tf.status = ConfigItemStatus.get(1)
+                policyService.createException('1001', 'txnFile', tf.id, 'tellering/viewTellerTxnInquiry2/'+tf.id)
+            }
+            tf.save(flush:true,failOnError:true)
+            tb.txnFile = tf
+            tb.save(flush:true,failOnError:true)
+            //if(tb.id > 1){
+            //    def tm = TxnCashCheckBlotter.get(tb.id - 1)
+            //    tb.cashOutAmt = tm.cashOutAmt
+            //    tb.cashInAmt += tm.cashInAmt
+            //    tb.checkInAmt = tm.checkInAmt
+            //    tb.checkOutAmt = tm.checkOutAmt
+            //}
+            tb.cashInAmt += tc.txnAmt
+            tb.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            tb.currency = Currency.get(tf.txnTemplate.currencyId)
+            tb.user = UserMaster.get(session.user_id)
+            tb.txnParticulars = tf.txnParticulars
+            tb.save(flush:true,failOnError:true)
+            
+            //def txnBreakdownInstance = new TxnBreakdown(creditAmt:tf.txnAmt, txnDate:tf.txnDate, txnFile:tf)
+            //txnBreakdownInstance.save(flush:true)
+            
+            userMasterService.updateTellerBalanceStatus(false)
+            glTransactionService.saveTxnBreakdown(tf.id)
+            //flash.message = 'Success'
+            render(view: '/tellering/index', model: [txnBillsPaymentInstance:new TxnBillsPayment()])
+        }
+    }
+    def createTellerOtherCashReceiptBillsPaymentTxn(){
+       
+        def user = UserMaster.get(session.user_id)
+        if (user.cash){
+            def txnFileInstance = new TxnFile()
+            def txnBillsPaymentInstance = new TxnBillsPayment()
+            render(view:'/tellering/txnBillsPayment/create', model: [txnBillsPaymentInstance:txnBillsPaymentInstance])       
+        }
+        else{
+            println user.cash
+            flash.message = 'Error! No cash account defined'
+            render(view: '/tellering/index')            
+        }        
+    }
+   
+    
+/* OTHER CHECK RECEIPT BILLS PAYMENT */
+
+    def saveTellerOtherCheckReceiptBillsPaymentTxn(TxnBillsPayment tc, TxnFile tf){
+        println params //Error check
+        
+        println session["checks"].id
+        
+        //params.coci.each {
+        //  println params.coci
+        //    def tcoci = new TxnCOCI()
+        //   tc.addToChecks(tcoci)
+        //    tcoci.status = ConfigItemStatus.get(2)
+        //    tcoci.txnFile = tc            
+        //    tcoci.save(flush:true)
+        //}
+        
+
+        
+        if(tc.hasErrors() || tf.hasErrors()){
+            flash.message = 'Failed to transfer'
+            render(view: '/tellering/txnCheckBillsPayment/create', model: [txnCheckBillsPaymentInstance:tc])
+        }
+        else{
+            def tb = new TxnCashCheckBlotter()
+            tb.cashOutAmt = 0;
+            tb.cashInAmt = 0;
+            tb.checkInAmt = 0;
+            tb.checkOutAmt = 0;
+            
+            tf.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            
+            def txnBranch = Branch.get(UserMaster.get(session.user_id).branchId)
+            
+            tf.txnDescription = tf.txnTemplate.codeDescription
+            tf.currency = Currency.get(tf.txnTemplate.currencyId)
+            tf.txnCode = tf.txnTemplate.code
+            tf.txnDate = txnBranch.runDate
+            tf.txnTimestamp = new Date().toTimestamp()
+            tf.user = UserMaster.get(session.user_id)  
+            tf.beneficiary = Customer.get(params.customer)
+            tf.save(flush:true,failOnError:true)
+            
+            tc.txnFile = tf
+            tc.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            tc.currency = Currency.get(tf.txnTemplate.currencyId)
+            tc.status = ConfigItemStatus.get(2)
+            tc.txnDate = txnBranch.runDate
+            tc.beneficiary = Customer.get(params.customer)
+            tc.save(flush:true,failOnError:true)
+            //tf.txnId = tc.id
+            //tf.txnDate = new Date()
+            tf.txnType = tf.txnTemplate.txnType
+            tf.status = ConfigItemStatus.get(2)
+            def amt = (tf.txnAmt).longValue()
+            def isTxnAllowed =  policyService.isTxnAllowed(tf.txnTemplate.code, amt)
+            if(isTxnAllowed == false) {
+                tf.status = ConfigItemStatus.get(1)
+                policyService.createException('1001', 'txnFile', tf.id, 'tellering/viewTellerTxnInquiry2/'+tf.id)
+            }
+            tf.save(flush:true,failOnError:true)
+            tb.txnFile = tf
+            tb.save(flush:true,failOnError:true)
+            //if(tb.id > 1){
+            //    def tm = TxnCashCheckBlotter.get(tb.id - 1)
+            //    tb.cashOutAmt = tm.cashOutAmt
+            //    tb.cashInAmt += tm.cashInAmt
+            //    tb.checkInAmt = tm.checkInAmt
+            //    tb.checkOutAmt = tm.checkOutAmt
+            //}
+            tb.checkInAmt += tc.txnAmt
+            tb.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            tb.currency = Currency.get(tf.txnTemplate.currencyId)
+            tb.user = UserMaster.get(session.user_id)
+            tb.txnParticulars = tf.txnParticulars
+            tb.save(flush:true,failOnError:true)
+            
+            session["checks"].each {
+                def tcoci = TxnCOCI.get(session["checks"].id)
+                tcoci.status = ConfigItemStatus.get(2)
+                tcoci.txnFile = tf
+                tcoci.save(flush:true,failOnError:true)
+            }
+            //def txnBreakdownInstance = new TxnBreakdown(creditAmt:tf.txnAmt, txnDate:tf.txnDate, txnFile:tf)
+            //txnBreakdownInstance.save(flush:true)
+            
+            
+            userMasterService.updateTellerBalanceStatus(false)
+            glTransactionService.saveTxnBreakdown(tf.id)
+            //flash.message = 'Success'
+            render(view: '/tellering/index', model: [txnCheckBillsPaymentInstance:new TxnBillsPayment()])
+        }
+    }
+    def createTellerOtherCheckReceiptBillsPaymentTxn(){
+        def user = UserMaster.get(session.user_id)
+        if (user.coci){
+            def txnFileInstance = new TxnFile()
+            def txnCOCIInstance = new TxnCOCI()
+            def txnCheckBillsPaymentInstance = new TxnBillsPayment()
+            session["checks"] = []
+        render(view:'/tellering/txnCheckBillsPayment/create', model: [txnCheckBillsPaymentInstance:txnCheckBillsPaymentInstance])       
+        }
+        else{
+            println user.cash
+            flash.message = 'Error! No COCI account defined'
+            render(view: '/tellering/index')            
+        }
+        
+    }
+
+    
+/* OTHER CHECK RECEIPT ADJUSTMENT */
+
+    def saveTellerOtherCheckReceiptAdjustmentTxn(TxnFile tc){
+        println params //Error check
+        println params.coci
+        
+        //params.coci.each {
+        //    def tcoci = new TxnCOCI()
+        //    tc.addToChecks(tcoci)
+        //    tcoci.status = ConfigItemStatus.get(2)
+        //    tcoci.txnFile = tc
+        //    tcoci.save(flush:true)
+        //}
+        
+        if(tc.hasErrors()){
+            println 'Error'
+            flash.message = 'Failed to transfer'
+            render(view: '/tellering/txnCheckReceiptAdjustment/create', model: [txnCheckReceiptAdjustment:tc])
+        }
+        else{
+            def tb = new TxnCashCheckBlotter()
+            tb.cashOutAmt = 0;
+            tb.cashInAmt = 0;
+            tb.checkInAmt = 0;
+            tb.checkOutAmt = 0;
+            
+            tc.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+           
+            def txnBranch = Branch.get(UserMaster.get(session.user_id).branchId)
+            
+            tc.txnDescription = tc.txnTemplate.codeDescription
+            tc.currency = Currency.get(tc.txnTemplate.currencyId)
+            tc.txnCode = tc.txnTemplate.code
+            tc.txnDate = txnBranch.runDate
+            tc.txnTimestamp = new Date().toTimestamp()
+            tc.user = UserMaster.get(session.user_id)  
+            tc.txnType = tc.txnTemplate.txnType
+            tc.save(flush:true,failOnError:true)
+            
+            //tf.txnDate = new Date()
+            tc.status = ConfigItemStatus.get(2)
+            def amt = (tc.txnAmt).longValue()
+            def isTxnAllowed =  policyService.isTxnAllowed(tc.txnTemplate.code, amt)
+            if(isTxnAllowed == false) {
+                tf.status = ConfigItemStatus.get(1)
+                policyService.createException('1001', 'txnFile', tf.id, 'tellering/viewTellerTxnInquiry2/'+tc.id)
+            }
+            tc.save(flush:true,failOnError:true)
+            tb.txnFile = tc
+          
+            //if(tb.id > 1){
+            //    def tm = TxnCashCheckBlotter.get(tb.id - 1)
+            //    tb.cashOutAmt = tm.cashOutAmt
+            //    tb.cashInAmt += tm.cashInAmt
+            //    tb.checkInAmt = tm.checkInAmt
+            //    tb.checkOutAmt = tm.checkOutAmt
+            //}
+            tb.checkInAmt += tc.txnAmt
+            tb.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            tb.currency = Currency.get(tc.txnTemplate.currencyId)
+            tb.user = UserMaster.get(session.user_id)
+            tb.txnParticulars = tc.txnParticulars
+             tb.save(flush:true,failOnError:true)
+            
+            session["checks"].each {
+                def tcoci = TxnCOCI.get(session["checks"].id)
+                tcoci.status = ConfigItemStatus.get(2)
+                tcoci.txnFile = tc
+                tcoci.save(flush:true,failOnError:true)
+            }
+            //def txnBreakdownInstance = new TxnBreakdown(creditAmt:tf.txnAmt, txnDate:tf.txnDate, txnFile:tf)
+            //txnBreakdownInstance.save(flush:true)
+            
+            
+            userMasterService.updateTellerBalanceStatus(false)
+            glTransactionService.saveTxnBreakdown(tc.id)
+            //flash.message = 'Success'
+            render(view: '/tellering/index', model: [txnCheckReceiptAdjustmentInstance:new TxnFile()])
+        }
+    }
+    def createTellerOtherCheckReceiptAdjustmentTxn(){
+        
+        def user = UserMaster.get(session.user_id)
+        if (user.coci){
+            def txnCOCIInstance = new TxnCOCI()
+            def txnCheckReceiptAdjustmentInstance = new TxnFile()
+            session["checks"] = []
+            render(view:'/tellering/txnCheckReceiptAdjustment/create', model: [txnCheckReceiptAdjustmentInstance:txnCheckReceiptAdjustmentInstance])       
+        }
+        else{
+            println user.cash
+            flash.message = 'Error! No COCI account defined'
+            render(view: '/tellering/index')            
+        }        
+    }
+    
+/* OTHER CASH PAYMENT ADJUSTMENT */
+
+    def saveTellerOtherCashPaymentAdjustmentTxn(TxnFile tc){
+        println params //Error check
+        
+        if(tc.hasErrors()){
+            flash.message = 'Failed to transfer'
+            render(view:'/tellering/txnPaymentAdjustment/create', model: [txnPaymentAdjustmentInstance:tc])
+        }
+        else{
+            def tb = new TxnCashCheckBlotter()
+            tb.cashOutAmt = 0;
+            tb.cashInAmt = 0;
+            tb.checkInAmt = 0;
+            tb.checkOutAmt = 0;
+            
+            tc.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+           
+            def txnBranch = Branch.get(UserMaster.get(session.user_id).branchId)
+            
+            tc.txnDescription = tc.txnTemplate.codeDescription
+            tc.currency = Currency.get(tc.txnTemplate.currencyId)
+            tc.txnCode = tc.txnTemplate.code
+            tc.txnDate = txnBranch.runDate
+            tc.txnTimestamp = new Date().toTimestamp()
+            tc.user = UserMaster.get(session.user_id) 
+            tc.txnType = tc.txnTemplate.txnType
+            tc.save(flush:true,failOnError:true)
+            tc.status = ConfigItemStatus.get(2)
+            def amt = (tc.txnAmt).longValue()
+            def isTxnAllowed =  policyService.isTxnAllowed(tc.txnTemplate.code, amt)
+            if(isTxnAllowed == false) {
+                tc.status = ConfigItemStatus.get(1)
+                policyService.createException('1001', 'txnFile', tc.id, 'tellering/viewTellerTxnInquiry2/'+tc.id)
+            }
+            tc.save(flush:true,failOnError:true)
+            tb.txnFile = tc
+            tb.save(flush:true,failOnError:true)
+            //if(tb.id > 1){
+            //    def tm = TxnCashCheckBlotter.get(tb.id - 1)
+            //    tb.cashOutAmt = tm.cashOutAmt
+            //    tb.cashInAmt += tm.cashInAmt
+            //    tb.checkInAmt = tm.checkInAmt
+            //    tb.checkOutAmt = tm.checkOutAmt
+            //}
+            tb.cashOutAmt += tc.txnAmt
+            tb.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            tb.currency = Currency.get(tc.txnTemplate.currencyId)
+            tb.user = UserMaster.get(session.user_id)
+            tb.txnParticulars = tc.txnParticulars
+            tb.save(flush:true,failOnError:true)
+            
+            //def txnBreakdownInstance = new TxnBreakdown(creditAmt:tf.txnAmt, txnDate:tf.txnDate, txnFile:tf)
+            //txnBreakdownInstance.save(flush:true)
+            
+            
+            userMasterService.updateTellerBalanceStatus(false)
+            glTransactionService.saveTxnBreakdown(tc.id)
+            
+            //flash.message = 'Success'
+            render(view:'/tellering/index', model: [txnPaymentAdjustmentInstance:new TxnFile()])
+        }
+    }
+    def createTellerOtherCashPaymentAdjustmentTxn(){
+        
+        def user = UserMaster.get(session.user_id)
+        if (user.cash){
+            def txnPaymentAdjustmentInstance = new TxnFile()
+            render (view:'/tellering/txnPaymentAdjustment/create', model: [txnPaymentAdjustmentInstance:txnPaymentAdjustmentInstance])
+        }
+        else{
+            println user.cash
+            flash.message = 'Error! No cash account defined'
+            render(view: '/tellering/index')            
+        }        
+    }
+    
+/* OTHER CASH RECEIPT ADJUSTMENT */
+    
+    def saveTellerOtherCashReceiptAdjustmentTxn(TxnFile tc){
+        println params //Error check
+        
+        if(tc.hasErrors()){
+            flash.message = 'Failed to transfer'
+            render(view:'/tellering/txnReceiptAdjustment/create', model: [txnReceiptAdjustmentInstance:tc])
+        }
+        else{
+            def tb = new TxnCashCheckBlotter()
+            tb.cashOutAmt = 0;
+            tb.cashInAmt = 0;
+            tb.checkInAmt = 0;
+            tb.checkOutAmt = 0;
+            
+            tc.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+           
+            def txnBranch = Branch.get(UserMaster.get(session.user_id).branchId)
+            
+            tc.txnDescription = tc.txnTemplate.codeDescription
+            tc.currency = Currency.get(tc.txnTemplate.currencyId)
+            tc.txnCode = tc.txnTemplate.code
+            tc.txnDate = txnBranch.runDate
+            tc.txnTimestamp = new Date().toTimestamp()
+            tc.user = UserMaster.get(session.user_id)  
+            tc.txnType = tc.txnTemplate.txnType
+            tc.save(flush:true,failOnError:true)
+            tc.status = ConfigItemStatus.get(2)
+            def amt = (tc.txnAmt).longValue()
+            def isTxnAllowed =  policyService.isTxnAllowed(tc.txnTemplate.code, amt)
+            if(isTxnAllowed == false) {
+                tc.status = ConfigItemStatus.get(1)
+                policyService.createException('1001', 'txnFile', tc.id, 'tellering/viewTellerTxnInquiry2/'+tc.id)
+            }
+            tc.save(flush:true,failOnError:true)
+            tb.txnFile = tc
+            tb.save(flush:true,failOnError:true)
+            //if(tb.id > 1){
+            //    def tm = TxnCashCheckBlotter.get(tb.id - 1)
+            //    tb.cashOutAmt = tm.cashOutAmt
+            //    tb.cashInAmt += tm.cashInAmt
+            //    tb.checkInAmt = tm.checkInAmt
+            //    tb.checkOutAmt = tm.checkOutAmt
+            //}
+            tb.cashInAmt += tc.txnAmt
+            tb.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            tb.currency = Currency.get(tc.txnTemplate.currencyId)
+            tb.user = UserMaster.get(session.user_id)
+            tb.txnParticulars = tc.txnParticulars
+            tb.save(flush:true,failOnError:true)
+            
+            //def txnBreakdownInstance = new TxnBreakdown(creditAmt:tf.txnAmt, txnDate:tf.txnDate, txnFile:tf)
+            //txnBreakdownInstance.save(flush:true)
+            
+            userMasterService.updateTellerBalanceStatus(false)
+            glTransactionService.saveTxnBreakdown(tc.id)
+            
+            //flash.message = 'Success'
+            render(view:'/tellering/index', model: [txnReceiptAdjustmentInstance:new TxnFile()])
+        }
+    }
+    def createTellerOtherCashReceiptAdjustmentTxn(){
+        
+        def user = UserMaster.get(session.user_id)
+        if (user.cash){
+            def txnReceiptAdjustmentInstance = new TxnFile()
+            render (view:'/tellering/txnReceiptAdjustment/create', model: [txnReceiptAdjustmentInstance:txnReceiptAdjustmentInstance])
+        }
+        else{
+            println user.cash
+            flash.message = 'Error! No cash account defined'
+            render(view: '/tellering/index')            
+        }
+        
+    }
+    
+/* OTHER CASH PAYMENT REMITTANCE */
+    
+    def saveTellerOtherCashPaymentRemittanceTxn(TxnRemittance tc, TxnFile tf){
+        println params //Error check
+        
+        if(tc.hasErrors() || tf.hasErrors()){
+            flash.message = 'Failed to transfer'
+            render(view:'/tellering/txnCashPaymentRemittance/create', model: [txnCashPaymentRemittanceInstance:tc])
+        }
+        else{
+            def tb = new TxnCashCheckBlotter()
+            tb.cashOutAmt = 0;
+            tb.cashInAmt = 0;
+            tb.checkInAmt = 0;
+            tb.checkOutAmt = 0;
+            
+            tf.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+           
+            def txnBranch = Branch.get(UserMaster.get(session.user_id).branchId)
+            
+            tf.txnDescription = tf.txnTemplate.codeDescription
+            tf.currency = Currency.get(tf.txnTemplate.currencyId)
+            tf.txnCode = tf.txnTemplate.code
+            tf.txnDate = txnBranch.runDate
+            tf.txnTimestamp = new Date().toTimestamp()
+            tf.user = UserMaster.get(session.user_id)  
+            tf.txnType = tf.txnTemplate.txnType
+          
+            tf.save(flush:true,failOnError:true)
+            
+            tc.txnFile = tf
+            tc.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            tc.user = UserMaster.get(session.user_id)
+            tc.currency = Currency.get(tf.txnTemplate.currencyId)
+            tc.status = ConfigItemStatus.get(2)
+            tc.txnDate = txnBranch.runDate
+            tc.save(flush:true,failOnError:true)
+            //tf.txnId = tc.id
+            //tf.txnDate = new Date()
+            tf.txnType = tf.txnTemplate.txnType
+            tf.status = ConfigItemStatus.get(2)
+            def amt = (tf.txnAmt).longValue()
+            def isTxnAllowed =  policyService.isTxnAllowed(tf.txnTemplate.code, amt)
+            if(isTxnAllowed == false) {
+                tf.status = ConfigItemStatus.get(1)
+                policyService.createException('1001', 'txnFile', tf.id, 'tellering/viewTellerTxnInquiry2/'+tf.id)
+            }
+            tf.save(flush:true,failOnError:true)
+            tb.txnFile = tf
+            tb.save(flush:true,failOnError:true)
+            //if(tb.id > 1){
+            //    def tm = TxnCashCheckBlotter.get(tb.id - 1)
+            //    tb.cashOutAmt = tm.cashOutAmt
+            //    tb.cashInAmt += tm.cashInAmt
+            //    tb.checkInAmt = tm.checkInAmt
+            //    tb.checkOutAmt = tm.checkOutAmt
+            //}
+            tb.cashOutAmt += tc.txnAmt
+            tb.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            tb.currency = Currency.get(tf.txnTemplate.currencyId)
+            tb.user = UserMaster.get(session.user_id)
+            tb.txnParticulars = tf.txnParticulars
+            tb.save(flush:true,failOnError:true)
+            
+            //def txnBreakdownInstance = new TxnBreakdown(creditAmt:tf.txnAmt, txnDate:tf.txnDate, txnFile:tf)
+            //txnBreakdownInstance.save(flush:true)
+            
+            userMasterService.updateTellerBalanceStatus(false)
+            glTransactionService.saveTxnBreakdown(tc.id)
+            
+            //flash.message = 'Success'
+            render(view:'/tellering/index', model: [txnCashPaymentRemittanceInstance:new TxnRemittance()])
+        }
+    }
+    def createTellerOtherCashPaymentRemittanceTxn(){
+
+        def user = UserMaster.get(session.user_id)
+        if (user.cash){
+            def txnFileInstance = new TxnFile()
+            def txnCashPaymentRemittanceInstance = new TxnRemittance()
+            render (view:'/tellering/txnCashPaymentRemittance/create', model: [txnCashPaymentRemittanceInstance:txnCashPaymentRemittanceInstance])
+        }
+        else{
+            println user.cash
+            flash.message = 'Error! No cash account defined'
+            render(view: '/tellering/index')            
+        }        
+    }
+    
+/* OTHER CASH RECEIPT REMITTANCE */
+    
+    def saveTellerOtherCashReceiptRemittanceTxn(TxnRemittance tc, TxnFile tf){
+        println params //Error check
+        
+        if(tc.hasErrors() || tf.hasErrors()){
+            println tc.errors
+            println tf.errors
+            flash.message = 'Failed to transfer'
+            render(view:'/tellering/txnCashReceiptRemittance/create', model: [txnCashReceiptRemittanceInstance:tc])
+        }
+        else{
+            def tb = new TxnCashCheckBlotter()
+            tb.cashOutAmt = 0;
+            tb.cashInAmt = 0;
+            tb.checkInAmt = 0;
+            tb.checkOutAmt = 0;
+            
+            tf.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            //def description = TxnTemplate.get(tf.txnType.toInteger())
+            def txnBranch = Branch.get(UserMaster.get(session.user_id).branchId)
+            
+            tf.txnDescription = tf.txnTemplate.codeDescription
+            tf.currency = Currency.get(tf.txnTemplate.currencyId)
+            tf.txnCode = tf.txnTemplate.code
+            tf.txnDate = txnBranch.runDate
+            tf.txnTimestamp = new Date().toTimestamp()
+            tf.user = UserMaster.get(session.user_id)            
+            tf.save(flush:true,failOnError:true)
+            
+            tc.txnFile = tf
+            tc.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            tc.user = UserMaster.get(session.user_id)
+            tc.currency = Currency.get(tf.txnTemplate.currencyId)
+            tc.status = ConfigItemStatus.get(2)
+            tc.txnDate = txnBranch.runDate
+            tc.save(flush:true,failOnError:true)
+            //tf.txnId = tc.id
+            //tf.txnDate = new Date()
+            tf.txnType = tf.txnTemplate.txnType
+            tf.status = ConfigItemStatus.get(2)
+            def amt = (tf.txnAmt).longValue()
+            def isTxnAllowed =  policyService.isTxnAllowed(tf.txnTemplate.code, amt)
+            if(isTxnAllowed == false) {
+                tf.status = ConfigItemStatus.get(1)
+                policyService.createException('1001', 'txnFile', tf.id, 'tellering/viewTellerTxnInquiry2/'+tf.id)
+            }
+            tf.save(flush:true,failOnError:true)
+            tb.txnFile = tf
+            tb.save(flush:true,failOnError:true)
+            //if(tb.id > 1){
+            //    def tm = TxnCashCheckBlotter.get(tb.id - 1)
+            //    tb.cashOutAmt = tm.cashOutAmt
+            //    tb.cashInAmt += tm.cashInAmt
+            //    tb.checkInAmt = tm.checkInAmt
+            //    tb.checkOutAmt = tm.checkOutAmt
+            //}
+            tb.cashInAmt += tc.txnAmt
+            tb.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            tb.currency = Currency.get(tf.txnTemplate.currencyId)
+            tb.user = UserMaster.get(session.user_id)
+            tb.txnParticulars = tf.txnParticulars
+            tb.save(flush:true,failOnError:true)
+            
+            //def txnBreakdownInstance = new TxnBreakdown(creditAmt:tf.txnAmt, txnDate:tf.txnDate, txnFile:tf)
+            //txnBreakdownInstance.save(flush:true)
+            
+            userMasterService.updateTellerBalanceStatus(false)
+            glTransactionService.saveTxnBreakdown(tc.id)
+            
+            //flash.message = 'Success'
+            render(view:'/tellering/index', model: [txnCashReceiptRemittanceInstance:new TxnRemittance()])
+        }
+    }
+    def createTellerOtherCashReceiptRemittanceTxn(){
+        
+        def user = UserMaster.get(session.user_id)
+        if (user.cash){
+            def txnFileInstance = new TxnFile()
+            def txnCashReceiptRemittanceInstance = new TxnRemittance()
+            render (view:'/tellering/txnCashReceiptRemittance/create', model: [txnCashReceiptRemittanceInstance:txnCashReceiptRemittanceInstance])
+        }
+        else{
+            flash.message = 'Error! No cash account defined'
+            render(view: '/tellering/index')            
+        }        
+    }
+    
+/* OTHER CHECK RECEIPT REMITTANCE */
+    
+    def saveTellerOtherCheckReceiptRemittanceTxn(TxnRemittance tc, TxnFile tf){
+        println params //Error check
+        
+        if(tc.hasErrors() || tf.hasErrors()){
+            flash.message = 'Failed to transfer'
+            render(view:'/tellering/txnCheckReceiptRemittance/create', model: [txnCheckReceiptRemittanceInstance:tc])
+        }
+        else{
+            def tb = new TxnCashCheckBlotter()
+            tb.cashOutAmt = 0;
+            tb.cashInAmt = 0;
+            tb.checkInAmt = 0;
+            tb.checkOutAmt = 0;
+            
+            tf.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            
+            def txnBranch = Branch.get(UserMaster.get(session.user_id).branchId)
+            
+            tf.txnDescription = tf.txnTemplate.codeDescription
+            tf.currency = Currency.get(tf.txnTemplate.currencyId)
+            tf.txnCode = tf.txnTemplate.code
+            tf.txnDate = txnBranch.runDate
+            tf.txnTimestamp = new Date().toTimestamp()
+            tf.user = UserMaster.get(session.user_id)            
+            tf.txnType = tf.txnTemplate.txnType
+            tf.save(flush:true,failOnError:true)
+            
+            tc.txnFile = tf
+            tc.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            tc.user = UserMaster.get(session.user_id)
+            tc.currency = Currency.get(tf.txnTemplate.currencyId)
+            tc.status = ConfigItemStatus.get(2)
+            tc.txnDate = txnBranch.runDate
+            tc.save(flush:true,failOnError:true)
+            //tf.txnId = tc.id
+            //tf.txnDate = new Date()
+            tf.txnType = tf.txnTemplate.txnType
+            tf.status = ConfigItemStatus.get(2)
+            def amt = (tf.txnAmt).longValue()
+            def isTxnAllowed =  policyService.isTxnAllowed(tf.txnTemplate.code, amt)
+            if(isTxnAllowed == false) {
+                tf.status = ConfigItemStatus.get(1)
+                policyService.createException('1001', 'txnFile', tf.id, 'tellering/viewTellerTxnInquiry2/'+tf.id)
+            }
+            tf.save(flush:true,failOnError:true)
+            tb.txnFile = tf
+            tb.save(flush:true,failOnError:true)
+            //if(tb.id > 1){
+            //    def tm = TxnCashCheckBlotter.get(tb.id - 1)
+            //    tb.cashOutAmt = tm.cashOutAmt
+            //    tb.cashInAmt += tm.cashInAmt
+            //    tb.checkInAmt = tm.checkInAmt
+            //    tb.checkOutAmt = tm.checkOutAmt
+            //}
+            tb.checkInAmt += tc.txnAmt
+            tb.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            tb.currency = Currency.get(tf.txnTemplate.currencyId)
+            tb.user = UserMaster.get(session.user_id)
+            tb.txnParticulars = tf.txnParticulars
+            tb.save(flush:true,failOnError:true)
+            
+            session["checks"].each {
+                def tcoci = TxnCOCI.get(session["checks"].id)
+                tcoci.status = ConfigItemStatus.get(2)
+                tcoci.txnFile = tf
+                tcoci.save(flush:true,failOnError:true)
+            }            
+            
+            //def txnBreakdownInstance = new TxnBreakdown(creditAmt:tf.txnAmt, txnDate:tf.txnDate, txnFile:tf)
+            //txnBreakdownInstance.save(flush:true)
+            
+            userMasterService.updateTellerBalanceStatus(false)
+            glTransactionService.saveTxnBreakdown(tc.id)
+            
+            //flash.message = 'Success'
+            render(view:'/tellering/index', model: [txnCheckReceiptRemittanceInstance:new TxnRemittance()])
+        }
+    }
+    def createTellerOtherCheckReceiptRemittanceTxn(){
+        
+        def user = UserMaster.get(session.user_id)
+        if (user.cash){
+            def txnFileInstance = new TxnFile()
+            def txnCOCIInstance = new TxnCOCI()
+            session["checks"] = []
+            def txnCheckReceiptRemittanceInstance = new TxnRemittance()
+            render (view:'/tellering/txnCheckReceiptRemittance/create', model: [txnCheckReceiptRemittanceInstance:txnCheckReceiptRemittanceInstance])
+        }
+        else{
+            flash.message = 'Error! No cash account defined'
+            render(view: '/tellering/index')            
+        }        
+        
+    }
+    
+/* CASH DEPOSIT */
+    @Transactional
+    def saveTellerCashDepositTxn(TxnDepositAcctLedger tc, TxnFile tf){
+        println params //Error check
+        
+        if(tc.hasErrors() || tf.hasErrors()){
+            flash.message = 'Failed to transfer'
+            render(view: '/tellering/txnCashDeposit/create', model: [txnCashDepositInstance:tc])
+        }
+        else{
+            def depositInstance = Deposit.get(params.deposit.id);
+            def temp = params.creditAmt.toDouble();
+            def txnTemp = tf.txnTemplate
+            def branch = Branch.get(depositInstance.branchId)
+            def acctProduct = ProductTxn.findAllWhere(product:depositInstance.product,txnTemplate:txnTemp)
+            println "PROD" + depositInstance.product
+            println "txnTemps" + txnTemp
+            def depLedger = TxnDepositAcctLedger.findAllWhere(acctNo:depositInstance.acctNo)
+            def userBranch = UserMaster.get(session.user_id)
+            if (depositInstance.statusId == 5){
+                flash.message = 'Dormant Account'
+                render(view: '/tellering/txnCashDeposit/create', model: [txnCashDepositInstance:tc])
+                return    
+            }
+            
+            // transaction not allowed for product
+            if (!acctProduct) {
+                flash.message = 'Transaction not allowed for product'
+                render(view: '/tellering/txnCashDeposit/create', model: [txnCashDepositInstance:tc])
+                return                
+            }
+            
+            // check opening deposit
+            if (!depLedger){
+                if (temp < depositInstance.product.minOpen){
+                    flash.message = 'Product requires minimum opening deposit'
+                    render(view: '/tellering/txnCashDeposit/create', model: [txnCashDepositInstance:tc])
+                    return 
+                }
+            }
+            
+            // fd deposit check
+            if (depositInstance.product.productType == ProductType.get(3) && depositInstance.dateOpened != branch.runDate){
+                if (branch.runDate != Rollover.get(depositInstance.currentRolloverId).endDate){
+                    flash.message = 'Transaction not allowed for FD'
+                    render(view: '/tellering/txnCashDeposit/create', model: [txnCashDepositInstance:tc])
+                    return                                
+                }
+            }
+            // interbranch transactions account check
+            if (depositInstance.branch != userBranch.branch && txnTemp.interbranchTxn != YesNoNa.get(1)){
+            //if (depositInstance.branch != userBranch.branch && tf.txnTemplateId == 5 && txnTemp.interbranchTxn != 1){
+                flash.message = 'Interbranch transaction for Other branch account only'
+                render(view: '/tellering/txnCashDeposit/create', model: [txnCashDepositInstance:tc])
+                return                                                
+            }
+            
+            // update instances
+            tf.acctNo = depositInstance.acctNo
+            tf.depAcct = depositInstance
+            tf.currency = Currency.get(depositInstance.product.currencyId)
+            tf.user = UserMaster.get(session.user_id)
+            tf.branch = branch
+            tf.txnAmt = temp
+            tf.txnCode = txnTemp.code
+            tf.txnDate = branch.runDate
+            tf.txnTimestamp = new Date().toTimestamp()
+            tf.txnDescription = txnTemp.codeDescription
+            tf.status = ConfigItemStatus.get(2)
+            tf.save(flush:true,failOnError:true)
+            
+            tc.acct = depositInstance
+            tc.txnType = tf.txnTemplate.txnType
+            tc.acctNo = depositInstance.acctNo
+            tc.bal = depositInstance.ledgerBalAmt + temp
+            tc.branch = branch
+            tc.currency = Currency.get(depositInstance.product.currencyId)
+            tc.txnDate = branch.runDate
+            tc.user = UserMaster.get(session.user_id)
+            tc.status = DepositStatus.get(2)
+            tc.save(flush:true,failOnError:true)
+            
+            depositInstance.ledgerBalAmt += temp;            
+            depositInstance.availableBalAmt += temp;
+            //depositInstance.outstandingBalAmt += temp;
+            depositInstance.save(flush:true,failOnError:true)
+           
+            if (txnTemp.requirePassbook != 'No')
+            { 
+                println "PUSH"
+                depositInstance.passbookBalAmt = depositInstance.ledgerBalAmt
+                depositInstance.save(flush:true,failOnError:true);
+            }
+                  
+            def tb = new TxnCashCheckBlotter()
+            tb.cashOutAmt = 0;
+            tb.cashInAmt = 0;
+            tb.checkInAmt = 0;
+            tb.checkOutAmt = 0;
+                        
+            tc.txnFile = tf
+            tc.save(flush:true,failOnError:true)
+            tf.txnType = tf.txnTemplate.txnType
+            //tf.txnId = tc.id
+            //tf.txnDate = new Date()
+            //def description = TxnTemplate.get(tf.txnType.toInteger())
+            //tf.txnDescription = description.codeDescription
+            //tf.status = ConfigItemStatus.get(2)
+            def amt = (temp).longValue()
+            def isTxnAllowed =  policyService.isTxnAllowed(txnTemp.code, amt)
+            if(isTxnAllowed == false) {
+                tf.status = ConfigItemStatus.get(1)
+                policyService.createException('TLR00300', 'txnFile', tf.id, 'tellering/viewTellerTxnInquiry2/'+tf.id)
+            }
+            tf.save(flush:true,failOnError:true)
+            tb.txnFile = tf
+            tb.save(flush:true,failOnError:true)
+            //if(tb.id > 1){
+            //    def tm = TxnCashCheckBlotter.get(tb.id - 1)
+            //    tb.cashOutAmt = tm.cashOutAmt
+            //    tb.cashInAmt += tm.cashInAmt
+            //    tb.checkInAmt = tm.checkInAmt
+            //    tb.checkOutAmt = tm.checkOutAmt
+            //}
+            tb.cashInAmt += temp;
+            tb.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            tb.currency = Currency.get(depositInstance.product.currencyId)
+            tb.user = UserMaster.get(session.user_id)
+            tb.txnParticulars = tf.txnRef + ' ' + tf.acctNo
+            tb.save(flush:true,failOnError:true)          
+            //def txnBreakdownInstance = new TxnBreakdown(creditAmt:tf.txnAmt, txnDate:tf.txnDate, txnFile:tf)
+            //txnBreakdownInstance.save(flush:true)
+            
+            userMasterService.updateTellerBalanceStatus(false)
+            glTransactionService.saveTxnBreakdown(tf.id)
+            
+            //flash.message = 'Success'
+            render(view: '/tellering/index', model: [txnCashDepositInstance:new TxnDepositAcctLedger()])
+        }
+    }
+    def createTellerCashDepositTxn(){
+        
+        def user = UserMaster.get(session.user_id)
+        if (user.cash){
+            def txnFileInstance = new TxnFile()
+            def txnCashDepositInstance = new TxnDepositAcctLedger()
+            render(view:'/tellering/txnCashDeposit/create', model: [txnCashDepositInstance:txnCashDepositInstance])       
+        }
+        else{
+            flash.message = 'Error! No cash account defined'
+            render(view: '/tellering/index')            
+        }        
+    }
+
+    
+/* CHECK DEPOSIT */
+    
+    def saveTellerCheckDepositTxn(TxnDepositAcctLedger tc, TxnFile tf){
+        println params //Error check
+        
+        if(tc.hasErrors() || tf.hasErrors() || !params.deposit.id){
+            flash.message = 'Failed to transfer'
+            render(view: '/tellering/txnCheckDeposit/create', model: [txnCheckDepositInstance:tc])
+        }
+        else{
+            def depositInstance = Deposit.get(params.deposit.id);
+            def temp = params.creditAmt.toDouble();
+            def txnTemp = tf.txnTemplate
+            def branch = Branch.get(depositInstance.branchId)
+            def acctProduct = ProductTxn.findAllWhere(product:depositInstance.product,txnTemplate:txnTemp)
+            def depLedger = TxnDepositAcctLedger.findAllWhere(acctNo:depositInstance.acctNo)
+            def userBranch = UserMaster.get(session.user_id)
+            println "product "+depositInstance.product
+             println "template "+txnTemp
+            
+            if (depositInstance.statusId == 5){
+                flash.message = 'Dormant Account'
+                render(view: '/tellering/txnCashDeposit/create', model: [txnCashDepositInstance:tc])
+                return    
+            }
+            
+            // transaction not allowed for product
+            if (!acctProduct) {
+                flash.message = 'Transaction not allowed for product'
+                render(view: '/tellering/txnCheckDeposit/create', model: [txnCheckDepositInstance:tc])
+                return                
+            }
+            
+            // check opening deposit
+            if (!(depLedger) && temp < depositInstance.product.minOpen){
+                flash.message = 'Product requires minimum opening deposit'
+                render(view: '/tellering/txnCheckDeposit/create', model: [txnCheckDepositInstance:tc])
+                return                                
+            }
+            
+            // fd deposit check
+            if (depositInstance.product.productType == ProductType.get(3) && depositInstance.dateOpened != branch.runDate){
+                if (branch.runDate.toDate() != Rollover.get(depositInstance.currentRolloverId).endDate.toDate()){
+                    flash.message = 'Transaction not allowed for FD'
+                    render(view: '/tellering/txnCashDeposit/create', model: [txnCashDepositInstance:tc])
+                    return                                
+                }
+            }
+            // interbranch transactions account check
+            if (depositInstance.branch != userBranch.branch && txnTemp.interbranchTxn != YesNoNa.get(1)){
+            //if (depositInstance.branch != userBranch.branch && tf.txnTemplateId == 7 && txnTemp.interbranchTxn != 1){
+                flash.message = 'Interbranch transaction for Other branch account only'
+                render(view: '/tellering/txnCheckDeposit/create', model: [txnCheckDepositInstance:tc])
+                return                                                
+            }
+            
+            // update instances
+            tf.acctNo = depositInstance.acctNo
+            tf.depAcct = depositInstance
+            tf.currency = Currency.get(depositInstance.product.currencyId)
+            tf.user = UserMaster.get(session.user_id)
+            tf.branch = branch
+            tf.txnAmt = temp
+            tf.txnCode = txnTemp.code
+            tf.txnDate = branch.runDate
+            tf.txnTimestamp = new Date().toTimestamp()
+            tf.txnDescription = txnTemp.codeDescription
+            tf.status = ConfigItemStatus.get(2)
+            tf.save(flush:true,failOnError:true)
+            
+            tc.acct = depositInstance
+            tc.txnType = tf.txnTemplate.txnType
+            tc.acctNo = depositInstance.acctNo
+            tc.bal = depositInstance.ledgerBalAmt + temp
+            tc.branch = branch
+            tc.currency = Currency.get(depositInstance.product.currencyId)
+            tc.txnDate = branch.runDate
+            tc.user = UserMaster.get(session.user_id)
+            tc.status = DepositStatus.get(2)
+            tc.save(flush:true,failOnError:true)
+            
+            depositInstance.ledgerBalAmt += temp;            
+            //depositInstance.outstandingBalAmt += temp;
+            depositInstance.save(flush:true,failOnError:true)
+            if (txnTemp.requirePassbook == 1)
+            {
+                depositInstance.passbookBalAmt = depositInstance.ledgerBalAmt
+                depositInstance.save(flush:true,failOnError:true)
+            }
+                            
+            def tb = new TxnCashCheckBlotter()
+            tb.cashOutAmt = 0;
+            tb.cashInAmt = 0;
+            tb.checkInAmt = 0;
+            tb.checkOutAmt = 0;
+                        
+            tc.txnFile = tf
+            tc.save(flush:true,failOnError:true)
+            tf.txnType = tf.txnTemplate.txnType
+            //tf.txnId = tc.id
+            //tf.txnDate = new Date()
+            //def description = TxnTemplate.get(tf.txnType.toInteger())
+            //tf.txnDescription = description.codeDescription
+            //tf.status = ConfigItemStatus.get(2)
+            def amt = (temp).longValue()
+            def isTxnAllowed =  policyService.isTxnAllowed(txnTemp.code, amt)
+            if(isTxnAllowed == false) {
+                tf.status = ConfigItemStatus.get(1)
+                policyService.createException('TLR00300', 'txnFile', tf.id, 'tellering/viewTellerTxnInquiry2/'+tf.id)
+            }
+            tf.save(flush:true,failOnError:true)
+            tb.txnFile = tf
+            tb.save(flush:true,failOnError:true)
+            //if(tb.id > 1){
+            //    def tm = TxnCashCheckBlotter.get(tb.id - 1)
+            //    tb.cashOutAmt = tm.cashOutAmt
+            //    tb.cashInAmt += tm.cashInAmt
+            //    tb.checkInAmt = tm.checkInAmt
+            //    tb.checkOutAmt = tm.checkOutAmt
+            //}
+            tb.checkInAmt += temp;
+            tb.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            tb.currency = Currency.get(depositInstance.product.currencyId)
+            tb.user = UserMaster.get(session.user_id)
+            tb.txnParticulars = tf.txnParticulars
+            tb.save(flush:true)            
+            
+            session["checks"].each {
+                def tcoci = TxnCOCI.get(session["checks"].id)
+                tcoci.status = ConfigItemStatus.get(2)
+                tcoci.txnFile = tf
+                tcoci.depAcct = depositInstance
+                tcoci.save(flush:true)
+                
+           
+            }
+            //def txnBreakdownInstance = new TxnBreakdown(creditAmt:tf.txnAmt, txnDate:tf.txnDate, txnFile:tf)
+            //txnBreakdownInstance.save(flush:true)
+            
+            
+            userMasterService.updateTellerBalanceStatus(false)
+            glTransactionService.saveTxnBreakdown(tf.id)
+            
+            flash.message = 'Success'
+            render(view: '/tellering/index', model: [txnCheckDepositInstance:new TxnDepositAcctLedger()])
+        }
+    }
+    def createTellerCheckDepositTxn(){
+        
+        def user = UserMaster.get(session.user_id)
+        if (user.coci){
+            def txnFileInstance = new TxnFile()
+            def txnCOCIInstance = new TxnCOCI()
+            def txnCheckDepositInstance = new TxnDepositAcctLedger()
+            session["checks"] = []
+            render(view:'/tellering/txnCheckDeposit/create', model: [txnCheckDepositInstance:txnCheckDepositInstance])       
+        }
+        else{
+            flash.message = 'Error! No COCI account defined'
+            render(view: '/tellering/index')            
+        }        
+    }
+    
+/* CASH WITHDRAWAL */
+    
+    def saveTellerCashWithdrawalTxn(TxnDepositAcctLedger tc, TxnFile tf){
+        println params //Error check
+        
+        if(tc.hasErrors() || tf.hasErrors()){
+            flash.message = 'Failed to transfer'
+            render(view: '/tellering/txnCashWithdrawal/create', model: [txnCashWithdrawalInstance:tc])
+        }
+        else{
+            def depositInstance = Deposit.get(params.deposit.id);
+            //def temp = params.debitAmtreplaceAll(","," ").toDouble();
+            def temp = params.debitAmt.toDouble();
+            def txnTemp = tf.txnTemplate
+            def branch = Branch.get(depositInstance.branchId)
+            def acctProduct = ProductTxn.findAllWhere(product:depositInstance.product,txnTemplate:txnTemp)
+            def depLedger = TxnDepositAcctLedger.findAllWhere(acctNo:depositInstance.acctNo)
+            def userBranch = UserMaster.get(session.user_id)
+            
+            if (depositInstance.statusId == 5){
+                flash.message = 'Dormant Account'
+                render(view: '/tellering/txnCashWithdrawal/create', model: [txnCashWithdrawalInstance:tc])
+                return    
+            }
+            
+            // transaction not allowed for product
+            if (!acctProduct) {
+                flash.message = 'Transaction not allowed for product'
+                render(view: '/tellering/txnCashWithdrawal/create', model: [txnCashWithdrawalInstance:tc])
+                return                
+            }
+
+            // interbranch transactions account check
+            if (depositInstance.branch != userBranch.branch && txnTemp.interbranchTxn != YesNoNa.get(1)){
+            //if (depositInstance.branch != userBranch.branch && tf.txnTemplateId == 9 && txnTemp.interbranchTxn != 1){
+                flash.message = 'Interbranch transaction for Other branch account only'
+                render(view: '/tellering/txnCashWithdrawal/create', model: [txnCashWithdrawalInstance:tc])
+                return                                                
+            }
+            
+            if (temp > depositInstance.availableBalAmt){
+                flash.message = 'Amount greater than available balance'
+                render(view: '/tellering/txnCashWithdrawal/create', model: [txnCashWithdrawalInstance:tc])
+                return                                                                    
+            }
+            
+            // update instances
+            tf.acctNo = depositInstance.acctNo
+            tf.depAcct = depositInstance
+            tf.currency = Currency.get(depositInstance.product.currencyId)
+            tf.user = UserMaster.get(session.user_id)
+            tf.branch = branch
+            tf.txnAmt = temp
+            tf.txnCode = txnTemp.code
+            tf.txnDate = branch.runDate
+            tf.txnTimestamp = new Date().toTimestamp()
+            tf.txnDescription = txnTemp.codeDescription
+            tf.status = ConfigItemStatus.get(2)
+            tf.save(flush:true,failOnError:true)
+            
+            tc.acct = depositInstance
+            tc.txnType = tf.txnTemplate.txnType
+            tc.acctNo = depositInstance.acctNo
+            tc.bal = depositInstance.ledgerBalAmt - temp
+            tc.branch = branch
+            tc.currency = Currency.get(depositInstance.product.currencyId)
+            tc.txnDate = branch.runDate
+            tc.user = UserMaster.get(session.user_id)
+            tc.status = DepositStatus.get(2)
+            tc.save(flush:true,failOnError:true)
+            
+            
+            
+            depositInstance.ledgerBalAmt -= temp;            
+            depositInstance.availableBalAmt -= temp;
+            //depositInstance.outstandingBalAmt -= temp;
+            depositInstance.save(flush:true,failOnError:true)
+            if (txnTemp.requirePassbook == 1)
+            {
+                depositInstance.passbookBalAmt = depositInstance.ledgerBalAmt
+                depositInstance.save(flush:true,failOnError:true);
+            }
+                  
+            def tb = new TxnCashCheckBlotter()
+            tb.cashOutAmt = 0;
+            tb.cashInAmt = 0;
+            tb.checkInAmt = 0;
+            tb.checkOutAmt = 0;
+                        
+            tc.txnFile = tf
+            tc.save(flush:true,failOnError:true)
+            tf.txnType = tf.txnTemplate.txnType
+            //tf.txnId = tc.id
+            //tf.txnDate = new Date()
+            //def description = TxnTemplate.get(tf.txnType.toInteger())
+            //tf.txnDescription = description.codeDescription
+            //tf.status = ConfigItemStatus.get(2)
+            def amt = (temp).longValue()
+            def isTxnAllowed =  policyService.isTxnAllowed(txnTemp.code, amt)
+            if(isTxnAllowed == false) {
+                tf.status = ConfigItemStatus.get(1)
+                policyService.createException('TLR00300', 'txnFile', tf.id, 'tellering/viewTellerTxnInquiry2/'+tf.id)
+            }
+            tf.save(flush:true,failOnError:true)
+            tb.txnFile = tf
+            tb.save(flush:true,failOnError:true)
+            //if(tb.id > 1){
+            //    def tm = TxnCashCheckBlotter.get(tb.id - 1)
+            //    tb.cashOutAmt = tm.cashOutAmt
+            //    tb.cashInAmt += tm.cashInAmt
+            //    tb.checkInAmt = tm.checkInAmt
+            //    tb.checkOutAmt = tm.checkOutAmt
+            //}
+            tb.cashOutAmt += temp;
+            tb.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            tb.currency = Currency.get(depositInstance.product.currencyId)
+            tb.user = UserMaster.get(session.user_id)
+            tb.txnParticulars = tf.txnParticulars
+            tb.save(flush:true,failOnError:true)
+            //def txnBreakdownInstance = new TxnBreakdown(creditAmt:tf.txnAmt, txnDate:tf.txnDate, txnFile:tf)
+            //txnBreakdownInstance.save(flush:true)
+            
+            userMasterService.updateTellerBalanceStatus(false)
+            glTransactionService.saveTxnBreakdown(tf.id)
+            
+            //flash.message = 'Success'
+            render(view: '/tellering/index', model: [txnCashWithdrawalInstance:new TxnDepositAcctLedger()])
+        }
+    }
+    def createTellerCashWithdrawalTxn(){
+        
+        def user = UserMaster.get(session.user_id)
+        if (user.cash){
+            def txnFileInstance = new TxnFile()
+            def txnCashWithdrawalInstance = new TxnDepositAcctLedger()
+            render(view:'/tellering/txnCashWithdrawal/create', model: [txnCashWithdrawalInstance:txnCashWithdrawalInstance])       
+        }
+        else{
+            flash.message = 'Error! No cash account defined'
+            render(view: '/tellering/index')            
+        }        
+    }
+    
+/* FIXED DEPOSIT INTEREST WITHDRAWAL */
+    
+    def saveTellerFDInterestWithdrawalTxn(TxnDepositAcctLedger tc, TxnFile tf){
+        //println "TEST PARAMS: " params //Error check
+        
+        if(tc.hasErrors() || tf.hasErrors()){
+            flash.message = 'Failed to transfer'
+            render(view: '/tellering/txnFDInterestWithdrawal/create', model: [txnFDInterestWithdrawalInstance:tc])
+        }
+        else{
+            def depositInstance = Deposit.get(params.deposit.id);
+            //def temp = params.debitAmt.replaceAll(",", "").toDouble();
+
+            def txnTemp = tf.txnTemplate
+            def branch = Branch.get(depositInstance.branchId)
+            def acctProduct = ProductTxn.findAllWhere(product:depositInstance.product,txnTemplate:txnTemp)
+            //println "TESTING " + depositInstance.product + "-" + txnTemp
+            def depLedger = TxnDepositAcctLedger.findAllWhere(acctNo:depositInstance.acctNo)
+            def userBranch = UserMaster.get(session.user_id)
+            
+            if (depositInstance.statusId == 5){
+                flash.message = 'Dormant Account'
+                render(view: '/tellering/txnFDInterestWithdrawal/create', model: [txnFDInterestWithdrawalInstance:tc])
+                return    
+            }
+            // transaction not allowed for product
+            if (!acctProduct) {
+                flash.message = 'Transaction not allowed for product'
+                render(view: '/tellering/txnFDInterestWithdrawal/create', model: [txnFDInterestWithdrawalInstance:tc])
+                return                
+            }
+            // interbranch transactions account check
+            if (depositInstance.branch != userBranch.branch && txnTemp.interbranchTxn != YesNoNa.get(1)){
+                flash.message = 'Interbranch transaction for Other branch account only'
+                render(view: '/tellering/txnFDInterestWithdrawal/create', model: [txnFDInterestWithdrawalInstance:tc])
+                return                                                
+            }
+            // calculate the interest and taz
+            Double grossInt = 0
+            Double taxAmt = 0
+            Double intWdlAmt = 0
+            Double totWdlAmt = 0
+            
+            //grossInt = depositInstance.acrintAmt
+            taxAmt = depositInstance?.currentRollover?.taxAmt1
+            intWdlAmt = depositInstance?.currentRollover?.normalInterestAmt
+            totWdlAmt = (depositInstance?.currentRollover?.normalInterestAmt - depositInstance?.currentRollover?.taxAmt1)
+
+            //println "Interest " + intWdlAmt
+            // update instances
+            tf.acctNo = depositInstance.acctNo
+            tf.depAcct = depositInstance
+            tf.currency = Currency.get(depositInstance.product.currencyId)
+            tf.user = UserMaster.get(session.user_id)
+            tf.branch = branch
+            tf.txnAmt = totWdlAmt
+            tf.txnCode = txnTemp.code
+            tf.txnDate = branch.runDate
+            tf.txnTimestamp = new Date().toTimestamp()
+            tf.txnDescription = txnTemp.codeDescription
+            tf.txnRef = params.txnRef
+            tf.status = ConfigItemStatus.get(2)
+            tf.txnType = txnTemp.txnType
+            tf.save(flush:true,failOnError:true)
+            
+            tc.acct = depositInstance
+            tc.txnType = tf.txnTemplate.txnType
+            tc.acctNo = depositInstance.acctNo
+            tc.bal = depositInstance.ledgerBalAmt
+            tc.branch = branch
+            tc.txnType = tf.txnTemplate.txnType
+            tc.txnRef = params.txnRef
+            tc.debitAmt = intWdlAmt
+            tc.currency = Currency.get(depositInstance.product.currencyId)
+            tc.txnDate = branch.runDate
+            tc.user = UserMaster.get(session.user_id)
+            tc.status = DepositStatus.get(2)
+            tc.txnFile = tf
+            tc.save(flush:true,failOnError:true)
+            
+            def taxLedger = new TxnDepositAcctLedger()
+            taxLedger.acct = depositInstance
+            taxLedger.acctNo = depositInstance.acctNo
+            taxLedger.bal = depositInstance.ledgerBalAmt 
+            taxLedger.branch = branch
+            taxLedger.txnType = tf.txnTemplate.txnType
+            taxLedger.txnRef = params.txnRef //'Withholding Tax'
+            taxLedger.creditAmt = taxAmt
+            taxLedger.currency = Currency.get(depositInstance.product.currencyId)
+            taxLedger.txnDate = branch.runDate
+            taxLedger.user = UserMaster.get(session.user_id)
+            taxLedger.status = DepositStatus.get(2)
+            taxLedger.txnFile = tf
+            taxLedger.save(flush:true,failOnError:true)
+            
+            depositInstance.acrintAmt = 0.0
+            depositInstance.save(flush:true,failOnError:true)
+
+//            def intWdl = New TxnDepositAcctLedger()
+//            intWdl.acct = depositInstance
+//            intWdl.acctNo = depositInstance.acctNo
+//            intWdl.bal = depositInstance.ledgerBalAmt 
+//            intWdl.branch = branch
+//            intWdl.txnType = TxnTemplate.get(params.txnTypeId)
+//            intWdl.txnRef = 'Interest Withdrawal'
+//            intWdl.creditAmt = intWdlAmt
+//            intWdl.currency = Currency.get(depositInstance.product.currencyId)
+//            intWdl.txnDate = branch.runDate
+//            intWdl.user = UserMaster.get(session.user_id)
+//            intWdl.status = ConfigItemStatus.get(2)
+//            intWdl.save(flush:true,failOnError:true)
+            
+            def amt = (tf.txnAmt).longValue()
+            def isTxnAllowed =  policyService.isTxnAllowed(txnTemp.code, amt)
+            if(isTxnAllowed == false) {
+                tf.status = ConfigItemStatus.get(1)
+                policyService.createException('1001', 'txnFile', tf.id, 'tellering/viewTellerTxnInquiry2/'+tf.id)
+            }
+            tf.save(flush: true)
+            def tb = new TxnCashCheckBlotter()
+            tb.txnFile = tf
+            //tb.save(flush:true)
+            //if(tb.id > 1){
+            //    def tm = TxnCashCheckBlotter.get(tb.id - 1)
+            //    tb.cashOutAmt += tm.cashOutAmt
+            //    tb.cashInAmt = tm.cashInAmt
+            //    tb.checkInAmt = tm.checkInAmt
+            //    tb.checkOutAmt = tm.checkOutAmt
+            //}
+            tb.cashOutAmt = totWdlAmt;
+            tb.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            tb.currency = Currency.get(depositInstance.product.currencyId)
+            tb.user = UserMaster.get(session.user_id)
+            tb.txnParticulars = tf.txnRef
+            tb.save(flush:true,failOnError:true)
+            
+//            def txnBreakdownInstance = new TxnBreakdown(debitAmt:tf.txnAmt, txnDate:tf.txnDate, txnFile:tf)
+//            txnBreakdownInstance.user = tf.user
+//            txnBreakdownInstance.save(flush:true)
+            
+            userMasterService.updateTellerBalanceStatus(false)
+            glTransactionService.saveTxnBreakdown(tf.id)
+            
+            //update for deposit and rollover if interest is withdraw
+            depositInstance.acrintDate = branch.runDate
+            depositInstance.currentRollover.normalInterestAmt = 0
+            depositInstance.currentRollover.taxAmt1 = 0
+            depositInstance.save(flush:true,failOnError:true)
+            
+            flash.message = 'Success'
+            render(view: '/tellering/index', model: [txnFDInterestWithdrawalInstance:new TxnDepositAcctLedger()])
+        }
+    }
+    def createTellerFDInterestWithdrawalTxn(){
+        def user = UserMaster.get(session.user_id)
+        if (user.cash){
+            def txnFileInstance = new TxnFile()
+            def txnFDInterestWithdrawalInstance = new TxnDepositAcctLedger()
+            render(view:'/tellering/txnFDInterestWithdrawal/create', model: [txnFDInterestWithdrawalInstance:txnFDInterestWithdrawalInstance])       
+        }
+        else{
+            flash.message = 'Error! No cash account defined'
+            render(view: '/tellering/index')            
+        }        
+        
+    }
+    
+/* FIXED DEPOSIT PRETERMINATION */
+    
+    def saveTellerFDPreTerminationTxn(TxnDepositAcctLedger tc, TxnFile tf){
+        //println params //Error check
+        
+        if(tc.hasErrors() || tf.hasErrors()){
+            flash.message = 'Failed to transfer'
+            render(view: '/tellering/txnFDPreTermination/create', model: [txnFDPreTerminationInstance:tc])
+        }
+        else{
+            //println "TEST HERE :"
+            def tb = new TxnCashCheckBlotter()
+            def depositInstance = Deposit.get(params.deposit.id);
+            //def temp = params.debitAmt.toDouble();
+            def txnTemp = tf.txnTemplate
+            def branch = Branch.get(depositInstance.branchId)
+            def acctProduct = ProductTxn.findAllWhere(product:depositInstance.product,txnTemplate:txnTemp)
+            def depLedger = TxnDepositAcctLedger.findAllWhere(acctNo:depositInstance.acctNo)
+            def userBranch = UserMaster.get(session.user_id)
+            
+            //println "TESTING " + depositInstance.product + "-" + txnTemp
+            if (depositInstance.statusId == 5){
+                //println "TEST HERE : 5"
+                flash.message = 'Dormant Account'
+                //render(view: '/tellering/txnCashWithdrawal/create', model: [txnCashWithdrawalInstance:tc])
+                render(view: '/tellering/txnFDPreTermination/create', model: [txnFDPreTerminationInstance:tc])
+                return    
+            }
+            
+            // transaction not allowed for product
+            if (!acctProduct) {
+                //println "TEST HERE : 6"
+                flash.message = 'Transaction not allowed for product'
+                render(view: '/tellering/txnFDPreTermination/create', model: [txnFDPreTerminationInstance:tc])
+                return                
+            }
+
+            // interbranch transactions account check
+            if (depositInstance.branch != userBranch.branch && txnTemp.interbranchTxn != YesNoNa.get(1)){
+                //println "TEST HERE :B"
+                flash.message = 'Interbranch transaction for Other branch account only'
+                render(view: '/tellering/txnFDPreTermination/create', model: [txnFDPreTerminationInstance:tc])
+                return                                                
+            }
+            // calculate the interest and taz
+            Double grossInt = 0
+            Double taxAmt = 0
+            Double intWdlAmt = 0
+            Double totWdlAmt = 0
+            
+            //grossInt = deposintInstance.acrintAmt
+            taxAmt = depositInstance?.currentRollover?.taxAmt2
+            intWdlAmt = depositInstance?.currentRollover?.preTermInterestAmt
+            totWdlAmt = intWdlAmt - taxAmt
+
+            // update instances
+            tf.acctNo = depositInstance.acctNo
+            tf.depAcct = depositInstance
+            tf.currency = Currency.get(depositInstance.product.currencyId)
+            tf.user = UserMaster.get(session.user_id)
+            tf.branch = branch
+            tf.txnAmt = totWdlAmt
+            tf.txnCode = txnTemp.code
+            tf.txnDate = branch.runDate
+            tf.txnTimestamp = new Date().toTimestamp()
+            tf.txnDescription = txnTemp.codeDescription
+            tf.txnRef = params.txnRef
+            tf.status = ConfigItemStatus.get(2)
+            tf.txnType = txnTemp.txnType
+            tf.save(flush:true,failOnError:true)
+            
+            tc.acct = depositInstance
+            tc.txnType = tf.txnTemplate.txnType
+            tc.acctNo = depositInstance.acctNo
+            tc.bal = (depositInstance.ledgerBalAmt + intWdlAmt)
+            tc.branch = branch
+            tc.txnType = tf.txnTemplate.txnType
+            tc.txnRef = params.txnRef
+            //tc.bal = depositInstance.ledgerBalAmt + grossInt
+            tc.debitAmt = intWdlAmt
+            tc.currency = Currency.get(depositInstance.product.currencyId)
+            tc.txnDate = branch.runDate
+            tc.user = UserMaster.get(session.user_id)
+            tc.status = DepositStatus.get(2)
+            tc.txnFile = tf
+            tc.save(flush:true,failOnError:true)
+            
+            def taxLedger = new TxnDepositAcctLedger()
+            taxLedger.acct = depositInstance
+            taxLedger.acctNo = depositInstance.acctNo
+            taxLedger.bal = (depositInstance.ledgerBalAmt + totWdlAmt)
+            taxLedger.branch = branch
+            taxLedger.txnType = tf.txnTemplate.txnType
+            taxLedger.txnRef = params.txnRef //'Withholding Tax'
+            taxLedger.creditAmt = taxAmt
+            //taxLedger.bal = depositInstance.ledgerBalAmt + grossInt - taxAmt
+            taxLedger.currency = Currency.get(depositInstance.product.currencyId)
+            taxLedger.txnDate = branch.runDate
+            taxLedger.user = UserMaster.get(session.user_id)
+            taxLedger.status = DepositStatus.get(2)
+            taxLedger.txnFile = tf
+            taxLedger.save(flush:true,failOnError:true)
+
+            depositInstance.ledgerBalAmt = 0.0
+            depositInstance.availableBalAmt = 0.0
+            depositInstance.passbookBalAmt = 0.0
+            depositInstance.acrintAmt = 0.0
+            depositInstance.save(flush:true,failOnError:true)
+            
+//            def intWdl = New TxnDepositAcctLedger()
+//            intWdl.acct = depositInstance
+//            intWdl.acctNo = depositInstance.acctNo
+//            intWdl.bal = depositInstance.ledgerBalAmt 
+//            intWdl.branch = branch
+//            intWdl.txnType = TxnTemplate.get(params.txnTypeId)
+//            intWdl.txnRef = 'FD Pre-termination'
+//            intWdl.bal = 0.0
+//            intWdl.creditAmt = intWdlAmt
+//            intWdl.currency = Currency.get(depositInstance.product.currencyId)
+//            intWdl.txnDate = branch.runDate
+//            intWdl.user = UserMaster.get(session.user_id)
+//            intWdl.status = ConfigItemStatus.get(2)
+//            intWdl.save(flush:true,failOnError:true)
+            
+            
+            def amt = (tf.txnAmt).longValue()
+            def isTxnAllowed =  policyService.isTxnAllowed(txnTemp.code, amt)
+            if(isTxnAllowed == false) {
+                tf.status = ConfigItemStatus.get(1)
+                policyService.createException('1001', 'txnFile', tf.id, 'tellering/viewTellerTxnInquiry2/'+tf.id)
+            }
+            tf.save(flush: true)
+            tb.txnFile = tf
+//            tb.save(flush:true)
+//            if(tb.id > 1){
+//                def tm = TxnCashCheckBlotter.get(tb.id - 1)
+//                tb.cashOutAmt += tm.cashOutAmt
+//                tb.cashInAmt = tm.cashInAmt
+//                tb.checkInAmt = tm.checkInAmt
+//                tb.checkOutAmt = tm.checkOutAmt
+//            }
+            tb.cashOutAmt = totWdlAmt
+            tb.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            tb.currency = Currency.get(depositInstance.product.currencyId)
+            tb.user = UserMaster.get(session.user_id)
+            tb.txnParticulars = tf.txnRef
+            tb.save(flush:true)
+            
+//            def txnBreakdownInstance = new TxnBreakdown(debitAmt:tf.txnAmt, txnDate:tf.txnDate, txnFile:tf)
+//            txnBreakdownInstance.save(flush:true)
+            
+            userMasterService.updateTellerBalanceStatus(false)
+            glTransactionService.saveTxnBreakdown(tf.id)
+            
+            //update for deposit and rollover if interest is withdraw
+            depositInstance.acrintDate = branch.runDate
+            depositInstance.currentRollover.preTermInterestAmt = 0
+            depositInstance.currentRollover.taxAmt2 = 0
+            depositInstance.save(flush:true,failOnError:true)
+            
+            flash.message = 'Success'
+            render(view: '/tellering/index', model: [txnFDPreTerminationInstance:new TxnDepositAcctLedger()])
+        }
+    }
+    def createTellerFDPreTerminationTxn(){
+        
+        def user = UserMaster.get(session.user_id)
+        if (user.cash){
+            def txnFileInstance = new TxnFile()
+            def txnFDPreTerminationInstance = new TxnDepositAcctLedger()
+            render(view:'/tellering/txnFDPreTermination/create', model: [txnFDPreTerminationInstance:txnFDPreTerminationInstance])       
+        }
+        else{
+            flash.message = 'Error! No cash account defined'
+            render(view: '/tellering/index')            
+        }        
+    }
+    
+    
+/* LOAN CASH REPAYMENT */
+    
+    def saveTellerLoanCashRepaymentTxn(TxnLoanPaymentDetails tc, TxnFile tf){
+        println params //Error check
+        
+        if(tc.hasErrors() || tf.hasErrors()){
+            flash.message = 'Failed to transfer'
+            render(view: '/tellering/txnLoanCashRepayment/create', model: [txnLoanCashRepaymentInstance:tc])
+        }
+        else{
+            def loanInstance = Loan.get(params?.loanId)
+            def tb = new TxnCashCheckBlotter()
+            def txnTemp = tf.txnTemplate
+            def branch = Branch.get(depositInstance.branchId)
+            
+            tb.cashOutAmt = 0;
+            tb.cashInAmt = 0;
+            tb.checkInAmt = 0;
+            tb.checkOutAmt = 0;
+            
+            tf.acctNo = loanInstance.accountNo
+            tf.loanAcct = loanInstance
+            tf.currency = Currency.get(loanInstance.product.currencyId)
+            tf.user = UserMaster.get(session.user_id)
+            tf.branch = branch
+            //tf.txnAmt = temp
+            tf.txnCode = txnTemp.code
+            tf.txnDate = branch.runDate
+            tf.txnTimestamp = new Date().toTimestamp()
+            tf.txnDescription = txnTemp.codeDescription
+            tf.status = ConfigItemStatus.get(2)
+            tf.save(flush:true,failOnError:true)
+            
+            def amt = (tf.txnAmt).longValue()
+            def isTxnAllowed =  policyService.isTxnAllowed(description.code, amt)
+            if(isTxnAllowed == false) {
+                tf.status = ConfigItemStatus.get(1)
+                policyService.createException('1001', 'txnFile', tf.id, 'tellering/viewTellerTxnInquiry2/'+tf.id)
+            }
+            tf.save(flush: true)
+            if(tb.id > 1){
+                def tm = TxnCashCheckBlotter.get(tb.id - 1)
+                tb.cashOutAmt = tm.cashOutAmt
+                tb.cashInAmt += tm.cashInAmt
+                tb.checkInAmt = tm.checkInAmt
+                tb.checkOutAmt = tm.checkOutAmt
+            }
+            
+            Double paymentAmt = (params?.paymentAmt.replaceAll(",","")).toDouble()
+            Double tempPaymentAmt = paymentAmt            
+
+            // pay service charge
+            Double totalServiceChargePaid = 0
+            for(installment in loanInstance?.loanInstallments.findAll{it.status.id == 3L || it.status.id == 4L}.sort{it.sequenceNo}) {
+                if (tempPaymentAmt > 0) {
+                    Double dueServiceCharge = (installment?.serviceChargeInstallmentAmount - installment?.serviceChargeInstallmentPaid)
+
+                    if (tempPaymentAmt > dueServiceCharge) {                    
+                        installment.serviceChargeInstallmentPaid += dueServiceCharge
+                        totalServiceChargePaid += dueServiceCharge
+                        tempPaymentAmt -= dueServiceCharge                        
+                        dueServiceCharge = 0
+                    } else {
+                        installment.serviceChargeInstallmentPaid += tempPaymentAmt
+                        totalServiceChargePaid += tempPaymentAmt
+                        dueServiceCharge = dueServiceCharge - tempPaymentAmt                        
+                        tempPaymentAmt = 0                        
+                    }
+                }
+            }
+
+            // pay penalty
+            Double totalPenaltyPaid = 0
+            for(installment in loanInstance?.loanInstallments.findAll{it.status.id == 3L || it.status.id == 4L}.sort{it.sequenceNo}) {
+                if (tempPaymentAmt > 0) {
+                    Double duePenalty = (installment?.penaltyInstallmentAmount - installment?.penaltyInstallmentPaid)
+
+                    if (tempPaymentAmt > duePenalty) {
+                        installment.penaltyInstallmentPaid += duePenalty
+                        totalPenaltyPaid += duePenalty
+                        tempPaymentAmt -= duePenalty                        
+                        duePenalty = 0
+                    } else {
+                        installment.penaltyInstallmentPaid += tempPaymentAmt
+                        totalPenaltyPaid += tempPaymentAmt
+                        duePenalty = duePenalty - tempPaymentAmt
+                        tempPaymentAmt = 0                        
+                    }
+                }
+            }
+
+            // pay interest
+            Double totalInterestPaid = 0
+            for(installment in loanInstance?.loanInstallments.findAll{it.status.id == 3L || it.status.id == 4L}.sort{it.sequenceNo}) {
+                if (tempPaymentAmt > 0) {
+                    Double dueInterest = (installment?.interestInstallmentAmount - installment?.interestInstallmentPaid)
+
+                    if (tempPaymentAmt > dueInterest) {
+                        installment.interestInstallmentPaid += dueInterest
+                        totalInterestPaid += dueInterest
+                        tempPaymentAmt -= dueInterest
+                        dueInterest = 0
+                    } else {
+                        installment.interestInstallmentPaid += tempPaymentAmt
+                        totalInterestPaid += tempPaymentAmt
+                        dueInterest = dueInterest - tempPaymentAmt
+                        tempPaymentAmt = 0                        
+                    }
+                }
+            }
+
+            // pay principal
+            Double totalPrincipalPaid = 0
+            for(installment in loanInstance?.loanInstallments.findAll{it.status.id == 3L || it.status.id == 4L}.sort{it.sequenceNo}) {
+                if (tempPaymentAmt > 0) {
+                    Double duePrincipal = (installment?.principalInstallmentAmount - installment?.principalInstallmentPaid)
+
+                    if (tempPaymentAmt > duePrincipal) {
+                        installment.principalInstallmentPaid += duePrincipal
+                        totalPrincipalPaid += duePrincipal
+                        tempPaymentAmt -= duePrincipal
+                        duePrincipal = 0
+                    } else {
+                        installment.principalInstallmentPaid += tempPaymentAmt
+                        totalPrincipalPaid += tempPaymentAmt
+                        duePrincipal = duePrincipal - tempPaymentAmt
+                        tempPaymentAmt = 0                        
+                    }
+                }
+            }
+
+            // upate loan
+            loanInstance.balanceAmount -= totalPrincipalPaid
+            loanInstance.interestBalanceAmount -= totalInterestPaid
+            loanInstance.penaltyBalanceAmount -= totalPenaltyPaid
+            loanInstance.serviceChargeBalanceAmount -= totalServiceChargePaid
+            loanInstance.lastTransactionNo = tf.txnId
+            loanInstance.transactionSequenceNo = loanInstance.transactionSequenceNo + 1    
+            loanInstance.lastTransactionDate = branch.runDate
+            loanInstance.lastCustormerTransactionDate = branch.runDate            
+            loanInstance.save(flush:true)
+
+            // create loan ledger entry
+            def loanLedgerEntry = new LoanLedger(loan: loanInstance, txn: tf, txnType: TxnType.get(11), txnDate: branch.runDate, 
+                principalCredit: totalPrincipalPaid, principalBalance: loanInstance.balanceAmount, 
+                interestCredit: totalInterestPaid, interestBalance: loanInstance.interestBalanceAmount, 
+                penaltyCredit: totalPenaltyPaid, penaltyBalance: loanInstance.penaltyBalanceAmount,
+                chargesCredit: totalServiceChargePaid, chargesBalance: loanInstance.serviceChargeBalanceAmount)
+            loanLedgerEntry.save(flush:true)
+            
+            tb.cashInAmt += loanInstance.balanceAmount
+            tb.cashInAmt += loanInstance.interestBalanceAmount
+            tb.cashInAmt += loanInstance.penaltyBalanceAmount
+            tb.cashInAmt += loanInstance.serviceChargeBalanceAmount
+            tb.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            tb.currency = Currency.get(loanInstance.product.currencyId)
+            tb.user = UserMaster.get(session.user_id)
+            tb.txnParticulars = tf.txnParticulars
+            tb.save(flush:true)
+            
+            //def txnBreakdownInstance = new TxnBreakdown(creditAmt:tb.cashInAmt, txnDate:tf.txnDate, txnFile:tf)
+            //txnBreakdownInstance.save(flush:true)
+            
+            userMasterService.updateTellerBalanceStatus(false)
+            
+            flash.message = 'Success'
+            render(view: '/tellering/index', model: [txnLoanCashRepaymentInstance:new TxnLoanPaymentDetails()])
+        }
+    }
+    def createTellerLoanCashRepaymentTxn(){
+        
+        def user = UserMaster.get(session.user_id)
+        if (user.cash){
+            def txnFileInstance = new TxnFile()        
+            def txnLoanCashRepaymentInstance = new TxnLoanPaymentDetails()                
+            render(view:'/tellering/txnLoanCashRepayment/create', model: [txnLoanCashRepaymentInstance:txnLoanCashRepaymentInstance])       
+        }
+        else{
+            flash.message = 'Error! No cash account defined'
+            render(view: '/tellering/index')            
+        }        
+    }
+    
+    
+/* CHECK ENCASHMENT */
+
+    def saveTellerCheckEncashmentTxn(TxnCOCI tc, TxnFile tf){
+        println params //Error check
+        
+        if(tc.hasErrors() || tf.hasErrors()){
+            flash.message = 'Failed to transfer'
+            render(view: '/tellering/txnCheckEncashment/create', model: [txnCheckEncashmentInstance:tc])
+        }
+        else{
+            def depositInstance = Deposit.get(params.deposit.id);
+            def temp = params.debitAmt.toDouble();
+            def txnTemp = tf.txnTemplate
+            def branch = Branch.get(depositInstance.branchId)
+            def acctProduct = ProductTxn.findAllWhere(product:depositInstance.product,txnTemplate:txnTemp)
+            def depLedger = TxnDepositAcctLedger.findAllWhere(acctNo:depositInstance.acctNo)
+            def userBranch = UserMaster.get(session.user_id)
+            def txnCheque = Cheque.findByChequeNo(checkNo.toLong())
+            def spo = StopPaymentOrder.findByCheque(txnCheque)
+            def issueChequeList = Chequebook.FindAllwhere(depositId:params.deposit.id)
+            
+            if (depositInstance.statusId == 5){
+                flash.message = 'Dormant Account'
+                render(view: '/tellering/txnCheckEncashment/create', model: [txnCheckEncashmentInstance:tc])
+                return    
+            }
+            
+            // transaction not allowed for product
+            if (!acctProduct) {
+                flash.message = 'Transaction not allowed for product'
+                render(view: '/tellering/txnCheckEncashment/create', model: [txnCheckEncashmentInstance:tc])
+                return                
+            }
+
+            // interbranch transactions account check
+            if (depositInstance.branch != userBranch.branch && txnTemp.interbranchTxn != YesNoNa.get(1)){
+                flash.message = 'Interbranch transaction for Other branch account only'
+                render(view: '/tellering/txnCheckEncashment/create', model: [txnCheckEncashmentInstance:tc])
+                return                                                
+            }
+            
+            if (temp > depositInstance.availableBalAmt){
+                flash.message = 'Amount greater than available balance'
+                render(view: '/tellering/txnCheckEncashment/create', model: [txnCheckEncashmentInstance:tc])
+                return                                                                    
+            }
+            
+            if (!txnCheque){
+                flash.message = 'Invalid Check Number'
+                render(view: '/tellering/txnCheckEncashment/create', model: [txnCheckEncashmentInstance:tc])
+                return                                                                                    
+            }
+            
+            if (txnCheque.status == CheckStatus.get(3) || txnCheque.status == CheckStatus.get(4)){
+                flash.message = 'Check already used/Cancelled'
+                render(view: '/tellering/txnCheckEncashment/create', model: [txnCheckEncashmentInstance:tc])
+                return                                                                                                                    
+            }
+            
+            if (spo){
+                flash.message = 'Check Stopped'
+                render(view: '/tellering/txnCheckEncashment/create', model: [txnCheckEncashmentInstance:tc])
+                return                                                                                                    
+            }
+            // verify account and check relationship
+            Boolean goodCheck = false
+            each (checkbook in issueChequeList){
+                if (checkNo.toLong() >= checkbook.seriesStart && checkNo.toLong() <= checkbook.seriesEnd ){
+                    goodCheck = true
+                }
+            }
+            if (!goodCheck){
+                flash.message = 'Check Not issued for this account'
+                render(view: '/tellering/txnCheckEncashment/create', model: [txnCheckEncashmentInstance:tc])
+                return                                                                                                                    
+            }
+            
+            // update instances
+            tf.acctNo = depositInstance.acctNo
+            tf.depAcct = depositInstance
+            tf.currency = Currency.get(depositInstance.product.currencyId)
+            tf.user = UserMaster.get(session.user_id)
+            tf.branch = branch
+            tf.txnAmt = temp
+            tf.txnCode = txnTemp.code
+            tf.txnDate = branch.runDate
+            tf.txnTimestamp = new Date().toTimestamp()
+            tf.txnDescription = txnTemp.codeDescription
+            tf.status = ConfigItemStatus.get(2)
+            tf.save(flush: true)
+            
+            tc.acct = depositInstance
+            tc.txnType = tf.txnTemplate.txnType
+            tc.acctNo = depositInstance.acctNo
+            tc.bal = depositInstance.ledgerBalAmt - temp
+            tc.branch = branch
+            tc.currency = Currency.get(depositInstance.product.currencyId)
+            tc.txnDate = branch.runDate
+            tc.user = UserMaster.get(session.user_id)
+            tc.status = ConfigItemStatus.get(2)
+            tc.save(flush: true)
+            
+            depositInstance.ledgerBalAmt -= temp;            
+            depositInstance.availableBalAmt -= temp;
+            depositInstance.outstandingBalAmt -= temp;
+            depositInstance.save(flush:true)
+            if (txnTemp.requirePassbook == 1)
+            {
+                depositInstance.passbookBalAmt = depositInstance.ledgerBalAmt
+                depositInstance.save(flush:true);
+            }
+            
+            txnCheque.chequeDate = params.checkDate
+            txnCheque.isChequeClrOnUs = false
+            txnCheque.chequeAmt = temp
+            txnCheque.status = CheckStatus.get(3)
+            txnCheque.save(flush:true,failOnError:true)
+            
+            def tb = new TxnCashCheckBlotter()
+            tb.cashOutAmt = 0;
+            tb.cashInAmt = 0;
+            tb.checkInAmt = 0;
+            tb.checkOutAmt = 0;
+                        
+            tc.txnFile = tf
+            tc.save(flush: true)
+            tf.txnType = tf.txnTemplate.txnType
+            //tf.txnId = tc.id
+            //tf.txnDate = new Date()
+            //def description = TxnTemplate.get(tf.txnType.toInteger())
+            //tf.txnDescription = description.codeDescription
+            //tf.status = ConfigItemStatus.get(2)
+            def amt = (temp).longValue()
+            def isTxnAllowed =  policyService.isTxnAllowed(txnTemp.code, amt)
+            if(isTxnAllowed == false) {
+                tf.status = ConfigItemStatus.get(1)
+                policyService.createException('TLR00300', 'txnFile', tf.id, 'tellering/viewTellerTxnInquiry2/'+tf.id)
+            }
+            tf.save(flush: true)
+            tb.txnFile = tf
+            tb.save(flush:true)
+            //if(tb.id > 1){
+            //    def tm = TxnCashCheckBlotter.get(tb.id - 1)
+            //    tb.cashOutAmt = tm.cashOutAmt
+            //    tb.cashInAmt += tm.cashInAmt
+            //    tb.checkInAmt = tm.checkInAmt
+            //    tb.checkOutAmt = tm.checkOutAmt
+            //}
+            tb.cashOutAmt += temp;
+            tb.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            tb.currency = Currency.get(depositInstance.product.currencyId)
+            tb.user = UserMaster.get(session.user_id)
+            tb.txnParticulars = tf.txnParticulars
+            tb.save(flush:true)            
+            //def txnBreakdownInstance = new TxnBreakdown(creditAmt:tf.txnAmt, txnDate:tf.txnDate, txnFile:tf)
+            //txnBreakdownInstance.save(flush:true)
+            
+            userMasterService.updateTellerBalanceStatus(false)
+            glTransactionService.saveTxnBreakdown(tf.id)
+            
+            flash.message = 'Success'
+            render(view: '/tellering/index', model: [txnCheckEncashmentInstance:new TxnCOCI()])
+        }
+    }
+    def createTellerCheckEncashmentTxn(){
+        
+        def user = UserMaster.get(session.user_id)
+        if (user.cash){
+            def txnFileInstance = new TxnFile()
+            def txnCheckEncashmentInstance = new TxnCOCI()
+            render(view:'/tellering/txnCheckEncashment/create', model: [txnCheckEncashmentInstance:txnCheckEncashmentInstance])       
+        }
+        else{
+            flash.message = 'Error! No cash account defined'
+            render(view: '/tellering/index')            
+        }        
+        
+    }
+    
+    
+/* LOAN CHECK REPAYMENT */
+    
+    def saveTellerLoanCheckRepaymentTxn(TxnLoanPaymentDetails tc, TxnFile tf){
+        println params //Error check
+        
+        if(tc.hasErrors() || tf.hasErrors()){
+            flash.message = 'Failed to transfer'
+            render(view: '/tellering/txnLoanCheckRepayment/create', model: [txnLoanCheckRepaymentInstance:tc])
+        }
+        else{
+            def tb = new TxnCashCheckBlotter()
+            def loanInstance = Loan.get(params?.loanId)
+            def txnTemp = tf.txnTemplate
+            def branch = Branch.get(depositInstance.branchId)
+            
+            tb.cashOutAmt = 0;
+            tb.cashInAmt = 0;
+            tb.checkInAmt = 0;
+            tb.checkOutAmt = 0;
+            
+            tf.acctNo = loanInstance.accountNo
+            tf.loanAcct = loanInstance
+            tf.currency = Currency.get(loanInstance.product.currencyId)
+            tf.user = UserMaster.get(session.user_id)
+            tf.branch = branch
+            //tf.txnAmt = temp
+            tf.txnCode = txnTemp.code
+            tf.txnDate = branch.runDate
+            tf.txnTimestamp = new Date().toTimestamp()
+            tf.txnDescription = txnTemp.codeDescription
+            tf.status = ConfigItemStatus.get(2)
+            tf.save(flush:true,failOnError:true)
+            def amt = (tf.txnAmt).longValue()
+            def isTxnAllowed =  policyService.isTxnAllowed(description.code, amt)
+            if(isTxnAllowed == false) {
+                tf.status = ConfigItemStatus.get(1)
+                policyService.createException('1001', 'txnFile', tf.id, 'tellering/viewTellerTxnInquiry2/'+tf.id)
+            }
+            tf.save(flush: true)
+            if(tb.id > 1){
+                def tm = TxnCashCheckBlotter.get(tb.id - 1)
+                tb.cashOutAmt = tm.cashOutAmt
+                tb.cashInAmt = tm.cashInAmt
+                tb.checkInAmt += tm.checkInAmt
+                tb.checkOutAmt = tm.checkOutAmt
+            }
+            
+            //def loanInstance = Loan.get(params?.loanId)
+
+            Double paymentAmt = (params?.paymentAmt.replaceAll(",","")).toDouble()
+            Double tempPaymentAmt = paymentAmt            
+
+            // pay service charge
+            Double totalServiceChargePaid = 0
+            for(installment in loanInstance?.loanInstallments.findAll{it.status.id == 3L || it.status.id == 4L}.sort{it.sequenceNo}) {
+                if (tempPaymentAmt > 0) {
+                    Double dueServiceCharge = (installment?.serviceChargeInstallmentAmount - installment?.serviceChargeInstallmentPaid)
+
+                    if (tempPaymentAmt > dueServiceCharge) {                    
+                        installment.serviceChargeInstallmentPaid += dueServiceCharge
+                        totalServiceChargePaid += dueServiceCharge
+                        tempPaymentAmt -= dueServiceCharge                        
+                        dueServiceCharge = 0
+                    } else {
+                        installment.serviceChargeInstallmentPaid += tempPaymentAmt
+                        totalServiceChargePaid += tempPaymentAmt
+                        dueServiceCharge = dueServiceCharge - tempPaymentAmt                        
+                        tempPaymentAmt = 0                        
+                    }
+                }
+            }
+
+            // pay penalty
+            Double totalPenaltyPaid = 0
+            for(installment in loanInstance?.loanInstallments.findAll{it.status.id == 3L || it.status.id == 4L}.sort{it.sequenceNo}) {
+                if (tempPaymentAmt > 0) {
+                    Double duePenalty = (installment?.penaltyInstallmentAmount - installment?.penaltyInstallmentPaid)
+
+                    if (tempPaymentAmt > duePenalty) {
+                        installment.penaltyInstallmentPaid += duePenalty
+                        totalPenaltyPaid += duePenalty
+                        tempPaymentAmt -= duePenalty                        
+                        duePenalty = 0
+                    } else {
+                        installment.penaltyInstallmentPaid += tempPaymentAmt
+                        totalPenaltyPaid += tempPaymentAmt
+                        duePenalty = duePenalty - tempPaymentAmt
+                        tempPaymentAmt = 0                        
+                    }
+                }
+            }
+
+            // pay interest
+            Double totalInterestPaid = 0
+            for(installment in loanInstance?.loanInstallments.findAll{it.status.id == 3L || it.status.id == 4L}.sort{it.sequenceNo}) {
+                if (tempPaymentAmt > 0) {
+                    Double dueInterest = (installment?.interestInstallmentAmount - installment?.interestInstallmentPaid)
+
+                    if (tempPaymentAmt > dueInterest) {
+                        installment.interestInstallmentPaid += dueInterest
+                        totalInterestPaid += dueInterest
+                        tempPaymentAmt -= dueInterest
+                        dueInterest = 0
+                    } else {
+                        installment.interestInstallmentPaid += tempPaymentAmt
+                        totalInterestPaid += tempPaymentAmt
+                        dueInterest = dueInterest - tempPaymentAmt
+                        tempPaymentAmt = 0                        
+                    }
+                }
+            }
+
+            // pay principal
+            Double totalPrincipalPaid = 0
+            for(installment in loanInstance?.loanInstallments.findAll{it.status.id == 3L || it.status.id == 4L}.sort{it.sequenceNo}) {
+                if (tempPaymentAmt > 0) {
+                    Double duePrincipal = (installment?.principalInstallmentAmount - installment?.principalInstallmentPaid)
+
+                    if (tempPaymentAmt > duePrincipal) {
+                        installment.principalInstallmentPaid += duePrincipal
+                        totalPrincipalPaid += duePrincipal
+                        tempPaymentAmt -= duePrincipal
+                        duePrincipal = 0
+                    } else {
+                        installment.principalInstallmentPaid += tempPaymentAmt
+                        totalPrincipalPaid += tempPaymentAmt
+                        duePrincipal = duePrincipal - tempPaymentAmt
+                        tempPaymentAmt = 0                        
+                    }
+                }
+            }
+
+            // upate loan
+            loanInstance.balanceAmount -= totalPrincipalPaid
+            loanInstance.interestBalanceAmount -= totalInterestPaid
+            loanInstance.penaltyBalanceAmount -= totalPenaltyPaid
+            loanInstance.serviceChargeBalanceAmount -= totalServiceChargePaid
+            loanInstance.lastTransactionNo = tf.txnId
+            loanInstance.transactionSequenceNo = loanInstance.transactionSequenceNo + 1    
+            loanInstance.lastTransactionDate = branch.runDate
+            loanInstance.lastCustomerTransactionDate = branch.runDate            
+            loanInstance.save(flush:true)
+            
+            tb.checkInAmt += loanInstance.balanceAmount
+            tb.checkInAmt += loanInstance.interestBalanceAmount
+            tb.checkInAmt += loanInstance.penaltyBalanceAmount
+            tb.checkInAmt += loanInstance.serviceChargeBalanceAmount
+            tb.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            tb.currency = Currency.get(loanInstance.product.currencyId)
+            tb.user = UserMaster.get(session.user_id)
+            tb.txnParticulars = tf.txnParticulars
+            tb.save(flush:true,failOnError:true)
+
+            // create loan ledger entry
+            def loanLedgerEntry = new LoanLedger(loan: loanInstance, txn: tf, txnType: TxnType.get(11), txnDate: branch.runDate, 
+                principalCredit: totalPrincipalPaid, principalBalance: loanInstance.balanceAmount, 
+                interestCredit: totalInterestPaid, interestBalance: loanInstance.interestBalanceAmount, 
+                penaltyCredit: totalPenaltyPaid, penaltyBalance: loanInstance.penaltyBalanceAmount,
+                chargesCredit: totalServiceChargePaid, chargesBalance: loanInstance.serviceChargeBalanceAmount)
+            loanLedgerEntry.save(flush:true)
+            
+            session["checks"].each {
+                def tcoci = TxnCOCI.get(session["checks"].id)
+                tcoci.status = ConfigItemStatus.get(2)
+                tcoci.txnFile = tf
+                //tcoci.depAcct = depositInstance
+                tcoci.save(flush:true)
+            }
+            
+            //def txnBreakdownInstance = new TxnBreakdown(creditAmt:tb.checkInAmt, txnDate:tf.txnDate, txnFile:tf)
+            //txnBreakdownInstance.save(flush:true)
+            
+            userMasterService.updateTellerBalanceStatus(false)
+            
+            flash.message = 'Success'
+            render(view: '/tellering/index', model: [txnLoanCheckRepaymentInstance:new TxnLoanPaymentDetails()])
+        }
+    }
+    def createTellerLoanCheckRepaymentTxn(){
+        
+        def user = UserMaster.get(session.user_id)
+        if (user.coci){
+            def txnFileInstance = new TxnFile()        
+            def txnLoanCheckRepaymentInstance = new TxnLoanPaymentDetails()                
+            session["checks"] = []
+            render(view:'/tellering/txnLoanCheckRepayment/create', model: [txnLoanCheckRepaymentInstance:txnLoanCheckRepaymentInstance])       
+        }
+        else{
+            flash.message = 'Error! No COCI account defined'
+            render(view: '/tellering/index')            
+        }        
+    }
+    
+/* LOAN CASH SPECIFIED REPAYMENT */
+    
+    def saveTellerLoanCashSpecifiedRepaymentTxn(TxnLoanPaymentDetails tc, TxnFile tf){
+        println params //Error check
+        
+        if(tc.hasErrors() || tf.hasErrors()){
+            flash.message = 'Failed to transfer'
+            render(view: '/tellering/txnLoanCashSpecifiedRepayment/create', model: [txnLoanCashSpecifiedRepaymentInstance:tc])
+        }
+        else{
+            def tb = new TxnCashCheckBlotter()
+            def loanInstance = Loan.get(params?.loanId)
+            def txnTemp = tf.txnTemplate
+            def branch = Branch.get(depositInstance.branchId)
+            
+            if (params.principalInstallmentAmount.toDouble() > loanInstance.balanceAmount){
+                flash.message = 'Principal Payment Greate than loan balance'
+                render(view:'/tellering/txnLoanCashSpecifiedRepayment/create', model: [txnLoanCashSpecifiedRepaymentInstance:txnLoanCashSpecifiedRepaymentInstance])       
+                return
+            }
+            
+            tb.cashOutAmt = 0;
+            tb.cashInAmt = 0;
+            tb.checkInAmt = 0;
+            tb.checkOutAmt = 0;
+            
+            tf.acctNo = loanInstance.accountNo
+            tf.loanAcct = loanInstance
+            tf.currency = Currency.get(loanInstance.product.currencyId)
+            tf.user = UserMaster.get(session.user_id)
+            tf.branch = branch
+            //tf.txnAmt = temp
+            tf.txnCode = txnTemp.code
+            tf.txnDate = branch.runDate
+            tf.txnTimestamp = new Date().toTimestamp()
+            tf.txnDescription = txnTemp.codeDescription
+            tf.status = ConfigItemStatus.get(2)
+            tf.save(flush:true,failOnError:true)
+            def amt = (tf.txnAmt).longValue()
+            def isTxnAllowed =  policyService.isTxnAllowed(description.code, amt)
+            if(isTxnAllowed == false) {
+                tf.status = ConfigItemStatus.get(1)
+                policyService.createException('1001', 'txnFile', tf.id, 'tellering/viewTellerTxnInquiry2/'+tf.id)
+            }
+            tf.save(flush: true)
+            
+            loanInstance.balanceAmount -= params.principalInstallmentAmount.toDouble()
+            loanInstance.interestBalanceAmount -= params.interestInstallmentAmount.toDouble()
+            loanInstance.penaltyBalanceAmount -= params.penaltyInstallmentAmount.toDouble()
+            loanInstance.serviceChargeBalanceAmount -= params.serviceChargeInstallmentAmount.toDouble()
+            loanInstance.lastTransactionNo = tf.txnId
+            loanInstance.transactionSequenceNo = loanInstance.transactionSequenceNo + 1    
+            loanInstance.lastTransactionDate = branch.runDate
+            loanInstance.lastCustomerTransactionDate = branch.runDate            
+            loanInstance.save(flush:true)
+            
+            // create loan ledger entry
+            def loanLedgerEntry = new LoanLedger(loan: loanInstance, txn: tf, txnType: TxnType.get(11), txnDate: branch.runDate, 
+                principalCredit: params.principalInstallmentAmount.toDouble(), principalBalance: loanInstance.balanceAmount, 
+                interestCredit: params.interestInstallmentAmount.toDouble(), interestBalance: loanInstance.interestBalanceAmount, 
+                penaltyCredit: params.penaltyInstallmentAmount.toDouble(), penaltyBalance: loanInstance.penaltyBalanceAmount,
+                chargesCredit: params.serviceChargeInstallmentAmount.toDouble(), chargesBalance: loanInstance.serviceChargeBalanceAmount)
+            loanLedgerEntry.save(flush:true)
+            
+            //if(tb.id > 1){
+            //    def tm = TxnCashCheckBlotter.get(tb.id - 1)
+            //    tb.cashOutAmt = tm.cashOutAmt
+            //    tb.cashInAmt += tm.cashInAmt
+            //    tb.checkInAmt = tm.checkInAmt
+            //    tb.checkOutAmt = tm.checkOutAmt
+            //}
+            tb.cashInAmt += tc.principalAmt
+            tb.cashInAmt += tc.interestAmt
+            tb.cashInAmt += tc.penaltyAmt
+            tb.cashInAmt += tc.serviceChargeAmt
+            tb.cashInAmt += tc.grtAmt
+            tb.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            tb.currency = Currency.get(loanInstance.product.currencyId)
+            tb.user = UserMaster.get(session.user_id)
+            tb.txnParticulars = tf.txnParticulars
+            tb.save(flush:true,failOnError:true)
+            
+            def txnBreakdownInstance = new TxnBreakdown(creditAmt:tb.cashInAmt, txnDate:tf.txnDate, txnFile:tf)
+            txnBreakdownInstance.save(flush:true)
+            
+            userMasterService.updateTellerBalanceStatus(false)
+            
+            flash.message = 'Success'
+            render(view: '/tellering/index', model: [txnLoanCashSpecifiedRepaymentInstance:new TxnLoanPaymentDetails()])
+        }
+    }
+    def createTellerLoanCashSpecifiedRepaymentTxn(){
+
+        def user = UserMaster.get(session.user_id)
+        if (user.cash){
+            def loanInstallmentInstance = new LoanInstallment()
+            def txnFileInstance = new TxnFile()
+            def txnLoanCashSpecifiedRepaymentInstance = new TxnLoanPaymentDetails()
+            render(view:'/tellering/txnLoanCashSpecifiedRepayment/create', model: [txnLoanCashSpecifiedRepaymentInstance:txnLoanCashSpecifiedRepaymentInstance])       
+        }
+        else{
+            flash.message = 'Error! No cash account defined'
+            render(view: '/tellering/index')            
+        }        
+        
+    }
+
+    
+/* LOAN CHECK SPECIFIED REPAYMENT */
+    
+    def saveTellerLoanCheckSpecifiedRepaymentTxn(TxnLoanPaymentDetails tc, TxnFile tf){
+        println params //Error check
+        
+        if(tc.hasErrors() || tf.hasErrors()){
+            flash.message = 'Failed to transfer'
+            render(view: '/tellering/txnLoanCheckSpecifiedRepayment/create', model: [txnLoanCheckSpecifiedRepaymentInstance:tc])
+        }
+        else{
+            def tb = new TxnCashCheckBlotter()
+            def loanInstance = Loan.get(params?.loanId)
+            def txnTemp = tf.txnTemplate
+            def branch = Branch.get(depositInstance.branchId)
+            
+            if (params.principalInstallmentAmount.toDouble() > loanInstance.balanceAmount){
+                flash.message = 'Principal Payment Greate than loan balance'
+                render(view: '/tellering/txnLoanCheckSpecifiedRepayment/create', model: [txnLoanCheckSpecifiedRepaymentInstance:tc])
+                return
+            }            
+            tb.cashOutAmt = 0;
+            tb.cashInAmt = 0;
+            tb.checkInAmt = 0;
+            tb.checkOutAmt = 0;
+            
+            tf.acctNo = loanInstance.accountNo
+            tf.loanAcct = loanInstance
+            tf.currency = Currency.get(loanInstance.product.currencyId)
+            tf.user = UserMaster.get(session.user_id)
+            tf.branch = branch
+            //tf.txnAmt = temp
+            tf.txnCode = txnTemp.code
+            tf.txnDate = branch.runDate
+            tf.txnTimestamp = new Date().toTimestamp()
+            tf.txnDescription = txnTemp.codeDescription
+            tf.status = ConfigItemStatus.get(2)
+            tf.save(flush:true,failOnError:true)
+            def amt = (tf.txnAmt).longValue()
+            def isTxnAllowed =  policyService.isTxnAllowed(description.code, amt)
+            if(isTxnAllowed == false) {
+                tf.status = ConfigItemStatus.get(1)
+                policyService.createException('1001', 'txnFile', tf.id, 'tellering/viewTellerTxnInquiry2/'+tf.id)
+            }
+            tf.save(flush: true)
+            
+            loanInstance.balanceAmount -= params.principalInstallmentAmount.toDouble()
+            loanInstance.interestBalanceAmount -= params.interestInstallmentAmount.toDouble()
+            loanInstance.penaltyBalanceAmount -= params.penaltyInstallmentAmount.toDouble()
+            loanInstance.serviceChargeBalanceAmount -= params.serviceChargeInstallmentAmount.toDouble()
+            loanInstance.lastTransactionNo = tf.txnId
+            loanInstance.transactionSequenceNo = loanInstance.transactionSequenceNo + 1    
+            loanInstance.lastTransactionDate = branch.runDate
+            loanInstance.lastCustomerTransactionDate = branch.runDate            
+            loanInstance.save(flush:true)
+            
+            // create loan ledger entry
+            def loanLedgerEntry = new LoanLedger(loan: loanInstance, txn: tf, txnType: TxnType.get(11), txnDate: branch.runDate, 
+                principalCredit: params.principalInstallmentAmount.toDouble(), principalBalance: loanInstance.balanceAmount, 
+                interestCredit: params.interestInstallmentAmount.toDouble(), interestBalance: loanInstance.interestBalanceAmount, 
+                penaltyCredit: params.penaltyInstallmentAmount.toDouble(), penaltyBalance: loanInstance.penaltyBalanceAmount,
+                chargesCredit: params.serviceChargeInstallmentAmount.toDouble(), chargesBalance: loanInstance.serviceChargeBalanceAmount)
+            loanLedgerEntry.save(flush:true)
+            
+            //if(tb.id > 1){
+            //    def tm = TxnCashCheckBlotter.get(tb.id - 1)
+            //    tb.cashOutAmt = tm.cashOutAmt
+            //    tb.cashInAmt = tm.cashInAmt
+            //    tb.checkInAmt += tm.checkInAmt
+            //    tb.checkOutAmt = tm.checkOutAmt
+            //}
+            tb.checkInAmt += tc.principalAmt
+            tb.checkInAmt += tc.interestAmt
+            tb.checkInAmt += tc.penaltyAmt
+            tb.checkInAmt += tc.serviceChargeAmt
+            tb.checkInAmt += tc.grtAmt
+            tb.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            tb.currency = Currency.get(loanInstance.product.currencyId)
+            tb.user = UserMaster.get(session.user_id)
+            tb.txnParticulars = tf.txnParticulars
+            tb.save(flush:true,failOnError:true)
+            
+            session["checks"].each {
+                def tcoci = TxnCOCI.get(session["checks"].id)
+                tcoci.status = ConfigItemStatus.get(2)
+                tcoci.txnFile = tf
+                //tcoci.depAcct = depositInstance
+                tcoci.save(flush:true)
+            }
+            //def txnBreakdownInstance = new TxnBreakdown(creditAmt:tb.checkInAmt, txnDate:tf.txnDate, txnFile:tf)
+            //txnBreakdownInstance.save(flush:true)
+            
+            userMasterService.updateTellerBalanceStatus(false)
+            
+            flash.message = 'Success'
+            render(view: '/tellering/index', model: [txnLoanCheckSpecifiedRepaymentInstance:new TxnLoanPaymentDetails()])
+        }
+    }
+    def createTellerLoanCheckSpecifiedRepaymentTxn(){
+        
+        def user = UserMaster.get(session.user_id)
+        if (user.coci){
+            def loanInstallmentInstance = new LoanInstallment()
+            def txnFileInstance = new TxnFile()
+            def txnCOCIInstance = new TxnCOCI()
+            def txnLoanCheckSpecifiedRepaymentInstance = new TxnLoanPaymentDetails()
+            session["checks"] = []
+            render(view:'/tellering/txnLoanCheckSpecifiedRepayment/create', model: [txnLoanCheckSpecifiedRepaymentInstance:txnLoanCheckSpecifiedRepaymentInstance])       
+        }
+        else{
+            flash.message = 'Error! No cash account defined'
+            render(view: '/tellering/index')            
+        }
+        
+    }
+    
+/* LOAN PROCEEDS DISBURSEMENT */
+    
+    def saveTellerLoanProceedsDisbursementTxn(TxnLoanPaymentDetails tc, TxnFile tf){
+        println params //Error check
+        
+        if(tc.hasErrors() || tf.hasErrors()){
+            flash.message = 'Failed to transfer'
+            render(view: '/tellering/txnLoanProceedsDisbursement/create', model: [txnLoanProceedsDisbursementInstance:tc])
+        }
+        else{
+            def tb = new TxnCashCheckBlotter()
+            def loanInstance = Loan.get(params?.loanId)
+            def txnTemp = tf.txnTemplate
+            def branch = Branch.get(depositInstance.branchId)
+            
+            if (params.totalNetProceeds.toDouble() > loanInstance.totalNetProceeeds){
+                flash.message = 'Amount greater than total net proceeds'
+                render(view: '/tellering/txnLoanProceedsDisbursement/create', model: [txnLoanProceedsDisbursementInstance:tc])
+                return
+            }            
+            tb.cashOutAmt = 0;
+            tb.cashInAmt = 0;
+            tb.checkInAmt = 0;
+            tb.checkOutAmt = 0;
+            
+            tf.acctNo = loanInstance.accountNo
+            tf.loanAcct = loanInstance
+            tf.currency = Currency.get(loanInstance.product.currencyId)
+            tf.user = UserMaster.get(session.user_id)
+            tf.branch = branch
+            tf.txnAmt = tc.totalNetProceeds
+            tf.txnCode = txnTemp.code
+            tf.txnDate = branch.runDate
+            tf.txnTimestamp = new Date().toTimestamp()
+            tf.txnDescription = txnTemp.codeDescription
+            tf.status = ConfigItemStatus.get(2)
+            tf.save(flush:true,failOnError:true)
+            def amt = (tf.txnAmt).longValue()
+            def isTxnAllowed =  policyService.isTxnAllowed(description.code, amt)
+            if(isTxnAllowed == false) {
+                tf.status = ConfigItemStatus.get(1)
+                policyService.createException('1001', 'txnFile', tf.id, 'tellering/viewTellerTxnInquiry2/'+tf.id)
+            }
+            tf.save(flush: true)
+            
+            loanInstance.balanceAmount += tc.totalNetProceeds
+            loanInstance.lastTransactionNo = tf.txnId
+            loanInstance.transactionSequenceNo = loanInstance.transactionSequenceNo + 1    
+            loanInstance.lastTransactionDate = branch.runDate
+            loanInstance.lastCustomerTransactionDate = branch.runDate            
+            loanInstance.save(flush:true)
+            
+            // create loan ledger entry
+            def loanLedgerEntry = new LoanLedger(loan: loanInstance, txn: tf, txnType: TxnType.get(11), txnDate: branch.runDate, 
+                principalCredit: tc.totalNetProceeds, principalBalance: loanInstance.balanceAmount)
+            loanLedgerEntry.save(flush:true)
+            
+            //if(tb.id > 1){
+            //    def tm = TxnCashCheckBlotter.get(tb.id - 1)
+            //    tb.cashOutAmt += tm.cashOutAmt
+            //    tb.cashInAmt = tm.cashInAmt
+            //    tb.checkInAmt = tm.checkInAmt
+            //    tb.checkOutAmt = tm.checkOutAmt
+            //}
+            tb.cashOutAmt += tc.totalNetProceeds
+            tb.branch = Branch.get(UserMaster.get(session.user_id).branchId)
+            tb.currency = Currency.get(loanInstance.product.currencyId)
+            tb.user = UserMaster.get(session.user_id)
+            tb.txnParticulars = tf.txnParticulars
+            tb.save(flush:true,failOnError:true)
+            tb.save(flush:true)
+            
+            //def txnBreakdownInstance = new TxnBreakdown(debitAmt:tb.cashOutAmt, txnDate:tf.txnDate, txnFile:tf)
+            //txnBreakdownInstance.save(flush:true)
+            
+            userMasterService.updateTellerBalanceStatus(false)
+            
+            flash.message = 'Success'
+            render(view: '/tellering/index', model: [txnLoanProceedsDisbursementInstance:new TxnLoanPaymentDetails()])
+        }
+    }
+    def createTellerLoanProceedsDisbursementTxn(){
+        
+        def user = UserMaster.get(session.user_id)
+        if (user.cash){
+            def txnFileInstance = new TxnFile()
+            def txnLoanProceedsDisbursementInstance = new TxnLoanPaymentDetails()
+            render(view:'/tellering/txnLoanProceedsDisbursement/create', model: [txnLoanProceedsDisbursementInstance:txnLoanProceedsDisbursementInstance])       
+        }
+        else{
+            flash.message = 'Error! No cash account defined'
+            render(view: '/tellering/index')            
+        }        
+    }
+        
+/* TRANSACTION INQUIRY */
+
+    def viewTellerTxnInquiry(){
+        render (view:'/tellering/txnInquiry/view');
+    }
+    
+    def viewTellerTxnInquiry2(TxnFile tf){
+        
+        def txnFileInstance = null
+        def senderInstance = null
+        def beneficiaryInstance = null
+        def txnTemplateInstance = null
+        String indicator = "BAMF"
+        
+            txnFileInstance = TxnFile.get(tf.id)
+            if (txnFileInstance?.sender?.id) {
+                senderInstance = Customer.get(txnFileInstance?.sender?.id)
+            }
+            if (txnFileInstance?.beneficiary?.id){
+                beneficiaryInstance = Customer.get(txnFileInstance?.beneficiary?.id)
+            }
+            if (txnFileInstance?.txnType) {
+                int txnTypeNo = txnFileInstance?.txnType.toInteger()
+                println txnTypeNo
+                txnTemplateInstance = TxnTemplate.get(txnTypeNo)
+                println txnTemplateInstance.txnType.codeDescription
+                if((txnTypeNo >= 1 && txnTypeNo <= 4) || (txnTypeNo >= 118 && txnTypeNo <= 121)){
+                    indicator = "Teller Cash"
+                }
+                if((txnTypeNo >= 5 && txnTypeNo <= 32) || (txnTypeNo >= 79 && txnTypeNo <= 86)){
+                    indicator = "Deposit"
+                }
+                if((txnTypeNo >= 5 && txnTypeNo <= 55) || (txnTypeNo >= 87 && txnTypeNo <= 117)){
+                    indicator = "Other Cash/Check"
+                }
+                if((txnTypeNo >= 56 && txnTypeNo <= 78)){
+                    indicator = "Loan"
+                }
+            }
+        
+        println indicator
+
+        render(view:'/tellering/txnInquiry2/view', model:[txnFileInstance:txnFileInstance, senderInstance:senderInstance, beneficiaryInstance:beneficiaryInstance, txnTemplateInstance:txnTemplateInstance, indicator:indicator])
+        return
+    }
+
+/* TELLER BALANCING */
+
+    def viewTellerBalancing(){
+        def txnBalancing = new TxnTellerCash()
+        render(view:'/tellering/tellerBalancing/create', model: [txnBalancing:txnBalancing])     
+            
+        //render(view:'/tellering/tellerBalancing/view', model: [txnBalancing:txnBalancing]) 
+        //def tellerBalancingInstance = new TellerBalancingCommand()
+        //render (view:'/tellering/tellerBalancing/view', model:[tellerBalancingInstance]);
+    }
+    
+    def comfirmTellerBalance(){
+      
+        def bList = TxnCashCheckBlotter.findAllByUser(UserMaster.get(session.user_id))
+        Double cashIn = 0
+        Double cashOut = 0
+        Double  cashNet = 0
+     
+      
+       
+      
+        def cashOnHand = params.txnAmt.toDouble()
+ 
+       
+        for (b in bList){
+            cashIn += b.cashInAmt
+            cashOut += b.cashOutAmt 
+        }
+        cashNet = cashIn - cashOut
+      
+        
+        if (cashNet != cashOnHand){
+            flash.message = 'Cash on Hand does not match system cash!'
+        }
+        else{
+            def user = UserMaster.get(session.user_id)
+            user.isTellerBalanced = true
+            user.save(flush:true)
+            flash.message = 'Congratulations, you have balanced!'    
+        }
+        println cashNet
+        println session
+        println params
+        
+        render (view:'/tellering/index');
+    }
+    
+/* TRANSACTION REVERSAL/CANCELLATION */
+
+    def viewTellerReverseCancelTxn(){
+        render (view:'/tellering/txnReversal/view');
+    }
+}
+
+@grails.validation.Validateable
+class TellerBalancingCommand {
+    
+    Double txnAmt
+    Integer bills1000
+    Integer bills500
+    Integer bills200
+    Integer bills100
+    Integer bills50
+    Integer bills20
+    Integer coins10
+    Integer coins5
+    Integer coins1
+    Integer coins025
+    Integer coins010
+    Integer coins005
+    Integer coins001
+    Double total1000
+    Double total500
+    Double total200
+    Double total100
+    Double total50
+    Double total20
+    Double total10
+    Double total5
+    Double total1
+    Double total025
+    Double total010
+    Double total005
+    Double total001
+    
+    static constraints = {
+        txnAmt nullable:true
+        bills1000 nullable:true
+        bills500 nullable:true
+        bills200 nullable:true
+        bills100 nullable:true
+        bills50 nullable:true
+        bills20 nullable:true
+        coins10 nullable:true
+        coins5 nullable:true
+        coins1 nullable:true
+        coins025 nullable:true
+        coins010 nullable:true
+        coins005 nullable:true
+        coins001 nullable:true
+        total1000 nullable:true
+        total500 nullable:true
+        total200 nullable:true
+        total100 nullable:true
+        total50 nullable:true
+        total20 nullable:true
+        total10 nullable:true
+        total5 nullable:true
+        total1 nullable:true
+        total025 nullable:true
+        total010 nullable:true
+        total005 nullable:true
+        total001 nullable:true
+    }
+    
+    static mapping = {
+        id sqlType: 'int', generator: 'increment'
+    }
+}

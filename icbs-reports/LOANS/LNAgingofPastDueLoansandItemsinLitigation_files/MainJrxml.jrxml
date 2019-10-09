@@ -1,0 +1,802 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.2.1.final using JasperReports Library version 6.2.0  -->
+<!-- 2016-04-28T17:50:53 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="loan" pageWidth="842" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="7dec5ee7-5d3a-4398-90c3-9a21b5af8ddc">
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="NRSBL Data Adapter"/>
+	<property name="ireport.jasperserver.url" value="http://localhost:8080/jasperserver/"/>
+	<property name="ireport.jasperserver.user" value="jasperadmin"/>
+	<property name="ireport.jasperserver.report.resource" value="/ICBS_REPORT/LOANS/LNAgingofPastDueLoansandItemsinLitigation_files/MainJrxml"/>
+	<property name="ireport.jasperserver.reportUnit" value="/ICBS_REPORT/LOANS/LNAgingofPastDueLoansandItemsinLitigation"/>
+	<parameter name="branch" class="java.util.ArrayList" isForPrompting="false"/>
+	<queryString language="SQL">
+		<![CDATA[select DISTINCT * from (
+(select DISTINCT
+	'LEDGER' as "LOAN",
+	D.param_value as "BANK NAME", 
+	C.name as "BRANCH NAME", 
+	B.description "DESCRIPTION",
+	E."1to60daysCount",
+	E."1to60daysSum",
+	F."60to90daysCount",
+	F."60t90daysSum",
+	G."90to180daysCount",
+	G."90t0180daysSum",
+	H."180to1yearCount",
+	H."180to1yearSum",
+	J."over1yearCount",
+	J."over1yearSum",
+	K."Count1toOver360",
+	K."Sum1toOver360",
+	(select X."A" FROM
+	(SELECT 
+	COUNT(account_no)as "A" FROM loan)X)as "COUNTACCOUNT",
+	(select X."A" FROM
+	(SELECT 
+	SUM(balance_amount)as "A" FROM loan)X)as "SUMBALANCEAMOUNT"
+	
+	FROM loan A
+	left join loan_project B on A.loan_project_id = B.id
+	left join branch C on A.branch_id = C."id" 
+	left join (select param_value from institution where id = '1')D on D.param_value is not null
+
+	left join(
+	select B.description, 
+	A.loan_project_id, A.branch_id,
+	count(A.account_no) as "1to60daysCount", 
+	sum(A.balance_amount) as "1to60daysSum"
+	from loan A
+	left join loan_project B on A.loan_project_id = B.id
+	left join  branch C on A.branch_id = C."id" 
+	where A.status_id = 4 and 
+	A.balance_amount > 0
+	and (extract(DAY from (A.maturity_date-C.run_date)) >=1 AND
+	extract(DAY from (A.maturity_date-C.run_date)) <=60)
+	group by B.description, A.loan_project_id, A.branch_id
+	)E on A.loan_project_id = E.loan_project_id and A.branch_id = E.branch_id
+
+	left join(
+	select B.description, 
+	A.loan_project_id, A.branch_id,
+	count(A.account_no) as "60to90daysCount", 
+	sum(A.balance_amount) as "60t90daysSum"
+	from loan A
+	left join loan_project B on A.loan_project_id = B.id
+	left join branch C on A.branch_id = C."id" 
+	where A.status_id = 4 and 
+	A.balance_amount > 0
+	and (extract(DAY from (A.maturity_date-C.run_date)) >=60 AND
+	extract(DAY from (A.maturity_date-C.run_date)) <=90)
+	group by B.description, A.loan_project_id, A.branch_id
+	)F on A.loan_project_id = F.loan_project_id and A.branch_id = F.branch_id
+
+
+	left join(
+	select B.description, 
+	A.loan_project_id, A.branch_id,
+	count(A.account_no) as "90to180daysCount", 
+	sum(A.balance_amount) as "90t0180daysSum"
+	from loan A
+	left join loan_project B on A.loan_project_id = B.id
+	left join branch C on A.branch_id = C."id" 
+	where A.status_id = 4 and 
+	A.balance_amount > 0
+	and (extract(DAY from (A.maturity_date-C.run_date)) >=90 AND
+	extract(DAY from (A.maturity_date-C.run_date)) <=180)
+	group by B.description, A.loan_project_id, A.branch_id
+	)G on A.loan_project_id = G.loan_project_id and A.branch_id = G.branch_id
+
+
+	left join(
+	select B.description, 
+	A.loan_project_id, A.branch_id,
+	count(A.account_no) as "180to1yearCount", 
+	sum(A.balance_amount) as "180to1yearSum"
+	from loan A
+	left join loan_project B on A.loan_project_id = B.id
+	left join branch C on A.branch_id = C."id" 
+	where A.status_id = 4 and 
+	A.balance_amount > 0
+	and (extract(DAY from (A.maturity_date-C.run_date)) >=180 AND
+	extract(DAY from (A.maturity_date-C.run_date)) <=360)
+	group by B.description, A.loan_project_id, A.branch_id
+	)H on A.loan_project_id = H.loan_project_id and A.branch_id = H.branch_id
+
+	left join(
+	select B.description, 
+	A.loan_project_id, A.branch_id,
+	count(A.account_no) as "over1yearCount", 
+	sum(A.balance_amount) as "over1yearSum"
+	from loan A
+	left join loan_project B on A.loan_project_id = B.id
+	left join branch C on A.branch_id = C."id" 
+	where A.status_id = 4 and 
+	A.balance_amount > 0
+	and (extract(DAY from (A.maturity_date-C.run_date)) >=360)
+	group by B.description, A.loan_project_id, A.branch_id
+	)J on A.loan_project_id = J.loan_project_id and A.branch_id = J.branch_id
+
+	left join(
+	select B.description, 
+	A.loan_project_id, A.branch_id,
+	count(A.account_no) as "Count1toOver360", 
+	sum(A.balance_amount) as "Sum1toOver360"
+	from loan A
+	left join loan_project B on A.loan_project_id = B.id
+	left join branch C on A.branch_id = C."id" 
+	where A.status_id = 4 and 
+	A.balance_amount > 0
+	and (extract(DAY from (A.maturity_date-C.run_date)) >= 1)
+	group by B.description, A.loan_project_id, A.branch_id
+	)K on A.loan_project_id = K.loan_project_id and A.branch_id = K.branch_id
+
+ORDER BY C.name)
+
+	UNION ALL
+
+	(select DISTINCT
+	'SECURITY' as "LOAN",
+	F.param_value as "BANK NAME",
+	E.name as "BRANCH NAME",
+	D.description as "DESCRIPTION",
+	G."1to60daysCount",
+	G."1to60daysSum",
+	H."60to90daysCount",
+	H."60to90daysSum",
+	I."90to180daysCount",
+	I."90to180daysSum",
+	J."180to360daysCount",
+	J."180to360daysSum",
+	K."over1yearCount",
+	K."over1yearSum",
+	L."Count1toOver360",
+	L."Sum1toOver360",
+	(select X."A" FROM
+	(SELECT 
+	COUNT(account_no)as "A" FROM loan)X)as "COUNTACCOUNT",
+	(select X."A" FROM
+	(SELECT 
+	SUM(balance_amount)as "A" FROM loan)X)as "SUMBALANCEAMOUNT"
+	
+	from loan A
+		LEFT JOIN loan_application B on A.loan_application_id = B.ID
+		LEFT JOIN loan_application_collaterals  C on B.ID = C.loan_application_id
+		LEFT JOIN loan_collateral_type D ON C.collateral_id = D.id
+		LEFT JOIN branch E on A.branch_id = E.id
+		LEFT JOIN (select param_value from institution WHERE caption = 'Institution Name')F on F.param_value is not NULL
+	LEFT JOIN (
+	SELECT
+	D.description, A.loan_application_id, A.branch_id,
+	COUNT(A.account_no) as "1to60daysCount",
+	SUM(A.balance_amount) as "1to60daysSum"
+	from loan A
+		LEFT JOIN loan_application B on A.loan_application_id = B.ID
+		LEFT JOIN loan_application_collaterals  C on B.ID = C.loan_application_id
+		LEFT JOIN loan_collateral_type D ON C.collateral_id = D.id
+		LEFT JOIN branch E on A.branch_id = E.id
+	where A.status_id = 4 and 
+	A.balance_amount > 0
+	and (extract(DAY from (A.maturity_date-E.run_date)) >=1 AND
+	extract(DAY from (A.maturity_date-E.run_date)) <=60)
+	GROUP BY D.description, A.loan_application_id, A.branch_id
+	)G on A.loan_application_id = G.loan_application_id and A.branch_id = G.branch_id
+
+	LEFT JOIN (
+	SELECT
+	D.description, A.loan_application_id, A.branch_id,
+	COUNT(A.account_no) as "60to90daysCount",
+	SUM(A.balance_amount) as "60to90daysSum"
+	from loan A
+		LEFT JOIN loan_application B on A.loan_application_id = B.ID
+		LEFT JOIN loan_application_collaterals  C on B.ID = C.loan_application_id
+		LEFT JOIN loan_collateral_type D ON C.collateral_id = D.id
+		LEFT JOIN branch E on A.branch_id = E.id
+	where A.status_id = 4 and 
+	A.balance_amount > 0
+	and (extract(DAY from (A.maturity_date-E.run_date)) >=60 AND
+	extract(DAY from (A.maturity_date-E.run_date)) <=90)
+	GROUP BY D.description, A.loan_application_id, A.branch_id
+	)H on A.loan_application_id = H.loan_application_id and A.branch_id = H.branch_id
+
+	LEFT JOIN (
+	SELECT
+	D.description, A.loan_application_id, A.branch_id,
+	COUNT(A.account_no) as "90to180daysCount",
+	SUM(A.balance_amount) as "90to180daysSum"
+	from loan A
+		LEFT JOIN loan_application B on A.loan_application_id = B.ID
+		LEFT JOIN loan_application_collaterals  C on B.ID = C.loan_application_id
+		LEFT JOIN loan_collateral_type D ON C.collateral_id = D.id
+		LEFT JOIN branch E on A.branch_id = E.id
+	where A.status_id = 4 and 
+	A.balance_amount > 0
+	and (extract(DAY from (A.maturity_date-E.run_date)) >=90 AND
+	extract(DAY from (A.maturity_date-E.run_date)) <=180)
+	GROUP BY D.description, A.loan_application_id, A.branch_id
+	)I on A.loan_application_id = I.loan_application_id and A.branch_id = I.branch_id
+
+	LEFT JOIN (
+	SELECT
+	D.description, A.loan_application_id, A.branch_id,
+	COUNT(A.account_no) as "180to360daysCount",
+	SUM(A.balance_amount) as "180to360daysSum"
+	from loan A
+		LEFT JOIN loan_application B on A.loan_application_id = B.ID
+		LEFT JOIN loan_application_collaterals  C on B.ID = C.loan_application_id
+		LEFT JOIN loan_collateral_type D ON C.collateral_id = D.id
+		LEFT JOIN branch E on A.branch_id = E.id
+	where A.status_id = 4 and 
+	A.balance_amount > 0
+	and (extract(DAY from (A.maturity_date-E.run_date)) >=180 AND
+	extract(DAY from (A.maturity_date-E.run_date)) <=360)
+	GROUP BY D.description, A.loan_application_id, A.branch_id
+	)J on A.loan_application_id = J.loan_application_id and A.branch_id = J.branch_id
+
+
+	LEFT JOIN (
+	SELECT
+	D.description, A.loan_application_id, A.branch_id,
+	COUNT(A.account_no) as "over1yearCount",
+	SUM(A.balance_amount) as "over1yearSum"
+	from loan A
+		LEFT JOIN loan_application B on A.loan_application_id = B.ID
+		LEFT JOIN loan_application_collaterals  C on B.ID = C.loan_application_id
+		LEFT JOIN loan_collateral_type D ON C.collateral_id = D.id
+		LEFT JOIN branch E on A.branch_id = E.id
+	where A.status_id = 4 and 
+	A.balance_amount > 0
+	and (extract(DAY from (A.maturity_date-E.run_date)) >= 360 )
+	GROUP BY D.description, A.loan_application_id, A.branch_id
+	)K on A.loan_application_id = K.loan_application_id and A.branch_id = K.branch_id
+
+	left join(
+	select B.description, 
+	A.loan_project_id, A.branch_id,
+	count(A.account_no) as "Count1toOver360", 
+	sum(A.balance_amount) as "Sum1toOver360"
+	from loan A
+	left join loan_project B on A.loan_project_id = B.id
+	left join branch C on A.branch_id = C."id" 
+	where A.status_id = 4 and 
+	A.balance_amount > 0
+	and (extract(DAY from (A.maturity_date-C.run_date)) >= 1)
+	group by B.description, A.loan_project_id, A.branch_id
+	)L on A.loan_project_id = L.loan_project_id and A.branch_id = L.branch_id
+
+ORDER BY E.name)
+)A
+WHERE $X{IN, A."BRANCH NAME", branch}   
+ORDER BY A."LOAN", A."BRANCH NAME"]]>
+	</queryString>
+	<field name="BANK NAME" class="java.lang.String"/>
+	<field name="BRANCH NAME" class="java.lang.String"/>
+	<field name="DESCRIPTION" class="java.lang.String"/>
+	<field name="1to60daysCount" class="java.lang.Long"/>
+	<field name="1to60daysSum" class="java.lang.Double"/>
+	<field name="LOAN" class="java.lang.String"/>
+	<field name="60to90daysCount" class="java.lang.Long"/>
+	<field name="60t90daysSum" class="java.lang.Double"/>
+	<field name="90to180daysCount" class="java.lang.Long"/>
+	<field name="90t0180daysSum" class="java.lang.Double"/>
+	<field name="180to1yearCount" class="java.lang.Long"/>
+	<field name="180to1yearSum" class="java.lang.Double"/>
+	<field name="over1yearCount" class="java.lang.Long"/>
+	<field name="over1yearSum" class="java.lang.Double"/>
+	<field name="Count1toOver360" class="java.lang.Long"/>
+	<field name="Sum1toOver360" class="java.lang.Double"/>
+	<field name="COUNTACCOUNT" class="java.lang.Long"/>
+	<field name="SUMBALANCEAMOUNT" class="java.lang.Double"/>
+	<variable name="Total1to60daysCount" class="java.lang.Long" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[$F{1to60daysCount}]]></variableExpression>
+	</variable>
+	<variable name="Total1to60daysSum" class="java.lang.Double" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[$F{1to60daysSum}]]></variableExpression>
+	</variable>
+	<variable name="Total60to90daysCount" class="java.lang.Long" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[$F{60to90daysCount}]]></variableExpression>
+	</variable>
+	<variable name="Total60t90daysSum" class="java.lang.Double" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[$F{60t90daysSum}]]></variableExpression>
+	</variable>
+	<variable name="Total90to180daysCount" class="java.lang.Long" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[$F{90to180daysCount}]]></variableExpression>
+	</variable>
+	<variable name="Total90t0180daysSum" class="java.lang.Double" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[$F{90t0180daysSum}]]></variableExpression>
+	</variable>
+	<variable name="Total180to1yearCount" class="java.lang.Long" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[$F{180to1yearCount}]]></variableExpression>
+	</variable>
+	<variable name="Total180to1yearSum" class="java.lang.Double" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[$F{180to1yearSum}]]></variableExpression>
+	</variable>
+	<variable name="Totalover1yearSum" class="java.lang.Double" resetType="Group" resetGroup="Group1" calculation="Sum">
+		<variableExpression><![CDATA[$F{over1yearSum}]]></variableExpression>
+	</variable>
+	<variable name="RatioofTotaltoTotalPastDue1to60days" class="java.lang.Double"/>
+	<variable name="RatioofTotaltoTotalPastDue60to90days" class="java.lang.Double"/>
+	<variable name="RatioofTotaltoTotalPastDue90to180days" class="java.lang.Double"/>
+	<variable name="RatioofTotaltoTotalPastDue180to360days" class="java.lang.Double"/>
+	<variable name="RatioofTotaltoTotalPastDueover1year" class="java.lang.Double"/>
+	<variable name="RatioofTotaltoTotalLoanPortfolio1to60days" class="java.lang.Double"/>
+	<variable name="RatioofTotaltoTotalLoanPortfolio60to90days" class="java.lang.Double"/>
+	<variable name="RatioofTotaltoTotalLoanPortfolio90to180days" class="java.lang.Double"/>
+	<variable name="RatioofTotaltoTotalLoanPortfolio180to360days" class="java.lang.Double"/>
+	<variable name="RatioofTotaltoTotalLoanPortfolioover1year" class="java.lang.Double"/>
+	<group name="Group1">
+		<groupExpression><![CDATA[$F{BRANCH NAME}]]></groupExpression>
+		<groupHeader>
+			<band height="38">
+				<textField>
+					<reportElement x="2" y="8" width="224" height="22" uuid="ade1826b-271d-4e2b-a464-809aa5273e80"/>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{BRANCH NAME} + " Branch"]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band height="218">
+				<textField evaluationTime="Group" evaluationGroup="Group1" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="690" y="72" width="112" height="20" uuid="2ca4bbf0-0115-40b4-ac90-18e0fe342624">
+						<property name="local_mesure_unitheight" value="pixel"/>
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement>
+						<font isBold="true" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[(($F{over1yearSum} / $F{SUMBALANCEAMOUNT}) * 100)]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group1" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="690" y="22" width="110" height="20" uuid="061ff71a-7a7c-42ea-a89d-230dd919ec15"/>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[(($F{over1yearSum} / $F{Sum1toOver360}) * 100)]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="10" y="95" width="350" height="18" uuid="d1136dd2-242d-4799-81cc-a114ed327c3c"/>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+					<text><![CDATA[Total Past Due Loans and Items in Litigation :]]></text>
+				</staticText>
+				<textField evaluationTime="Group" evaluationGroup="Group1" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="260" y="72" width="110" height="20" uuid="0d4eec43-28c9-4f74-bf84-8b341dcd14b9">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement>
+						<font isBold="true" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[(($F{60t90daysSum} / $F{SUMBALANCEAMOUNT}) * 100)]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group1" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="110" y="22" width="116" height="20" uuid="156afb1c-9d11-425f-b00f-29eedc7d3ff2"/>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[(($F{1to60daysSum} / $F{Sum1toOver360}) * 100)]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group1" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="400" y="72" width="114" height="20" uuid="4cf38b6d-eb88-43bd-a9a1-e84299f697f2">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement>
+						<font isBold="true" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[(($F{90t0180daysSum} / $F{SUMBALANCEAMOUNT}) * 100)]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group1" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="370" y="148" width="144" height="20" uuid="82a4950c-cf9a-4080-94f5-ed0d7ebba21e"/>
+					<textElement verticalAlignment="Middle">
+						<font isBold="true" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{SUMBALANCEAMOUNT}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="3" y="2" width="367" height="20" uuid="37359ff1-bce8-40a5-aedb-07a914b03c3e"/>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+					<text><![CDATA[Ratio of Total to Total Past Due Loans and Items in Litigation :]]></text>
+				</staticText>
+				<staticText>
+					<reportElement x="10" y="131" width="216" height="21" uuid="1248edc9-d65a-463e-9b6e-14919383233f"/>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+					<text><![CDATA[Total Loan Portfolio :]]></text>
+				</staticText>
+				<textField evaluationTime="Group" evaluationGroup="Group1" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="110" y="72" width="116" height="20" uuid="e0024b54-a470-439f-95cd-f1d2e695653b">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement>
+						<font isBold="true" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[(($F{1to60daysSum} / $F{SUMBALANCEAMOUNT}) * 100)]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="10" y="50" width="216" height="20" uuid="2b95fe33-1302-4b54-b26e-106baeea9e35"/>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+					<text><![CDATA[Ratio of Total to Total Loan Portfolio :]]></text>
+				</staticText>
+				<textField evaluationTime="Group" evaluationGroup="Group1" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="290" y="113" width="80" height="17" uuid="349ba24c-15cd-4252-8645-358815cfc422"/>
+					<textElement>
+						<font isBold="true" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{Count1toOver360}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group1" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="260" y="22" width="110" height="20" uuid="a92c9574-01dd-4fac-a209-34183b12686c"/>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[(($F{60t90daysSum} / $F{Sum1toOver360}) * 100)]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group1" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="550" y="72" width="108" height="20" uuid="bbb5f963-739d-4a65-bd4b-8693a6344717">
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					</reportElement>
+					<textElement>
+						<font isBold="true" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[(($F{180to1yearSum}/ $F{SUMBALANCEAMOUNT}) * 100)]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group1" pattern="#,##0" isBlankWhenNull="true">
+					<reportElement x="290" y="150" width="80" height="16" uuid="21759945-bdcb-44c9-8c4a-5c8d640f2b85"/>
+					<textElement>
+						<font isBold="true" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{COUNTACCOUNT}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group1" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="550" y="22" width="108" height="20" uuid="7284f124-4a7c-442c-9996-822d68ddd2cd"/>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[(($F{180to1yearSum} / $F{Sum1toOver360}) * 100)]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group1" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="400" y="22" width="114" height="20" uuid="76e79b1f-d348-4a37-a0c3-98c5783838ef"/>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[(($F{90t0180daysSum} / $F{Sum1toOver360}) * 100)]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement x="10" y="168" width="216" height="22" uuid="49a3239d-5fa7-400c-aa5a-831312e5d2cb"/>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+					<text><![CDATA[Past Due Ratio :]]></text>
+				</staticText>
+				<textField evaluationTime="Group" evaluationGroup="Group1" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="114" y="195" width="112" height="23" uuid="bff77307-941b-471e-adf4-d4c04773f1c1"/>
+					<textElement>
+						<font isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[(($F{Sum1toOver360} / $F{SUMBALANCEAMOUNT}) * 100)]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group1" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="370" y="113" width="144" height="17" uuid="79a073bb-7690-427e-ad26-83aae4ee9ef6"/>
+					<textElement>
+						<font isBold="true" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{Sum1toOver360}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupFooter>
+	</group>
+	<group name="Group2">
+		<groupExpression><![CDATA[$F{LOAN}]]></groupExpression>
+		<groupFooter>
+			<band height="46">
+				<textField evaluationTime="Group" evaluationGroup="Group1" isBlankWhenNull="true">
+					<reportElement x="658" y="6" width="32" height="30" uuid="8b749ef9-e291-4b1b-b0e1-4fd4fb343816"/>
+					<textElement>
+						<font isBold="true" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{Total180to1yearCount} == null ? "0" : $V{Total180to1yearCount}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group1" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="410" y="6" width="104" height="30" uuid="c7878fe6-e030-4934-be3f-72456338f6d3"/>
+					<textElement>
+						<font isBold="true" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{Total90t0180daysSum} == null ? "0.00" : $V{Total90t0180daysSum}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group1" isBlankWhenNull="true">
+					<reportElement x="514" y="6" width="36" height="30" uuid="7870ab59-a957-4512-a3e3-1d316ac95ea4"/>
+					<textElement>
+						<font isBold="true" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{Total180to1yearCount} == null ? "0" : $V{Total180to1yearCount}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group1" isBlankWhenNull="true">
+					<reportElement x="370" y="6" width="40" height="30" uuid="42ec1405-12dc-46ef-8823-5a9db4a9ec1c"/>
+					<textElement>
+						<font isBold="true" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{Total90to180daysCount} == null ? "0" : $V{Total90to180daysCount}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group1" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="690" y="6" width="110" height="30" uuid="d4547a7a-ee64-4f48-9895-f16f65ba61cf"/>
+					<textElement>
+						<font isBold="true" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{Totalover1yearSum} == null ? "0.00" : $V{Totalover1yearSum}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group1" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="550" y="6" width="108" height="30" uuid="5ed19db8-c3fa-41e8-a511-5aaae27648b4"/>
+					<textElement>
+						<font isBold="true" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{Total180to1yearSum} == null ? "0.00" : $V{Total180to1yearSum}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group1" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="260" y="6" width="110" height="30" uuid="ba81b70d-ae26-43a7-8c36-a2dff17df199"/>
+					<textElement>
+						<font isBold="true" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{Total60t90daysSum} == null ? "0.00" : $V{Total60t90daysSum}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group1" isBlankWhenNull="true">
+					<reportElement x="226" y="6" width="34" height="28" uuid="540d88be-5765-471d-a066-d904fe90a0e8"/>
+					<textElement>
+						<font isBold="true" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{Total60to90daysCount} == null ? "0" : $V{Total60to90daysCount}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group1" pattern="#,##0.00" isBlankWhenNull="true">
+					<reportElement x="110" y="6" width="116" height="28" uuid="c4dc1445-85ae-493e-af9d-7031d1459f7a"/>
+					<textElement>
+						<font isBold="true" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{Total1to60daysSum} == null ? "0.00" : $V{Total1to60daysSum}]]></textFieldExpression>
+				</textField>
+				<textField evaluationTime="Group" evaluationGroup="Group1" isBlankWhenNull="true">
+					<reportElement x="72" y="6" width="38" height="28" uuid="7e87967d-b9a5-4a3b-9945-498c6665a658"/>
+					<textElement>
+						<font isBold="true" isUnderline="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$V{Total1to60daysCount} == null ? "0" : $V{Total1to60daysCount}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<pageHeader>
+		<band height="134" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="52" width="802" height="24" uuid="6fa71410-f04f-452b-9fbc-3fd7b9e37258">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="18" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BANK NAME}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="98" width="802" height="20" uuid="77d38d7f-444f-4090-8d69-1f0b4309c78a"/>
+				<textElement textAlignment="Center">
+					<font size="14" isBold="true"/>
+				</textElement>
+				<text><![CDATA[AGING OF PAST DUE LOANS & ITEMS IN LITIGATION]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="0" y="78" width="802" height="20" uuid="866db671-007a-4920-840d-91b7a470d5a7"/>
+				<textElement textAlignment="Center">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BRANCH NAME} + " Branch"]]></textFieldExpression>
+			</textField>
+			<image>
+				<reportElement x="0" y="0" width="50" height="50" uuid="c6a0e11a-17b4-4782-a32d-848364e69b7a"/>
+				<imageExpression><![CDATA["repo:logo.png"]]></imageExpression>
+			</image>
+			<textField>
+				<reportElement x="690" y="0" width="112" height="13" uuid="aa9e6527-ea0e-4a05-b0aa-1f4c94558582">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA["Page: " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField pattern="h:mm a">
+				<reportElement x="690" y="13" width="112" height="13" uuid="04deaf7d-d4a2-4516-a7e2-cbb60ffa11d6">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField pattern="MMMMM dd, yyyy">
+				<reportElement x="690" y="26" width="112" height="13" uuid="213f5589-e48a-4dbe-a50a-d0033271344c">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="31" splitType="Stretch">
+			<staticText>
+				<reportElement x="110" y="4" width="116" height="20" uuid="75607a29-4148-450a-957f-77052ea15a85">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[1 60 DAYS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="226" y="4" width="144" height="20" uuid="ec553d69-cf8d-4d95-8ac2-d5e3de77ce23">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[61 TO 90 DAYS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="370" y="4" width="144" height="20" uuid="a49d77b9-84ac-434b-b324-e8e92dea04bf">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[91 TO 180 DAYS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="658" y="4" width="144" height="20" uuid="5d06f394-ca68-4e2e-9a18-e8afbb2e753e">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[OVER 1 YEAR]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="4" y="4" width="106" height="20" uuid="25aeb2b4-9175-4f84-921b-777dd3299c57">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{LOAN}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="514" y="4" width="144" height="20" uuid="64bcab4d-2cbe-4503-876a-896638af9c23">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[181 DAYS TO 1 YEAR]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="32" splitType="Stretch">
+			<textField isBlankWhenNull="true">
+				<reportElement x="72" y="3" width="38" height="20" uuid="4a7d491c-5a5a-4f41-8e89-a25f0cc100d7">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{1to60daysCount} == null ? "0" : $F{1to60daysCount}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="110" y="3" width="116" height="20" uuid="31836feb-adbe-4d1a-b327-13bb45b14225">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{1to60daysSum} == null ? "0.00" : $F{1to60daysSum}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="226" y="3" width="34" height="20" uuid="7986a6e2-ff0d-4367-b9fa-d64fec04268f">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{60to90daysCount} == null ? "0" : $F{60to90daysCount}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="260" y="3" width="110" height="20" uuid="ab7d7b2a-6090-4d38-864c-4ded2eb1dde5">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{60t90daysSum} == null ? "0.00" : $F{60t90daysSum}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="370" y="3" width="40" height="20" uuid="079c0673-a06f-4658-8430-d7fa3c873b20">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{90to180daysCount} == null ? "0" : $F{90to180daysCount}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="410" y="3" width="104" height="20" uuid="fc5175b2-3684-4646-841b-fec9d3cb5c20">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{90t0180daysSum} == null ? "0.00" : $F{90t0180daysSum}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="514" y="3" width="36" height="20" uuid="f619e82d-2e01-4407-b3d0-a006c5eca009">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{180to1yearCount} == null ? "0" : $F{180to1yearCount}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="550" y="3" width="108" height="20" uuid="f2cc43a8-16fd-4062-8281-c78eb3ca5f9d">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{180to1yearSum} == null ? "0.00" : $F{180to1yearSum}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="658" y="3" width="32" height="20" uuid="2319fb80-7739-4e91-9d3a-24057285d93b">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{over1yearCount} == null ? "0" : $F{over1yearCount}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="690" y="3" width="112" height="20" uuid="efc26065-3414-46a3-a195-177d441f6714">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression><![CDATA[$F{over1yearSum} == null ? "0.00" : $F{over1yearSum}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<pageFooter>
+		<band splitType="Stretch"/>
+	</pageFooter>
+	<noData>
+		<band height="108">
+			<staticText>
+				<reportElement x="0" y="75" width="802" height="13" uuid="eff1de11-4741-4180-b310-67e5b95d2019">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="10"/>
+				</textElement>
+				<text><![CDATA[NO DATA FOR REPORT]]></text>
+			</staticText>
+			<image>
+				<reportElement x="0" y="0" width="50" height="50" uuid="27d2c631-3820-4564-b082-ff1df3e35ec6"/>
+				<imageExpression><![CDATA["repo:logo.png"]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement x="0" y="54" width="802" height="21" uuid="ced25739-2430-4ce3-818c-507c9e2cf76a">
+					<property name="local_mesure_unitheight" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="16" isBold="true"/>
+				</textElement>
+				<text><![CDATA[AGING OF PAST DUE LOANS & ITEMS IN LITIGATION]]></text>
+			</staticText>
+		</band>
+	</noData>
+</jasperReport>

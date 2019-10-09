@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.0.3.final using JasperReports Library version 6.0.3  -->
+<!-- 2016-08-18T19:03:49 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="ReprintPassbookSA" pageWidth="595" pageHeight="842" columnWidth="575" leftMargin="0" rightMargin="20" topMargin="20" bottomMargin="20" uuid="c1103967-550f-42a1-975a-e9da5c69209c">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="net.sf.jasperreports.awt.ignore.missing.font" value="true"/>
+	<property name="net.sf.jasperreports.default.font.name" value="Courier New"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="Sample DB"/>
+	<parameter name="id" class="java.lang.Integer"/>
+	<queryString language="SQL">
+		<![CDATA[Select
+	A.acct_id,
+	B.id as "TRN NO.",
+	A.txn_date as "Date",
+	B.txn_code as "TRN Code",
+	A.debit_amt as "DEBT AMT",
+	A.credit_amt as "CRDT AMT",
+	A.bal as "BAL",
+	A.passbook_line as "PB LINE"
+	from txn_deposit_acct_ledger as A
+	left join txn_file as B on A.txn_file_id = B.id
+	left join deposit as C on A.acct_id = C.id
+where A.id = $P{id}]]>
+	</queryString>
+	<field name="acct_id" class="java.lang.Long"/>
+	<field name="TRN NO." class="java.lang.Integer"/>
+	<field name="Date" class="java.sql.Timestamp"/>
+	<field name="TRN Code" class="java.lang.String"/>
+	<field name="DEBT AMT" class="java.lang.Double"/>
+	<field name="CRDT AMT" class="java.lang.Double"/>
+	<field name="BAL" class="java.lang.Double"/>
+	<field name="PB LINE" class="java.lang.Integer"/>
+	<pageHeader>
+		<band height="60">
+			<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+		</band>
+	</pageHeader>
+	<detail>
+		<band>
+			<textField isStretchWithOverflow="true">
+				<reportElement stretchType="RelativeToTallestObject" x="25" y="0" width="31" height="0" uuid="b0194a12-6ef6-4898-9b39-4d3f3cbe9cfd"/>
+				<textElement markup="html">
+					<font size="7.5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[($F{PB LINE}== 1) ? "" :
+($F{PB LINE} == 2) ? "<br>" :  
+($F{PB LINE}  == 3) ? "<br><br>" : 
+($F{PB LINE} == 4) ? "<br><br><br>" : 
+($F{PB LINE} == 5) ? "<br><br><br><br>" : 
+($F{PB LINE} == 6) ? "<br><br><br><br><br>" : 
+($F{PB LINE} == 7) ? "<br><br><br><br><br><br>" : 
+($F{PB LINE} == 8) ? "<br><br><br><br><br><br><br>" : 
+($F{PB LINE} == 9) ? "<br><br><br><br><br><br><br><br>" : 
+($F{PB LINE} == 10) ? "<br><br><br><br><br><br><br><br><br>" : 
+($F{PB LINE} == 11) ? "<br><br><br><br><br><br><br><br><br><br>" : 
+($F{PB LINE} == 12) ? "<br><br><br><br><br><br><br><br><br><br><br>" : 
+($F{PB LINE} == 13) ? "<br><br><br><br><br><br><br><br><br><br><br><br>" : 
+"<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>"]]></textFieldExpression>
+			</textField>
+		</band>
+		<band>
+			<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+			<textField isStretchWithOverflow="true">
+				<reportElement stretchType="RelativeToTallestObject" x="25" y="0" width="100" height="0" uuid="16f9c01c-fc8f-48e1-b174-720264441db6">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textElement markup="html">
+					<font size="7.5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PB LINE} == 14 ? "" : 
+$F{PB LINE} == 15 ? "<br>" : 
+$F{PB LINE} == 16 ? "<br><br>" : 
+$F{PB LINE} == 17 ? "<br><br><br>" : 
+$F{PB LINE} == 18 ? "<br><br><br><br>" : 
+$F{PB LINE} == 19 ? "<br><br><br><br><br>" : 
+$F{PB LINE} == 20 ? "<br><br><br><br><br><br>" : 
+$F{PB LINE} == 21 ? "<br><br><br><br><br><br><br>" : 
+$F{PB LINE} == 22 ? "<br><br><br><br><br><br><br><br>" : 
+$F{PB LINE} == 23 ? "<br><br><br><br><br><br><br><br><br>" : 
+$F{PB LINE} == 24 ? "<br><br><br><br><br><br><br><br><br><br>" : 
+$F{PB LINE} == 25 ? "<br><br><br><br><br><br><br><br><br><br><br>" : 
+$F{PB LINE} == 26 ? "<br><br><br><br><br><br><br><br><br><br><br><br>" : 
+$F{PB LINE} == 27 ? "<br><br><br><br><br><br><br><br><br><br><br><br><br>" : 
+""]]></textFieldExpression>
+			</textField>
+		</band>
+		<band height="10" splitType="Stretch">
+			<textField>
+				<reportElement x="21" y="0" width="35" height="9" uuid="6fd58710-7f7a-4a42-bb10-556aa0b2522b"/>
+				<textElement textAlignment="Center">
+					<font fontName="Courier New" size="7.5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TRN NO.}]]></textFieldExpression>
+			</textField>
+			<textField pattern="">
+				<reportElement x="56" y="0" width="58" height="9" uuid="d3ea0da2-4a9c-43b8-8ab4-ed2aa8747269">
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font fontName="Courier New" size="7.5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.text.SimpleDateFormat("dd/MM/yy").format($F{Date})]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="114" y="0" width="58" height="9" uuid="2dd7d93d-a6bc-448e-bd20-5f8891b5c258">
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font fontName="Courier New" size="7.5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TRN Code}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="172" y="0" width="83" height="9" uuid="a071f290-b56b-4e32-a41c-4e364c9c388a">
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font fontName="Courier New" size="7.5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DEBT AMT} == null ? "" : "*"+new java.text.DecimalFormat("#,##0.00").format($F{DEBT AMT})]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="255" y="0" width="60" height="9" uuid="60fc799c-584c-4ff9-93ff-b9a7cab6b455"/>
+				<textElement textAlignment="Right">
+					<font fontName="Courier New" size="7.5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CRDT AMT} == null ? "" : "*"+new java.text.DecimalFormat("#,##0.00").format($F{CRDT AMT})]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="315" y="0" width="60" height="9" uuid="31dc7a8b-b59e-4fef-b805-b3546cafb862">
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Right">
+					<font fontName="Courier New" size="7.5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{BAL} == null ? "0.00" : "*"+new java.text.DecimalFormat("#,##0.00").format($F{BAL})]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="376" y="0" width="20" height="9" uuid="0908f033-0617-4e38-98d1-fca85e82fbbf">
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font fontName="Courier New" size="7.5"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{PB LINE}]]></textFieldExpression>
+			</textField>
+			<break>
+				<reportElement x="0" y="9" width="100" height="1" uuid="0c9ce9e4-271f-4c12-9cf9-412386d74cd3">
+					<printWhenExpression><![CDATA[$F{PB LINE} == 27]]></printWhenExpression>
+				</reportElement>
+			</break>
+		</band>
+		<band height="60">
+			<printWhenExpression><![CDATA[$F{PB LINE} == 13]]></printWhenExpression>
+		</band>
+	</detail>
+</jasperReport>

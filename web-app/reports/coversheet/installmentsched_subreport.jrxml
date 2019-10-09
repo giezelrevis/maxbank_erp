@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.3.0.final using JasperReports Library version 6.3.0  -->
+<!-- 2016-10-31T07:38:11 -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="installmentsched_subreport" pageWidth="612" pageHeight="792" columnWidth="612" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="f87bc8f8-0ca7-47a4-8985-d1f6cbd44287">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="LocalHost"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<parameter name="ploan_id" class="java.lang.Integer"/>
+	<parameter name="pgrantedamt" class="java.lang.Double">
+		<parameterDescription><![CDATA[]]></parameterDescription>
+	</parameter>
+	<queryString>
+		<![CDATA[select 
+
+id,
+version,
+date_paid,
+installment_date,
+interest_installment_amount,
+interest_installment_paid,
+normal_interest_installment_amount,
+past_due_interest_installment_amount,
+past_due_interest_installment_paid,
+past_due_penalty_installment_amount,
+past_due_penalty_installment_paid,
+penalty_installment_amount,
+penalty_installment_paid,
+principal_installment_amount,
+principal_installment_paid,
+sequence_no,
+service_charge_installment_amount,
+service_charge_installment_paid,
+status_id,
+tax_installment_amount,
+tax_installment_paid,
+total_installment_amount,
+type_id
+
+
+from loan_installment where id in (
+select loan_installment_id from loan_loan_installment 
+where loan_loan_installments_id = $P{ploan_id}  )
+order by installment_date]]>
+	</queryString>
+	<field name="id" class="java.lang.Integer"/>
+	<field name="version" class="java.lang.Long"/>
+	<field name="date_paid" class="java.sql.Timestamp"/>
+	<field name="installment_date" class="java.sql.Timestamp"/>
+	<field name="interest_installment_amount" class="java.lang.Double"/>
+	<field name="interest_installment_paid" class="java.lang.Double"/>
+	<field name="normal_interest_installment_amount" class="java.lang.Double"/>
+	<field name="past_due_interest_installment_amount" class="java.lang.Double"/>
+	<field name="past_due_interest_installment_paid" class="java.lang.Double"/>
+	<field name="past_due_penalty_installment_amount" class="java.lang.Double"/>
+	<field name="past_due_penalty_installment_paid" class="java.lang.Double"/>
+	<field name="penalty_installment_amount" class="java.lang.Double"/>
+	<field name="penalty_installment_paid" class="java.lang.Double"/>
+	<field name="principal_installment_amount" class="java.lang.Double"/>
+	<field name="principal_installment_paid" class="java.lang.Double"/>
+	<field name="sequence_no" class="java.lang.Integer"/>
+	<field name="service_charge_installment_amount" class="java.lang.Double"/>
+	<field name="service_charge_installment_paid" class="java.lang.Double"/>
+	<field name="status_id" class="java.lang.Integer"/>
+	<field name="tax_installment_amount" class="java.lang.Double"/>
+	<field name="tax_installment_paid" class="java.lang.Double"/>
+	<field name="total_installment_amount" class="java.lang.Double"/>
+	<field name="type_id" class="java.lang.Integer"/>
+	<variable name="vbalance_start" class="java.lang.Double">
+		<variableExpression><![CDATA[$P{pgrantedamt}]]></variableExpression>
+		<initialValueExpression><![CDATA[$P{pgrantedamt}]]></initialValueExpression>
+	</variable>
+	<variable name="vbalance_forward" class="java.lang.Double">
+		<variableExpression><![CDATA[$V{vbalance_previous} - $F{principal_installment_amount}]]></variableExpression>
+		<initialValueExpression><![CDATA[$V{vbalance_previous}]]></initialValueExpression>
+	</variable>
+	<variable name="vbalance_previous" class="java.lang.Double">
+		<variableExpression><![CDATA[$V{vbalance_forward}]]></variableExpression>
+		<initialValueExpression><![CDATA[$V{vbalance_start}]]></initialValueExpression>
+	</variable>
+	<variable name="vtotalPrincipal" class="java.lang.Double" calculation="Sum">
+		<variableExpression><![CDATA[$F{principal_installment_amount}]]></variableExpression>
+	</variable>
+	<variable name="vtotalInterest" class="java.lang.Double" calculation="Sum">
+		<variableExpression><![CDATA[$F{interest_installment_amount}]]></variableExpression>
+	</variable>
+	<variable name="vtotalTotalAmortization" class="java.lang.Double" calculation="Sum">
+		<variableExpression><![CDATA[$F{principal_installment_amount} + $F{interest_installment_amount}]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<pageHeader>
+		<band height="50">
+			<staticText>
+				<reportElement x="0" y="20" width="612" height="23" uuid="b3244d01-e517-4f1a-80ef-1f651da4b98e">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Loan Amortization Schedule]]></text>
+			</staticText>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="38" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="40" height="30" uuid="47bfed65-d1d8-4a38-b4aa-8d4741854e92">
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<text><![CDATA[Seq.No]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="40" y="0" width="60" height="30" uuid="0794378e-578e-4de2-873b-04081246b8e7">
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<text><![CDATA[Inst. Date]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="110" y="0" width="65" height="30" uuid="7599d438-12bf-4d4c-9797-aaf3af44ba34">
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<text><![CDATA[Principal]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="185" y="0" width="65" height="30" uuid="4fe36b9d-0f1b-418d-89d2-44a94cd976ba">
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<text><![CDATA[Interest]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="335" y="-1" width="90" height="30" uuid="0fcb6474-1700-408d-8a09-a17b754bb589">
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<text><![CDATA[Balance]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="260" y="-1" width="65" height="30" uuid="0e012786-aae5-4150-a325-c18f3beb2b8a">
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<text><![CDATA[Total Amortization]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="435" y="0" width="60" height="30" uuid="67f03357-d22a-42ee-875c-843dc8901efb">
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<text><![CDATA[Status]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="510" y="0" width="60" height="30" uuid="8137d4f8-f5cb-44ca-8f90-4189dbe218f2">
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<text><![CDATA[Date Paid]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="13" splitType="Stretch">
+			<textField pattern="">
+				<reportElement x="0" y="0" width="40" height="13" uuid="77daa706-0fa4-465b-bb61-1b3c6e7077e7">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{sequence_no}]]></textFieldExpression>
+			</textField>
+			<textField pattern="MM/dd/yyyy">
+				<reportElement x="40" y="0" width="60" height="13" uuid="ecb955c4-e90b-47b6-b077-838dd54ef283">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{installment_date}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00#">
+				<reportElement x="110" y="0" width="65" height="13" uuid="f673da67-31ec-4726-ae5b-e26037f383e4">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{principal_installment_amount}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00#">
+				<reportElement x="185" y="0" width="65" height="13" uuid="9381acf0-4d90-447a-a5f8-f200dcfc69ef">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{interest_installment_amount}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00#">
+				<reportElement x="260" y="-1" width="65" height="13" uuid="85c8a65c-b55b-4ae7-8615-606ff16989dc">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{principal_installment_amount}+$F{interest_installment_amount}]]></textFieldExpression>
+			</textField>
+			<textField pattern="">
+				<reportElement x="435" y="0" width="60" height="13" uuid="b589c727-310f-4ca7-9ddb-d06aa3b6f7b6">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{status_id}]]></textFieldExpression>
+			</textField>
+			<textField pattern="MM/dd/yyyy" isBlankWhenNull="true">
+				<reportElement x="510" y="0" width="60" height="13" uuid="7a1441e4-af0a-42cd-8a3a-e7d10769f425">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{date_paid}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00#">
+				<reportElement x="335" y="0" width="90" height="13" uuid="74d06592-ed69-47c6-9d1d-22b8437df4d9">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{vbalance_forward}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="13">
+			<textField pattern="#,##0.00#">
+				<reportElement x="110" y="0" width="65" height="13" uuid="42c2ff60-b972-4995-9587-741c23116245">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{vtotalPrincipal}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00#">
+				<reportElement x="185" y="0" width="65" height="13" uuid="bcec02fb-12bb-4ecc-86a8-800d6f1a3a6c">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{vtotalInterest}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00#">
+				<reportElement x="260" y="-1" width="65" height="13" uuid="87202824-567b-4dd8-a32d-85b740ea186c">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.width" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{vtotalTotalAmortization}]]></textFieldExpression>
+			</textField>
+		</band>
+	</columnFooter>
+	<pageFooter>
+		<band height="59">
+			<textField>
+				<reportElement x="0" y="0" width="570" height="30" uuid="fd5c0c94-b7f9-4a07-8af0-20c830656faf"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Notice: This is an estimated loan amortization schedule. Actual amounts may vary \nif payments are made on  different dates or in different amounts."]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+</jasperReport>
